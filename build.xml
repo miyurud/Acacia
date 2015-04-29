@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--	###
+	# Copyright 2015 Acacia Team
+	# 
+	# Licensed under the Apache License, Version 2.0 (the "License");
+	# you may not use this file except in compliance with the License.
+	# You may obtain a copy of the License at
+	# 
+	#    http://www.apache.org/licenses/LICENSE-2.0
+	#
+	# Unless required by applicable law or agreed to in writing, software
+	# distributed under the License is distributed on an "AS IS" BASIS,
+	# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	# See the License for the specific language governing permissions and
+	# limitations under the License.
+	##
+-->
+
+   <project name="acacia" default="compile" basedir="."> 	
+   	<loadproperties srcfile="conf/acacia-server.properties"></loadproperties>
+    <property environment="env" />
+    
+    <property name="src.dir"     value="src"/>    
+    <property name="lib.dir"     value="lib"/>
+    <property name="gremlin-groovy-lib.dir"     value="lib-gremlin-groovy"/>
+    <property name="neo4j-lib.dir"     value="neo4j-lib"/>
+    <property name="x10-lib.dir"     value="x10-lib"/>
+    <property name="doc.dir"     value="doc"/>
+
+    <property name="build.dir"   value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir"     value="${build.dir}/jar"/>
+
+    <path id="build.classpath">
+        <fileset dir="${lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${gremlin-groovy-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${neo4j-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${x10-lib.dir}">
+          <include name="*.jar" />
+        </fileset> 
+    </path>
+ 		
+ 	<target name="compile">
+ 		<echo message="Important note : This ant action just compiles the Java and X10 sources. To do compile+create jar please run jar action instead." />
+ 		<!--<echo message="${toString:build.classpath}" />-->
+        <mkdir dir="${classes.dir}"/>
+        <!-- <scalac srcdir="${scala-src.dir};" destdir="${build.dir}" classpathref="build.classpath">
+        </scalac> -->
+        <javac includeantruntime="false" srcdir="${src.dir};" destdir="${classes.dir}" deprecation="on" classpathref="build.classpath">
+         <compilerarg value="-Xlint:unchecked" />
+         <!--<compilerarg value="-Xlint:none" />-->
+        </javac>
+		<exec executable="./compile_x10.sh" />
+    </target>
+  	
+    <target name="clean">
+       <delete includeemptydirs="true">
+          <fileset dir="build" includes="**/*"/>
+          <fileset dir="bin" includes="**/*"/>
+       </delete>
+    </target>
+
+	<target name="jar" depends="compile">
+		<pathconvert property="libs.project" pathsep=" ">
+			<mapper>
+				<chainedmapper>
+					<flattenmapper />
+					<globmapper from="*" to="lib/*" />
+				</chainedmapper>
+			</mapper>
+			<path>
+				<fileset dir="${lib.dir}">
+					<include name="**/*.jar" />
+				</fileset>
+			</path>
+		</pathconvert>
+				
+		<mkdir dir="build/jar" />
+		<jar destfile="bin/acacia.jar" basedir="build/classes">
+			<zipfileset dir="lib" includes="*.jar" prefix="lib"/>
+			<manifest>
+				<!--<attribute name="Class-Path" value="/tmp/aca/lib/j2ee-1.4.jar /tmp/aca/lib/inject-api-1.0.0-PRD.jar /tmp/aca/lib/cdi-api-1.0.jar /tmp/aca/lib/commons-httpclient-3.1.jar /tmp/aca/lib/commons-codec-1.4.jar /tmp/aca/lib/commons-daemon-1.0.11.jar /tmp/aca/lib/jackson-core-asl-1.9.7.jar /tmp/aca/lib/jackson-mapper-asl-1.8.8.jar /tmp/aca/lib/jamon-runtime-2.3.1.jar /tmp/aca/lib/libthrift-0.8.0.jar /tmp/aca/lib/geronimo-jta.jar lib/metrics-core-2.1.2.jar /tmp/aca/lib/jersey-server-1.9.jar /tmp/aca/lib/jersey-core-1.9.jar /tmp/aca/lib/asm-3.2.jar /tmp/aca/lib/servlet-api-2.5-20081211.jar /tmp/aca/lib/guava-11.0.2.jar /tmp/aca/lib/jetty-6.1.25.jar /tmp/aca/lib/jetty-util-6.1.25.jar /tmp/aca/lib/jettison-1.3.jar /tmp/aca/lib/slf4j-log4j12-1.4.3.jar /tmp/aca/lib/slf4j-api-1.4.3.jar /tmp/aca/lib/log4j-1.2.16.jar /tmp/aca/lib/protobuf-java-2.4.0a.jar /tmp/aca/lib/commons-collections-3.2.1.jar /tmp/aca/lib/zookeeper-3.4.5.jar /tmp/aca/lib/hsqldb-2.2.9.jar /tmp/aca/lib/hadoop-core-1.0.4.jar /tmp/aca/lib/hbase-0.94.4.jar /tmp/aca/lib/commons-configuration-1.6.jar /tmp/aca/lib/commons-cli-1.2.jar /tmp/aca/lib/commons-io-1.4.jar /tmp/aca/lib/commons-lang-2.5.jar /tmp/aca/lib/commons-logging-1.1.1.jar"/>-->
+				<!--<attribute name="Class-Path" value="${libs.project}"/>-->
+			</manifest>
+		</jar>
+		<!--<exec executable="./compile_cpp.sh" />-->
+		<!--<copy file="temp/NotInVertsSearch" tofile="bin/NotInVertsSearch"/>
+		<chmod file="bin/NotInVertsSearch" perm="755"/>-->
+	</target>
+	
+	<target name="run" depends="jar">
+	<!--<target name="run" depends="compile">-->
+		<!--<java jar="build/jar/acacia.jar" fork="true"/>-->
+		<parallel>
+			<sequential>
+					<java classname="org.hsqldb.Server" classpath="lib/hsqldb-2.2.9.jar" args="-port ${org.acacia.metadata.db.port} -database.0 file:${org.acacia.server.runtime.location}/metadb -dbname.0 acacia_meta"/>
+					<exec executable="./acacia-start.sh" />
+				</sequential>
+			</parallel>
+	</target>
+   	
+	<target name="runonly">
+	<!--<target name="run" depends="compile">-->
+		<!--<java jar="build/jar/acacia.jar" fork="true"/>-->
+		<parallel>
+				<sequential>
+					<java classname="org.hsqldb.Server" classpath="lib/hsqldb-2.2.9.jar" args="-port ${org.acacia.metadata.db.port} -database.0 file:${org.acacia.server.runtime.location}/metadb -dbname.0 acacia_meta"/>
+				</sequential>
+				    <java classname="org.acacia.vertexcounter.VertexCounter" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
+					<!--<java classname="test.acacia.partitioner.index.TestPartitionIndex" classpath="build/classes;${toString:build.classpath}"/>-->
+					<exec executable="./acacia-start.sh" />
+			</parallel>
+	</target>
+   	
+	<target name="vertcnt">
+	<!--<target name="run" depends="compile">-->
+		<!--<java jar="build/jar/acacia.jar" fork="true"/>-->
+		<parallel>
+				<sequential>
+					<java classname="org.acacia.vertexcounter.VertexCounter" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
+				</sequential>
+			</parallel>
+	</target>
+
+	<!-- This is for execution of Scala compiler -->
+	<target name="init">
+		<property name="scala-library.jar" value="${env.SCALA_HOME}/lib/scala-library.jar" />
+		<path id="build.classpath">
+			<pathelement location="${scala-library.jar}" />
+			<pathelement location="${build.dir}" />
+		</path>
+		<taskdef resource="scala/tools/ant/antlib.xml">
+  			<classpath>
+    			<pathelement location="${env.SCALA_HOME}/lib/scala-compiler.jar"   />
+    			<pathelement location="${scala-library.jar}"   />
+  			</classpath>
+		</taskdef>
+	</target>
+</project>
+

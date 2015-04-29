@@ -1,0 +1,6 @@
+#The local storage is in MB
+#E.g., <HOST>:<number of MBs>
+sc01.sc.cs.titech.ac.jp:80
+sc02.sc.cs.titech.ac.jp:120
+sc03.sc.cs.titech.ac.jp:66
+sc04.sc.cs.titech.ac.jp:70

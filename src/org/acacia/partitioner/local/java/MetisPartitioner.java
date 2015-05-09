@@ -1,19 +1,3 @@
-/**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package org.acacia.partitioner.local.java;
 
 import java.io.BufferedReader;
@@ -46,7 +30,9 @@ import com.google.common.base.Splitter;
  *
  */
 public class MetisPartitioner{
-	private TreeMap<Long, HashSet<Long>> graphStorage = new TreeMap<Long, HashSet<Long>>(); 
+	//The following TreeMap loads the entire graph data file into memory. This is plausible because
+	//the size of graph data sets loaded during the non-distributed mode of operation of Acacia is small. 
+	private TreeMap<Long, HashSet<Long>> graphStorage = new TreeMap<Long, HashSet<Long>>(); //Stores the entire graph used for partitioning.
 	private String outputFilePath;
 	private long vertexCount;
 	private long edgeCount;
@@ -56,6 +42,7 @@ public class MetisPartitioner{
 	private String graphID;
 	private short[] partitionIndex; //We keep the partition index as short because sgraphStoragehort can store
 	                                //maximum 32,767 values in a short variable.
+	private ArrayList<String> partitionIDsList = new ArrayList<String>();
 	private boolean initPartFlag;
 	private boolean isDistributedCentralPartitions;
 	private int initlaPartitionID;
@@ -67,10 +54,14 @@ public class MetisPartitioner{
 		this.graphName = graphName;
 		this.isDistributedCentralPartitions = isDistributedCentralPartitions;
 		this.graphID = graphID;
-				
+		
+		System.out.println("----------------------->AAAAAAA-------->");
 		loadDataSet(inputFilePath);
+		System.out.println("----------------------->BBBBBBB-------->");
 		constructMetisFormat();
+		System.out.println("----------------------->DDDDDDD-------->");
 		partitionWithMetis(nParts);
+		System.out.println("----------------------->EEEEEEE-------->");
 		distributeEdges();
 	}
 	
@@ -108,7 +99,7 @@ public class MetisPartitioner{
 		    		String actualPartitionID = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
 		    		refToWriter = new PartitionWriter(outputFilePath+"/"+graphID+"_"+actualPartitionID);
 		    		partitionFilesMap.put(partitionID, refToWriter);
-		    		
+		    		partitionIDsList.add(actualPartitionID);
 		    		if(!initPartFlag){
 		    			initlaPartitionID = Integer.parseInt(actualPartitionID);
 		    			initPartFlag = true;
@@ -123,7 +114,7 @@ public class MetisPartitioner{
 		}
 		
 		//Next we have to go through the original edgelist and see whether each and every edge falls into the
-		//same partition. If so we can put the edge on to that partition. If ngetPartitionFileListot, we have to upload the edge
+		//same partition. If so we can put the edge on to that partition. If not, we have to upload the edge
 		//to the central store.
 		//The first pass is just to get the information of how the data set will be partitioned  across Acacia.
 		Iterator<Map.Entry<Long, HashSet<Long>>> itr = graphStorage.entrySet().iterator();
@@ -173,7 +164,7 @@ public class MetisPartitioner{
 		
 		if(isDistributedCentralPartitions){
 			//This is kind of tricky, but we need to get the number of places from the X10 runtime to determine the number of
-			//partitions that we will create from the central store.
+			//partitions that we will create from the central store. At the moment this is kept as a future work.
 		}else{
 			numberOfCentralPartitions = 1;
 		}
@@ -198,21 +189,19 @@ public class MetisPartitioner{
 					while(itr2.hasNext()){
 						toVertex = itr2.next();
 						toVertexPartition = partitionIndex[(int) toVertex];
-					}
 					
-					if(fromVertexPartition != toVertexPartition){
-					     //The output format will be <startID><startPartitionID><endPartitionID><endID>
-						prep.setString(1, graphID);
-						prep.setLong(2, fromVertex);
-						prep.setLong(3, fromVertexPartition);
-						prep.setLong(4, toVertexPartition);
-						prep.setLong(5, toVertex);
-						prep.addBatch();
-					}else{
-						same++;
-						numVerts[fromVertexPartition]++;
-						PartitionWriter pw = partitionFilesMap.get(fromVertexPartition);
-						pw.writeEdge(fromVertex, toVertex);
+						if(fromVertexPartition != toVertexPartition){
+						     //The output format will be <startID><startPartitionID><endPartitionID><endID>
+							prep.setString(1, graphID);
+							prep.setLong(2, fromVertex);
+							prep.setLong(3, fromVertexPartition);
+							prep.setLong(4, toVertexPartition);
+							prep.setLong(5, toVertex);
+							prep.addBatch();
+						}else{
+							PartitionWriter pw = partitionFilesMap.get(fromVertexPartition);
+							pw.writeEdge(fromVertex, toVertex);
+						}
 					}
 				}
 
@@ -238,7 +227,7 @@ public class MetisPartitioner{
 			System.out.println("DDDDDDDDDDDDD4...");
 			pw.compress();
 			System.out.println("DDDDDDDDDDDDD5...");
-			partitionFileList[k] = pw.getOutputFilePath();
+			partitionFileList[k] = pw.getOutputFilePath() + ".gz";
 			k++;
 			pw.close();
 			System.out.println("DDDDDDDDDDDDD6...");
@@ -275,15 +264,32 @@ public class MetisPartitioner{
 		return initlaPartitionID;
 	}
 	
-	public x10.core.Rail getPartitionFileList(){
-		x10.util.ArrayList<java.lang.String> lst = new x10.util.ArrayList<java.lang.String>((java.lang.System[]) null, x10.rtt.Types.STRING).x10$util$ArrayList$$init$S();
+	public String[] getPartitionFileList(){
+//		x10.util.ArrayList<java.lang.String> lst = new x10.util.ArrayList<java.lang.String>((java.lang.System[]) null, x10.rtt.Types.STRING).x10$util$ArrayList$$init$S();
+//		
+//		for(String item: partitionFileList){
+//			((x10.util.ArrayList<java.lang.String>)lst).add__0x10$util$ArrayList$$T$O(((java.lang.String)(item)));
+//		}
+//		
+//		x10.core.Rail arr =  ((x10.util.ArrayList<java.lang.String>)lst).toRail();
+//		return arr;
 		
-		for(String item: partitionFileList){
-			((x10.util.ArrayList<java.lang.String>)lst).add__0x10$util$ArrayList$$T$O(((java.lang.String)(item)));
+		return partitionFileList;		
+	}
+	
+	public String[] getPartitionIDList(){
+		String[] items = new String[partitionIDsList.size()];
+		int cntr = 0;
+		for(String i : partitionIDsList){
+			items[cntr] = i;
+			cntr++;
 		}
 		
-		x10.core.Rail arr =  ((x10.util.ArrayList<java.lang.String>)lst).toRail();
-		return arr;
+		return items;
+	}
+	
+	public String[] lst(){
+		return null;
 	}
 	
 	private void constructMetisFormat(){
@@ -367,6 +373,10 @@ public class MetisPartitioner{
 					splitter = Splitter.on(' ');
 				}else if(line.contains("\t")){
 					splitter = Splitter.on('\t');
+				}else if(line.contains(",")){
+					splitter = Splitter.on(',');
+				}else{
+					System.out.println("Error : Could not find the required splitter character ...");
 				}
 			}
 			
@@ -406,11 +416,17 @@ public class MetisPartitioner{
 		    	graphStorage.put(secondVertex, vertexSet);
 		    	
 				edgeCount++;
-		    	line = br.readLine();
+				line = br.readLine();
+		    	while(line.trim().length() == 0){
+		    		line = br.readLine();
+		    	}
+		    	//System.out.println("line : " + line);
 		    }
 		}catch(IOException e){
 			e.printStackTrace();
 		}
+		
+		System.out.println("Loaded edges : " + edgeCount);
 	}
 	
 	public void printGraphContent(){

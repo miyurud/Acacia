@@ -1,19 +1,3 @@
-/**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package org.acacia.server;
 
 import java.io.BufferedReader;
@@ -90,21 +74,31 @@ public class AcaciaInstanceFileTransferServiceSession extends Thread{
 				byte[] line = new byte[8*1024];
 				
 				inpStrm.read(line, 0, line.length);
-				String idTemp = new String(line);
+				String idTemp = new String(line).trim(); //We must trim() here to avoid an error which indicates invalid file path.
 				Logger_Java.info("File name is : " + idTemp);
+				Logger_Java.info("File path is : " + dataFolder + "/" + idTemp);
 				
-				File fil = new File(dataFolder + "/file" + idTemp);
-				FileOutputStream foutstrm = new FileOutputStream(fil);
+				File fil = new File(dataFolder + "/" + idTemp);
 
-				out.println(AcaciaInstanceProtocol.SEND_FILE);
-				out.flush();		
-				
-				while((b = inpStrm.read(line)) > 0){					
-					foutstrm.write(line, 0, b);
-					foutstrm.flush();
+				if(!fil.exists()){
+					fil.createNewFile();
 				}
-
-				foutstrm.close();
+				
+				if(fil.canWrite()){				
+					FileOutputStream foutstrm = new FileOutputStream(fil);
+	
+					out.println(AcaciaInstanceProtocol.SEND_FILE);
+					out.flush();		
+					
+					while((b = inpStrm.read(line)) > 0){					
+						foutstrm.write(line, 0, b);
+						foutstrm.flush();
+					}
+	
+					foutstrm.close();
+				}else{
+					Logger_Java.info("The file cannot be written to...");
+				}
 			//}catch(IOException e){
 				//Logger_Java.error("Error : " + e.getMessage());
 			//}

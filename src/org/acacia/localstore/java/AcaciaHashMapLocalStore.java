@@ -1,19 +1,3 @@
-/**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package org.acacia.localstore.java;
 
 import java.io.File;
@@ -36,7 +20,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
 
 /**
- * This class will hold only one subgraph instamce of a particular graph. Its essentially the
+ * This class will hold only one subgraph instance of a particular graph. Its essentially the
  * analogy for Neo4j store which was used in earlier Acacia versions. 
  */
 
@@ -55,13 +39,16 @@ public class AcaciaHashMapLocalStore{
 	private HashMap<Long, HashSet<Long>> localSubGraphMap = null;
 	private Kryo kryo = null;
 	
+	private long vertexCount = 0;
+	private long edgeCount = 0;
+	
 	public AcaciaHashMapLocalStore(int graphID, int partitionID){
 		this.graphID = graphID;
 		this.partitionID = partitionID;
 		
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
-		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.localstore.datafolder");
+		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 		String gid = graphID + "_" + partitionID;
 		instanceDataFolderLocation= dataFolder + "/" + gid;
 		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
@@ -92,7 +79,7 @@ public class AcaciaHashMapLocalStore{
             FileInputStream stream = new FileInputStream(edgeStorePath);
             Input input = new Input(stream);
             localSubGraphMap = (HashMap<Long, HashSet<Long>>)this.kryo.readObject(input, HashMap.class);
-            input.close();
+            input.close();//This will close the FileInputStream as well.
             
             if(localSubGraphMap != null){
             	result = true;
@@ -133,11 +120,42 @@ public class AcaciaHashMapLocalStore{
 		
 		if(neighbours == null){
 			neighbours = new HashSet<Long>();
+			//System.out.println("new neighbour slist for :" + startVid);
 		}
 		
 		neighbours.add(endVid);
 		localSubGraphMap.put(startVid, neighbours);
 	}
+	
+	public long getVertexCount(){
+		if(vertexCount == 0){
+			vertexCount = localSubGraphMap.keySet().size();
+		}
+		
+		System.out.println("<<<< Vertex count : " + vertexCount);
+		
+		return vertexCount;
+	}
+	
+	public long getEdgeCount(){
+		if(edgeCount == 0){ 
+			Set<Entry<Long, HashSet<Long>>> entrySet = localSubGraphMap.entrySet();
+			Iterator itr = entrySet.iterator();
+			
+			while(itr.hasNext()){
+				Entry<Long, HashSet<Long>> entry = (Entry<Long, HashSet<Long>>) itr.next();
+				
+				//System.out.println("entry.getValue().size() : " + entry.getValue().size());
+				
+				edgeCount += entry.getValue().size();
+			}
+		}
+		
+		System.out.println("<<< Edge count : " + edgeCount);
+		
+		return edgeCount;
+	}
+	
 	
 	public String toString(){
 		StringBuilder sb = new StringBuilder();

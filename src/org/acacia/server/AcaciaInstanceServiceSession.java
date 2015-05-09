@@ -1,19 +1,3 @@
-/**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package org.acacia.server;
 
 import java.io.BufferedReader;
@@ -275,6 +259,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 					msg = buff.readLine().trim();
 					//msg = ""+deleteAllverticesandEdgesofGraph(msg);
 					
+					Logger_Java.info("partition id is : " + msg);
+					
 					//we send the graphid and partitionid
 					msg = ""+deleteGraph(graphID, msg);
 					//We return the number of vertices deleted.
@@ -367,7 +353,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we need to get the file size and then check if the file size has been achieved.
 					//Mere file exitance is not enough to continue, because we might have another thread writing data to the file. 
 					
-					String fullFilePath = "/tmp/dgr/file" + fileName;
+					String fullFilePath = "/tmp/dgr/" + fileName;
 					File f = new File(fullFilePath);
 					
 					while((!f.exists()) && (f.length() < fileLen)){
@@ -390,11 +376,11 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					Logger_Java.info("Got the file : " + fileName);
 					
-					fileName = fileName.substring(0, fileName.indexOf("."));
-					
+					fileName = fileName.substring(fileName.indexOf("_") + 1, fileName.indexOf("."));
+					Logger_Java.info("Partition ID : " + fileName);
 					//here is where local store is constructed
 					//the fileName contains the graph partitionID. So we do not have to specifiy that again here.
-					unzipAndBatchUpload(fileName, graphID);
+					unzipAndBatchUpload(graphID, fileName);
 					
 					while(!isUploadCompleted(fullFilePath)){
 						msg = buff.readLine().trim();
@@ -702,7 +688,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 //					}
 					
 					//Next, we unzip the file
-					Process p = r.exec("gunzip -f /tmp/dgr/" + partitionID + ".gz");
+					Process p = r.exec("gunzip -f /tmp/dgr/" + graphID + "_" +  partitionID + ".gz");
 					p.waitFor();
 					
 					BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -714,10 +700,17 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					System.out.println("Completed unzipping");
 					//Unzipping completed
-			        Splitter splitter = Splitter.on('	');
+			        Splitter splitter = null;
 			        BufferedReader br;
-		            br = new BufferedReader(new FileReader("/tmp/dgr/" + partitionID), 10 * 1024 * 1024);
+		            br = new BufferedReader(new FileReader("/tmp/dgr/" + graphID + "_" +  partitionID), 10 * 1024 * 1024);
 		            line = br.readLine();
+		            
+		            if(line.contains(" ")){
+		            	splitter = Splitter.on(' ');
+		            }else if(line.contains("	")){
+		            	splitter = Splitter.on('	');
+		            }
+		            
 		            while (line != null) {
 			            Iterator<String> dataStrIterator = splitter.split(line).iterator();
 			            Long startVertexID = Long.parseLong(dataStrIterator.next());
@@ -730,7 +723,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		            localStore.storeGraph();
 		            
 					//Also we need to add a catalog record in the instance's local data store about the graph and its partition IDs
-					//writeCatalogRecord("" + graphID + ":" + partitionID);
+					writeCatalogRecord("" + graphID + ":" + partitionID);
 					
 				}catch(Exception e){
 					e.printStackTrace();
@@ -1183,79 +1176,87 @@ public class AcaciaInstanceServiceSession extends Thread{
 	
 	public String countVertices(String graphID, String partitionID){
 		String result = "-1";
-		GraphDatabaseService graphDB = null;
+//		GraphDatabaseService graphDB = null;
+//		
+//		if (defaultGraph == null){	
+//			graphDB = graphDBMap.get(Integer.parseInt(graphID));
+//			if(graphDB == null){
+//				//We see whether the graph is offline. If the DB is loaded we cannot load it again because there will be a lock contention.
+//				if(isGraphDBExists(graphID, partitionID) && !isGraphDBLoaded(graphID, partitionID)){
+//					loadNeo4j(graphID, partitionID);
+//				}else{
+//					//GraphDB exists and is currently loaded.
+//				}
+//				
+//				graphDB = graphDBMap.get(graphID + "_" + partitionID);
+//				
+//				if(graphDB == null){
+//					Logger_Java.info("GraphDB is null.");
+//					return result;
+//				}
+//			}
+//		}else{
+//			graphDB = defaultGraph;
+//		}
+//		
+//		ExecutionEngine engine = new ExecutionEngine(graphDB);
+//		ExecutionResult exResult = engine.execute("start n=node(*) return count(n);");
+//		Iterator itr = exResult.iterator();
+//
+//		if(itr.hasNext()){
+//			result = itr.next().toString();
+//			Pattern p = Pattern.compile("\\d+");
+//			Matcher m = p.matcher(result);
+//			
+//			while(m.find()){
+//				result = m.group();
+//			}
+//		}
+//		
+		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		localStore.loadGraph();
+		result = "" + localStore.getVertexCount();
 		
-		if (defaultGraph == null){	
-			graphDB = graphDBMap.get(Integer.parseInt(graphID));
-			if(graphDB == null){
-				//We see whether the graph is offline. If the DB is loaded we cannot load it again because there will be a lock contention.
-				if(isGraphDBExists(graphID, partitionID) && !isGraphDBLoaded(graphID, partitionID)){
-					loadNeo4j(graphID, partitionID);
-				}else{
-					//GraphDB exists and is currently loaded.
-				}
-				
-				graphDB = graphDBMap.get(graphID + "_" + partitionID);
-				
-				if(graphDB == null){
-					Logger_Java.info("GraphDB is null.");
-					return result;
-				}
-			}
-		}else{
-			graphDB = defaultGraph;
-		}
-		
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		ExecutionResult exResult = engine.execute("start n=node(*) return count(n);");
-		Iterator itr = exResult.iterator();
-
-		if(itr.hasNext()){
-			result = itr.next().toString();
-			Pattern p = Pattern.compile("\\d+");
-			Matcher m = p.matcher(result);
-			
-			while(m.find()){
-				result = m.group();
-			}
-		}
-		
-		result = "" + (Long.parseLong(result) - 1); //By default there is avertex created by every Neo4j instance. Therefore we need to deduct one to compensate this.
+		//result = "" + (Long.parseLong(result) - 1); //By default there is avertex created by every Neo4j instance. Therefore we need to deduct one to compensate this.
 		
 		return result;
 	}
 	
 	public String countEdges(String graphID, String partitionID){
 		String result = "-1";
-		GraphDatabaseService graphDB = null;
+//		GraphDatabaseService graphDB = null;
+//		
+//		if (defaultGraph == null){	
+//			graphDB = graphDBMap.get(graphID + "_" + partitionID);
+//			if(graphDB == null){
+//				//We see whether the graph is offline
+//				if(isGraphDBExists(graphID, partitionID)){
+//					loadNeo4j(graphID, partitionID);
+//				}
+//				
+//				graphDB = graphDBMap.get(graphID + "_" + partitionID);
+//				if(graphDB == null){				
+//					return result;
+//				}
+//			}
+//		}else{
+//			graphDB = defaultGraph;
+//		}
+//		
+//		ExecutionEngine engine = new ExecutionEngine(graphDB);
+//		
+//		Iterable<Relationship> allRelsItr = GlobalGraphOperations.at(graphDB).getAllRelationships();
+//		int counter = 0;
+//		for (Relationship rel: allRelsItr){
+//			counter++;
+//		}
+//		
+//		result = "" + counter;
 		
-		if (defaultGraph == null){	
-			graphDB = graphDBMap.get(graphID + "_" + partitionID);
-			if(graphDB == null){
-				//We see whether the graph is offline
-				if(isGraphDBExists(graphID, partitionID)){
-					loadNeo4j(graphID, partitionID);
-				}
-				
-				graphDB = graphDBMap.get(graphID + "_" + partitionID);
-				if(graphDB == null){				
-					return result;
-				}
-			}
-		}else{
-			graphDB = defaultGraph;
-		}
+		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		localStore.loadGraph();
+		result = "" + localStore.getEdgeCount();
 		
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		
-		Iterable<Relationship> allRelsItr = GlobalGraphOperations.at(graphDB).getAllRelationships();
-		int counter = 0;
-		for (Relationship rel: allRelsItr){
-			counter++;
-		}
-		
-		result = "" + counter;
-				
 		return result;
 	}
 	

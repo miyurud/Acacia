@@ -1,19 +1,3 @@
-/**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package org.acacia.server;
 
 import java.io.BufferedInputStream;
@@ -44,11 +28,11 @@ public class AcaciaManager{
 
 	}
 	
-	public static void sendFileThroughService(final String host, final String fileName, final String filePath){
+	public static void sendFileThroughService(final String host, final int port, final String fileName, final String filePath){
 		Thread t = new Thread(new Runnable(){
 			public void run(){
 				try{
-					Socket socket = new Socket(host, Conts_Java.ACACIA_INSTANCE_DATA_PORT);
+					Socket socket = new Socket(host, port);
 
 					OutputStream out = socket.getOutputStream();
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -84,11 +68,11 @@ public class AcaciaManager{
 		t.start();
 	}
 	
-	public static boolean batchUploadFile(String host, int port, long graphID, String filePath){
+	public static boolean batchUploadFile(String host, int port, long graphID, String filePath, int dataPort){
 		boolean result = true;
 		
 		try{
-			System.out.println(">>>>> COnnecting to host : " + host + " port : " + port);
+			System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
 			Socket socket = new Socket(host, port);
 			PrintWriter out = new PrintWriter(socket.getOutputStream());
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -118,6 +102,9 @@ public class AcaciaManager{
 			
 				String fileName = filePath.substring(filePath.lastIndexOf("/")+1);
 				
+				System.out.println("filePath : " + filePath);
+				System.out.println("fileName : " + fileName);
+				
 				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_NAME))){
 						out.println(fileName);
 						out.flush();
@@ -125,12 +112,13 @@ public class AcaciaManager{
 						response = reader.readLine();
 						
 						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
+							System.out.println("File len : " + new File(filePath).length());
 							out.println(new File(filePath).length());//File length in bytes
 							out.flush();
 							
 							response = reader.readLine();
 							if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_CONT))){
-								sendFileThroughService(host, fileName, filePath);
+								sendFileThroughService(host, dataPort, fileName, filePath);
 							}							
 						}			
 					}
@@ -448,9 +436,119 @@ public class AcaciaManager{
 		return -1;
 	}
 	
+	public static long countVertices(String host, String graphID, String partitionID){
+		long result = -1;
+		try{
+			Socket socket = new Socket(host, Conts_Java.ACACIA_INSTANCE_PORT);
+			PrintWriter out = new PrintWriter(socket.getOutputStream());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			String response = "";
+			
+			//First we need to Handshake
+			out.println(AcaciaInstanceProtocol.HANDSHAKE);
+			out.flush();
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+				out.println(java.net.InetAddress.getLocalHost().getHostName());
+				out.flush();
+			}
+
+			out.println(AcaciaInstanceProtocol.COUNT_VERTICES);
+			out.flush();
+
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+				out.println(graphID);
+				out.flush();
+				
+				response = reader.readLine();
+				
+				if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+					out.println(partitionID);
+					out.flush();
+				}else{
+					return -1;
+				}
+				
+			}else{
+				return -1;
+			}
+			
+			response = reader.readLine();
+			result = Long.parseLong(response);
+			out.close();
+			
+			return result;
+			
+		}catch(UnknownHostException e){
+			Logger_Java.error("Connecting to host (1) " + host + " got error message : " + e.getMessage());
+		}catch(IOException ec){
+			Logger_Java.error("Connecting to host (1) " + host + " got error message : " + ec.getMessage());
+		}
+		
+		return -1;
+	}
+	
 	public static long countVertices(String graphID){
 		long result = Long.parseLong(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("SELECT VERTEXCOUNt FROM ACACIA_META.GRAPH WHERE IDGRAPH=" + graphID).value)[(int)0L]);
         return result;
+	}
+	
+	public static long countEdges(String host, String graphID, String partitionID){
+		long result = -1;
+		try{
+			Socket socket = new Socket(host, Conts_Java.ACACIA_INSTANCE_PORT);
+			PrintWriter out = new PrintWriter(socket.getOutputStream());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			String response = "";
+			
+			//First we need to Handshake
+			out.println(AcaciaInstanceProtocol.HANDSHAKE);
+			out.flush();
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+				out.println(java.net.InetAddress.getLocalHost().getHostName());
+				out.flush();
+			}
+
+			out.println(AcaciaInstanceProtocol.COUNT_EDGES);
+			out.flush();
+
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+				out.println(graphID);
+				out.flush();
+				
+				response = reader.readLine();
+				
+				if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+					out.println(partitionID);
+					out.flush();
+				}else{
+					return -1;
+				}
+				
+			}else{
+				return -1;
+			}
+			
+			response = reader.readLine();
+			result = Long.parseLong(response);
+			out.close();
+			
+			return result;
+			
+		}catch(UnknownHostException e){
+			Logger_Java.error("Connecting to host (2) " + host + " got error message : " + e.getMessage());
+		}catch(IOException ec){
+			Logger_Java.error("Connecting to host (2) " + host + " got error message : " + ec.getMessage());
+		}
+		
+		return -1;
 	}
 	
 	/**

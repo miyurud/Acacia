@@ -1,3 +1,19 @@
+/**
+Copyright 2015 Acacia Team
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 package org.acacia.localstore.java;
 
 import java.io.File;
@@ -24,7 +40,7 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
  * analogy for Neo4j store which was used in earlier Acacia versions. 
  */
 
-public class AcaciaHashMapLocalStore{
+public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 	private final String VERTEX_STORE_NAME = "acacia.nodestore.db";
 	private final String EDGE_STORE_NAME = "acacia.edgestore.db";
 	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";
@@ -43,6 +59,7 @@ public class AcaciaHashMapLocalStore{
 	private long edgeCount = 0;
 	
 	public AcaciaHashMapLocalStore(int graphID, int partitionID){
+		super(graphID, partitionID);
 		this.graphID = graphID;
 		this.partitionID = partitionID;
 		
@@ -52,18 +69,8 @@ public class AcaciaHashMapLocalStore{
 		String gid = graphID + "_" + partitionID;
 		instanceDataFolderLocation= dataFolder + "/" + gid;
 		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
-		intilaize();
+		initialize();
 	}
-	
-	public void intilaize(){
-		File file = new File(instanceDataFolderLocation);
-		
-		//If the directory does not exist we need to create it first.
-		if(!file.isDirectory()){
-			file.mkdir();
-		}		
-	}
-	
 	
 	public boolean loadGraph(){
 		boolean result = false;
@@ -189,5 +196,15 @@ public class AcaciaHashMapLocalStore{
 		
 	public void shutdown(){
 		
+	}
+
+	@Override
+	public void initialize() {
+		File file = new File(instanceDataFolderLocation);
+		
+		//If the directory does not exist we need to create it first.
+		if(!file.isDirectory()){
+			file.mkdir();
+		}
 	}
 }

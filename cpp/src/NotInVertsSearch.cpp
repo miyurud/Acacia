@@ -24,16 +24,6 @@ using namespace std;
 using namespace boost::filesystem;
 
 int main(int argc, char* argv[]) {
-//	if(exists("/tmp/wcout2")){
-//		remove("/tmp/wcout2");
-//	}
-//
-//	int i = system("hadoop fs -get /user/miyuru/wcout/part-r-00000 /tmp/wcout2");
-//
-//	if(i != 0){
-//		cout << "Error in downloading the file from HDFS..." << endl;
-//	}
-
 	string line;
 	ifstream infile("/tmp/wcout2");
 	vector<string> strs;
@@ -59,7 +49,6 @@ int main(int argc, char* argv[]) {
 			try{
 				curval = boost::lexical_cast<long long>(strs[0]);
 			}catch(boost::bad_lexical_cast &){
-				//out << "Error : |" << strs[0] << "|" << endl;
 				//Just ignore this
 				continue;
 			}
@@ -70,7 +59,6 @@ int main(int argc, char* argv[]) {
 				prevval += 1;
 
 				while(prevval < curval){
-					//cout << "Not in : " << prevval << endl;
 					outfile << prevval << "\t-1" << endl;
 					prevval += 1;
 					flag = true;
@@ -90,12 +78,6 @@ int main(int argc, char* argv[]) {
 		if(i != 0){
 			cout << "Error in uploading the file to HDFS. Error code : " << i << endl;
 		}
-
-//		i = system("hadoop fs -put /tmp/notinverts /user/miyuru/notinverts");
-//
-//		if(i != 0){
-//			cout << "Error in uploading the file to HDFS. Error code : " << i << endl;
-//		}
 	}
 
 	return 0;

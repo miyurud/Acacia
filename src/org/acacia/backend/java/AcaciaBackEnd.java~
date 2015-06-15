@@ -36,8 +36,8 @@ public class AcaciaBackEnd {
 	private ArrayList<AcaciaBackEndServiceSession> sessions = new ArrayList<AcaciaBackEndServiceSession>();
 	
     public void run(){
-    	try{	
-		Logger_Java.info("Entry, run, AcaciaBackEnd");
+	Logger_Java.info("Entry, run, AcaciaBackEnd");
+    	try{
     		Logger_Java.info("Starting the backend");
     		srv = new ServerSocket(Conts_Java.ACACIA_BACKEND_PORT);
     		Logger_Java.info("Done creating backend");
@@ -57,7 +57,6 @@ public class AcaciaBackEnd {
     		// 	session.start();
     		// }
     		
-		Logger_Java.info("Exit, run, AcaciaBackEnd");
     	}catch(BindException e){
     		Logger_Java.error("Error : " + e.getMessage());
     	} catch (IOException e) {

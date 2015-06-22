@@ -1,21 +1,8 @@
-/**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package org.acacia.frontend;
 
+/**
+ * Class AcaciaFrontEndProtocol
+ */
 public class AcaciaFrontEndProtocol {
     //Note that this protocol do not need a handshake session since the communication in most of the time is conducted
     //between Acacia and Humans.
@@ -53,4 +40,6 @@ public class AcaciaFrontEndProtocol {
     public static val FREE_DATA_DIR_SPACE = "dfdt"; //Get a list of free directory spaces on each worker node.
     public static val GRAPHID_SEND = "graphid-send";
     public static val TRIANGLES = "trian";       //This command counts the number of triangles in a graph.
+    public static val SPARQL = "sparql";		//This command is to tell next commands are related with rdf graphs.
+    public static val S_QUERY_SEND = "s_query-send"; 	//This requets SPARQL query to be executed
 }

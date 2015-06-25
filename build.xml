@@ -114,6 +114,7 @@
 					<java classname="org.hsqldb.Server" classpath="lib/hsqldb-2.2.9.jar" args="-port ${org.acacia.metadata.db.port} -database.0 file:${org.acacia.server.runtime.location}/metadb -dbname.0 acacia_meta"/>
 				</sequential>
 				    <java classname="org.acacia.vertexcounter.VertexCounter" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
+				    <java classname="org.acacia.backend.AcaciaBackEnd" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
 					<!--<java classname="test.acacia.partitioner.index.TestPartitionIndex" classpath="build/classes;${toString:build.classpath}"/>-->
 					<exec executable="./acacia-start.sh" />
 			</parallel>

@@ -83,11 +83,7 @@ import org.acacia.query.algorithms.pagerank.ApproxiRank;
  * @author miyuru
  *
  */
-public class AcaciaInstanceServiceSession extends Thread{
-	private static enum RelTypes implements RelationshipType{
-		NEXT
-	}
-	
+public class AcaciaInstanceServiceSession extends Thread{	
 	private Socket sessionSkt;
 	//private GraphDatabaseService graphDB;//This is a reference to the original DB
 	private DBTruncateEventListener listener;
@@ -95,9 +91,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 	//private HashMap<Integer, GraphDatabaseService> graphDBMap = null;
 	//Note : Feb 4 2015 - Since we need to deal with the <praphID>_<partitionID> scenario,
 	//the key of the graph db map was changed to String
-	private HashMap<String, GraphDatabaseService> graphDBMap = null;
+	private HashMap<String, AcaciaHashMapLocalStore> graphDBMap = null;
 	private ArrayList<String> loadedGraphs;
-	private GraphDatabaseService defaultGraph = null;
+	private AcaciaHashMapLocalStore defaultGraph = null;
 	private String defaultGraphID=null;
 	private String dataFolder;
 	private String serverHostName;
@@ -110,14 +106,15 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * The constructor
 	 * @param socket
 	 */
-	public AcaciaInstanceServiceSession(Socket socket, HashMap<String, GraphDatabaseService> db, ArrayList<String> grp){
+	public AcaciaInstanceServiceSession(Socket socket, HashMap<String, AcaciaHashMapLocalStore> db, ArrayList<String> grp){
 		sessionSkt = socket;
 		graphDBMap = db;
 		loadedGraphs = grp;
 		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
+		System.out.println("MMMMMMMMMMMMM");
 	}
 	
-	public void setGraphDBMap(HashMap<String, GraphDatabaseService> db, ArrayList<String> grp){
+	public void setGraphDBMap(HashMap<String, AcaciaHashMapLocalStore> db, ArrayList<String> grp){
 		graphDBMap = db;
 		loadedGraphs = grp;
 		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
@@ -176,44 +173,44 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 				}else if(msg.equals(AcaciaInstanceProtocol.INSERT_EDGES)){
-					out.println(AcaciaInstanceProtocol.OK);
-					out.flush();
-					
-					//From here onwards we should receive a collection of edges
-					msg = buff.readLine();
-					
-					String graphID = msg;
-					
-					Logger_Java.info("graph id is : " + msg);
-					
-					out.println(AcaciaInstanceProtocol.OK);
-					out.flush();
-					
-					//This is the partition ID
-					msg = buff.readLine();
-					
-					setDefaultGraph(graphID, msg);
-					
-					//Just return an acknowledgement.
-					out.println(AcaciaInstanceProtocol.OK);
-					out.flush();
-					
-					msg = buff.readLine();
-					
-					while(!msg.equals(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE)){
-						Logger_Java.info("Adding Edge : " + msg);
-						String[] vertsArr = msg.split(" ");//We expect the edge to be split by a space.
-						try{
-							insertEdgeUsingIndex(Long.parseLong(vertsArr[0]), Long.parseLong(vertsArr[1]));
-						}catch(NumberFormatException ex){
-							//Just ignore. Expect the messages only in the for <long> <long> <long>
-							Logger_Java.error("Error : " + ex.getMessage());
-						}
-						msg = buff.readLine();
-					}
-					
-					out.println(AcaciaInstanceProtocol.INSERT_EDGES_ACK);
-					out.flush();
+//					out.println(AcaciaInstanceProtocol.OK);
+//					out.flush();
+//					
+//					//From here onwards we should receive a collection of edges
+//					msg = buff.readLine();
+//					
+//					String graphID = msg;
+//					
+//					Logger_Java.info("graph id is : " + msg);
+//					
+//					out.println(AcaciaInstanceProtocol.OK);
+//					out.flush();
+//					
+//					//This is the partition ID
+//					msg = buff.readLine();
+//					
+//					setDefaultGraph(graphID, msg);
+//					
+//					//Just return an acknowledgement.
+//					out.println(AcaciaInstanceProtocol.OK);
+//					out.flush();
+//					
+//					msg = buff.readLine();
+//					
+//					while(!msg.equals(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE)){
+//						Logger_Java.info("Adding Edge : " + msg);
+//						String[] vertsArr = msg.split(" ");//We expect the edge to be split by a space.
+//						try{
+//							insertEdgeUsingIndex(Long.parseLong(vertsArr[0]), Long.parseLong(vertsArr[1]));
+//						}catch(NumberFormatException ex){
+//							//Just ignore. Expect the messages only in the for <long> <long> <long>
+//							Logger_Java.error("Error : " + ex.getMessage());
+//						}
+//						msg = buff.readLine();
+//					}
+//					
+//					out.println(AcaciaInstanceProtocol.INSERT_EDGES_ACK);
+//					out.flush();
 				}else if (msg.equals(AcaciaInstanceProtocol.TRUNCATE)){					
 					fireDBTruncateEvent(new DBTruncateEvent("Truncating Acacia Instance"));
 					out.println(AcaciaInstanceProtocol.TRUNCATE_ACK);
@@ -300,7 +297,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
                     //Need to load the graph only when required
 					if (!graphDBMap.containsKey(gid)){
-						loadNeo4j(graphID, msg);
+						loadLocalStore(graphID, msg);
 					}
 					
 					//Just return an acknowledgement.
@@ -319,7 +316,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					msg = buff.readLine().trim();
 					
-					unLoadNeo4j(graphID, msg);
+					unloadLocalStore(graphID, msg);
 					
 					//Just return an acknowledgement.
 					out.println(AcaciaInstanceProtocol.UNLOAD_GRAPH_ACK);
@@ -528,15 +525,14 @@ public class AcaciaInstanceServiceSession extends Thread{
 		String result = null;
 		String gid = g + "_" + p;
 		//First we need to load the graph database server instance.
-		GraphDatabaseService graphDB = null;
+		AcaciaHashMapLocalStore graphDB = null;
 		if (defaultGraph == null){	
 			graphDB = graphDBMap.get(gid);
 			if(graphDB == null){
 				//We see whether the graph is offline
 				System.out.println("IIIIIIIIAAAAAAAMMM Now here : isGraphDBExists()");
 				if(isGraphDBExists(g, p)){
-					System.out.println("--------->loaded Neo4j.");
-					loadNeo4j(g, p);
+					loadLocalStore(g, p);
 					System.out.println("+++++++++++++++++++++++++++++>");
 				}
 				
@@ -556,10 +552,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 		return result;
 	}
 
-	private String pageRankTopKLocal(String graphID, String partitionID, String hostList,
-			int k) {
+	private String pageRankTopKLocal(String graphID, String partitionID, String hostList, int k) {
 		String result = null;
-		GraphDatabaseService graphDB = null;
+		AcaciaHashMapLocalStore graphDB = null;
 		String gid = graphID + "_" + partitionID;
 		Logger_Java.info("PPPPP1");
 		if (defaultGraph == null){	
@@ -568,7 +563,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			if(graphDB == null){
 				//We see whether the graph is offline
 				if(isGraphDBExists(graphID, partitionID)){
-					loadNeo4j(graphID, partitionID);
+					loadLocalStore(graphID, partitionID);
 				}
 				
 				graphDB = graphDBMap.get(gid);
@@ -799,7 +794,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		//We need to first turn-off the graph DB instance
 		if (graphDBMap.containsKey(graphID)){
 			Logger_Java.info("Unloading the graph - " + graphID + ":" + partitionID);
-			unLoadNeo4j(graphID, partitionID);
+			unloadLocalStore(graphID, partitionID);
 		}else{
 			Logger_Java.info("The following graph was not loaded to the system - " + graphID + ":" + partitionID);
 		}
@@ -851,8 +846,13 @@ public class AcaciaInstanceServiceSession extends Thread{
 		defaultGraphID = null;
 	}
 	
-	public void loadNeo4j(String graphID, String partitionID){
-		System.out.println("------------ Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
+	public void loadLocalStore(String graphID, String partitionID){
+		String gid = graphID + "_" + partitionID;
+		//int graphID, int partitionID
+		AcaciaHashMapLocalStore graphDB = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		graphDB.loadGraph();//We need to load the graph explicitly
+		graphDBMap.put(gid, graphDB);
+		loadedGraphs.add(gid);
 		try{
 			Logger_Java.info("Running local server at " + java.net.InetAddress.getLocalHost().getHostName());
 			String gid = graphID + "_" + partitionID;
@@ -888,7 +888,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			graphDBMap.put(gid, graphDB);
 			loadedGraphs.add(gid);
 			Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
-		}catch(Exception e){
+		}catch(UnknownHostException e){
 			e.printStackTrace();
 		}
 		
@@ -902,16 +902,16 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * the data by graph id without use of partition id. 
 	 * @param graphID
 	 */
-	public void unLoadNeo4j(String graphID, String partitionID){
+	public void unloadLocalStore(String graphID, String partitionID){
 		Iterator it = graphDBMap.entrySet().iterator();
-		HashMap<String, GraphDatabaseService> graphDBMap2 = new HashMap<String, GraphDatabaseService>();
+		HashMap<String, AcaciaHashMapLocalStore> graphDBMap2 = new HashMap<String, AcaciaHashMapLocalStore>();
 		ArrayList<String> loadedGraphs2 = new ArrayList<String>();
 		String gid = graphID + "_" + partitionID;
 		
 		while(it.hasNext()){
-			Map.Entry<String, GraphDatabaseService> pairs = (Map.Entry<String, GraphDatabaseService>)it.next();
+			Map.Entry<String, AcaciaHashMapLocalStore> pairs = (Map.Entry<String, AcaciaHashMapLocalStore>)it.next();
 			if (pairs.getKey().equals(gid)){
-				((GraphDatabaseService)pairs.getValue()).shutdown();
+				((AcaciaHashMapLocalStore)pairs.getValue()).shutdown();
 				try{
 					Logger_Java.info("Unloaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
 				}catch(UnknownHostException ex){
@@ -941,7 +941,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @param endVertexID
 	 */
 	public void insertEdge(long graphID, long startVertexID, long endVertexID){		
-		GraphDatabaseService graphDB = null;
+		AcaciaHashMapLocalStore graphDB = null;
 		
 		if (defaultGraph == null){	
 			graphDB = graphDBMap.get(graphID);
@@ -952,63 +952,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			graphDB = defaultGraph;
 		}
 		
-		
-		
-		//First we need to check whether vertex already exists in the DB.
-		
-//		if((!vertexExists(graphID, startVertexID))&&(!vertexExists(graphID, endVertexID))){
-//			
-//		}
-		
-		Node startNode = null;
-		Node endNode = null;
-		
-		long start = -1;
-		long end = -1;
-
-			if((start=vertexExists(graphID, startVertexID))==-1){
-				Transaction tx = graphDB.beginTx();
-				try{
-					startNode = graphDB.createNode();
-					startNode.setProperty("gid", ""+graphID);
-					startNode.setProperty("vid", ""+startVertexID);	
-					System.out.println("Graph gid : " + graphID + " Created first node : " + startVertexID);
-					tx.success();
-				}
-				finally{
-					tx.finish();
-				}
-			}else{
-				startNode = graphDB.getNodeById(start);
-				System.out.println("Graph gid : " + graphID + " loaded first node : " + startVertexID);
-			}
-			
-			if((end=vertexExists(graphID, endVertexID)) == -1){
-				Transaction tx = graphDB.beginTx();
-				try{
-					endNode = graphDB.createNode();
-					endNode.setProperty("gid", ""+graphID);
-					endNode.setProperty("vid", ""+endVertexID);
-					System.out.println("Graph gid : " + graphID + " Created second node : " + endVertexID);
-					tx.success();
-				}
-				finally{
-					tx.finish();
-				}
-			}else{
-				endNode = graphDB.getNodeById(end);
-				System.out.println("Graph gid : " + graphID + " loaded second node : " + endVertexID);
-			}
-			
-			Transaction tx = graphDB.beginTx();
-			try{
-				Relationship rel = startNode.createRelationshipTo(endNode, RelTypes.NEXT);
-				rel.setProperty("gid", ""+graphID);
-				tx.success();
-			}
-			finally{
-				tx.finish();
-			}
+		graphDB.addEdge(startVertexID, endVertexID);
 
 		System.out.println("Done adding edge : " + startVertexID + " " + endVertexID);
 	}
@@ -1191,44 +1135,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	public String countVertices(String graphID, String partitionID){
-		String result = "-1";
-//		GraphDatabaseService graphDB = null;
-//		
-//		if (defaultGraph == null){	
-//			graphDB = graphDBMap.get(Integer.parseInt(graphID));
-//			if(graphDB == null){
-//				//We see whether the graph is offline. If the DB is loaded we cannot load it again because there will be a lock contention.
-//				if(isGraphDBExists(graphID, partitionID) && !isGraphDBLoaded(graphID, partitionID)){
-//					loadNeo4j(graphID, partitionID);
-//				}else{
-//					//GraphDB exists and is currently loaded.
-//				}
-//				
-//				graphDB = graphDBMap.get(graphID + "_" + partitionID);
-//				
-//				if(graphDB == null){
-//					Logger_Java.info("GraphDB is null.");
-//					return result;
-//				}
-//			}
-//		}else{
-//			graphDB = defaultGraph;
-//		}
-//		
-//		ExecutionEngine engine = new ExecutionEngine(graphDB);
-//		ExecutionResult exResult = engine.execute("start n=node(*) return count(n);");
-//		Iterator itr = exResult.iterator();
-//
-//		if(itr.hasNext()){
-//			result = itr.next().toString();
-//			Pattern p = Pattern.compile("\\d+");
-//			Matcher m = p.matcher(result);
-//			
-//			while(m.find()){
-//				result = m.group();
-//			}
-//		}
-//		
+		String result = "-1";	
 		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
 		localStore.loadGraph();
 		result = "" + localStore.getVertexCount();
@@ -1239,36 +1146,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	public String countEdges(String graphID, String partitionID){
-		String result = "-1";
-//		GraphDatabaseService graphDB = null;
-//		
-//		if (defaultGraph == null){	
-//			graphDB = graphDBMap.get(graphID + "_" + partitionID);
-//			if(graphDB == null){
-//				//We see whether the graph is offline
-//				if(isGraphDBExists(graphID, partitionID)){
-//					loadNeo4j(graphID, partitionID);
-//				}
-//				
-//				graphDB = graphDBMap.get(graphID + "_" + partitionID);
-//				if(graphDB == null){				
-//					return result;
-//				}
-//			}
-//		}else{
-//			graphDB = defaultGraph;
-//		}
-//		
-//		ExecutionEngine engine = new ExecutionEngine(graphDB);
-//		
-//		Iterable<Relationship> allRelsItr = GlobalGraphOperations.at(graphDB).getAllRelationships();
-//		int counter = 0;
-//		for (Relationship rel: allRelsItr){
-//			counter++;
-//		}
-//		
-//		result = "" + counter;
-		
+		String result = "-1";		
 		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
 		localStore.loadGraph();
 		result = "" + localStore.getEdgeCount();
@@ -1279,10 +1157,10 @@ public class AcaciaInstanceServiceSession extends Thread{
 	public String outDegreeDistribution(String graphID, String partitionID){
 		org.acacia.log.java.Logger_Java.info("Out degree distribution calculation started at : " + org.acacia.util.java.Utils_Java.getHostName());
 		StringBuilder resultSB = new StringBuilder();		
-		GraphDatabaseService graphDB = null;
+		AcaciaHashMapLocalStore graphDB = null;
 		String gid = graphID + "_" + partitionID;
 		
-		if (defaultGraph == null){	
+		if (defaultGraph == null){
 			System.out.println("MM1");
 			graphDB = graphDBMap.get(gid);
 			System.out.println("MM2");
@@ -1291,7 +1169,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 				System.out.println("MM4");
 				if(isGraphDBExists(graphID, partitionID)){
 					System.out.println("Start loading the graph : " + graphID);
-					loadNeo4j(graphID, partitionID);
+					loadLocalStore(graphID, partitionID);
 					System.out.println("Loaded the graph : " + graphID);
 				}
 				System.out.println("MM5");
@@ -1303,40 +1181,45 @@ public class AcaciaInstanceServiceSession extends Thread{
 			}
 		}else{
 			graphDB = defaultGraph;
-		}		
+		}	
 		
-		//Next we get the out degree of each vertex
-		System.out.println("ASDS111");
-		ExecutionEngine engine = new ExecutionEngine(graphDB);		
-		HashMap<Long, Long> resMap = new HashMap<Long, Long>(); 
-		ExecutionResult execResult = engine.execute("start n=node(*) match n-->m return n, n.vid, count(m)");
+		HashMap<Long, Long> resMap = null;
 		
-		for(Map<String, Object> row : execResult){	
-			long vid = -1;
-			long oDeg = -1;
-			
-			for(Entry<String, Object> column : row.entrySet()){
-					if(column.getKey().equals("n.vid")){
-						vid = Integer.parseInt("" + column.getValue());
-					}
-					
-					if(column.getKey().equals("count(m)")){
-						oDeg = Integer.parseInt(""+column.getValue());
-					}
-			}
-			
-			if(resMap.containsKey(vid)){
-					long v = resMap.get(vid);
-					v = v + oDeg;
-					resMap.put(vid, v);
-			}else{
-				resMap.put(vid, oDeg);
-			}
-		}
-		System.out.println("ASDS222");
+//		//Next we get the out degree of each vertex
+//		System.out.println("ASDS111");
+//		ExecutionEngine engine = new ExecutionEngine(graphDB);		
+//		HashMap<Long, Long> resMap = new HashMap<Long, Long>(); 
+//		ExecutionResult execResult = engine.execute("start n=node(*) match n-->m return n, n.vid, count(m)");
+//		
+//		for(Map<String, Object> row : execResult){	
+//			long vid = -1;
+//			long oDeg = -1;
+//			
+//			for(Entry<String, Object> column : row.entrySet()){
+//					if(column.getKey().equals("n.vid")){
+//						vid = Integer.parseInt("" + column.getValue());
+//					}
+//					
+//					if(column.getKey().equals("count(m)")){
+//						oDeg = Integer.parseInt(""+column.getValue());
+//					}
+//			}
+//			
+//			if(resMap.containsKey(vid)){
+//					long v = resMap.get(vid);
+//					v = v + oDeg;
+//					resMap.put(vid, v);
+//			}else{
+//				resMap.put(vid, oDeg);
+//			}
+//		}
+//		System.out.println("ASDS222");
 		
 //        String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 //        String line = null;
+		
+		resMap = graphDB.getOutDegreeDistributionHashMap();
+		
         int partitionId = -1;
 //        try{
 //	        BufferedReader reader = new BufferedReader(new FileReader(dataFolder + "/catalog"));
@@ -1369,8 +1252,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 		long outDegree = 0;
 		long updatecount = 0;
 		for(Entry<String, String> item : res.entrySet()){
-			vertex = Long.parseLong(item.getKey());
-			outDegree = Long.parseLong(item.getValue());
+			vertex = Integer.parseInt(item.getKey());
+			outDegree = Integer.parseInt(item.getValue());
 			
 			if(resMap.containsKey(vertex)){
 				outDegree += resMap.get(vertex);
@@ -1393,7 +1276,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	
 	public String pageRankLocal(String graphID, String partitionID, String hostList){
 		String result = null;
-		GraphDatabaseService graphDB = null;
+		AcaciaHashMapLocalStore graphDB = null;
 		System.out.println("PPPPP1");
 		String gid = graphID + "_" + partitionID;
 		
@@ -1403,7 +1286,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			if(graphDB == null){
 				//We see whether the graph is offline
 				if(isGraphDBExists(graphID, partitionID)){
-					loadNeo4j(graphID, partitionID);
+					loadLocalStore(graphID, partitionID);
 				}
 				
 				graphDB = graphDBMap.get(gid);
@@ -1424,35 +1307,37 @@ public class AcaciaInstanceServiceSession extends Thread{
 		return result;
 	}
 	
-	public String removeVertices(String graphID){
-		String result = "-1";
-		GraphDatabaseService graphDB = null;
-		
-		if (defaultGraph == null){	
-			graphDB = graphDBMap.get(Integer.parseInt(graphID));
-			if(graphDB == null){
-				return result;
-			}
-		}else{
-			graphDB = defaultGraph;
-		}
-		
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		ExecutionResult exResult = engine.execute("start n=node(*) return count(n);");
-		Iterator itr = exResult.iterator();
-
-		if(itr.hasNext()){
-			result = itr.next().toString();
-			Pattern p = Pattern.compile("\\d+");
-			Matcher m = p.matcher(result);
-			
-			while(m.find()){
-				result = m.group();
-			}
-		}
-		
-		return result;
-	}	
+//	public String removeVertices(String graphID){
+//		String result = "-1";
+////		GraphDatabaseService graphDB = null;
+////		
+////		if (defaultGraph == null){	
+////			graphDB = graphDBMap.get(Integer.parseInt(graphID));
+////			if(graphDB == null){
+////				return result;
+////			}
+////		}else{
+////			graphDB = defaultGraph;
+////		}
+////		
+////		ExecutionEngine engine = new ExecutionEngine(graphDB);
+////		ExecutionResult exResult = engine.execute("start n=node(*) return count(n);");
+////		Iterator itr = exResult.iterator();
+////
+////		if(itr.hasNext()){
+////			result = itr.next().toString();
+////			Pattern p = Pattern.compile("\\d+");
+////			Matcher m = p.matcher(result);
+////			
+////			while(m.find()){
+////				result = m.group();
+////			}
+////		}
+//		
+//		//AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore();
+//		
+//		return result;
+//	}	
 	
 	public void addDBTruncateEventListener(DBTruncateEventListener listener){
 		this.listener = listener;

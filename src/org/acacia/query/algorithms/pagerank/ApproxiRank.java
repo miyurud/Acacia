@@ -39,9 +39,9 @@ import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaInstanceProtocol;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
-import org.neo4j.cypher.javacompat.ExecutionEngine;
-import org.neo4j.cypher.javacompat.ExecutionResult;
-import org.neo4j.graphdb.GraphDatabaseService;
+
+import org.acacia.localstore.java.AcaciaHashMapLocalStore;
+
 import org.acacia.server.AcaciaInstanceToManagerAPI;
 
 public class ApproxiRank {
@@ -51,82 +51,88 @@ public class ApproxiRank {
 	 * @param localGraphSize
 	 * @return Returning a String from this method is a stupid idea. But for the moment have to do this.
 	 */
-	public static String run(String graphID, String partitionID, GraphDatabaseService graphDB, String peerHost, String serverHostName, int k) {
+	public static String run(String graphID, String partitionID, AcaciaHashMapLocalStore graphDB, String peerHost, String serverHostName, int k) {
 		int localGraphSize = 0; //This needs to be calculated
 		int entireGraphSize = 0;
 		
-		//With the received graph database instance first we discover the out degree distribution for the graph
-		ExecutionEngine engine = new ExecutionEngine(graphDB);	
-		//Here the resMap will contain the local degree distribution.
-		HashMap<Integer, Integer> resMap = new HashMap<Integer, Integer>(); 
+//		//With the received graph database instance first we discover the out degree distribution for the graph
+//		ExecutionEngine engine = new ExecutionEngine(graphDB);	
+//		//Here the resMap will contain the local degree distribution.
+//		HashMap<Integer, Integer> resMap = new HashMap<Integer, Integer>(); 
+//		
+//		//Here we get the out degree distribution
+//		ExecutionResult execResult = engine.execute("start n=node(*) match n--m return n, n.vid, count(m)");
+//		
+//		for(Map<String, Object> row : execResult){	
+//			int vid = -1;
+//			int oDeg = -1;
+//			
+//			for(Entry<String, Object> column : row.entrySet()){
+//					if(column.getKey().equals("n.vid")){
+//						vid = Integer.parseInt("" + column.getValue());
+//					}
+//					
+//					if(column.getKey().equals("count(m)")){
+//						oDeg = Integer.parseInt(""+column.getValue());
+//					}
+//			}
+//			
+//			if(resMap.containsKey(vid)){
+//					int v = resMap.get(vid);
+//					v = v + oDeg;
+//					resMap.put(vid, v);
+//			}else{
+//				localGraphSize++;
+//				resMap.put(vid, oDeg);
+//			}
+//		}
 		
-		//Here we get the out degree distribution
-		ExecutionResult execResult = engine.execute("start n=node(*) match n--m return n, n.vid, count(m)");
-		
-		for(Map<String, Object> row : execResult){	
-			int vid = -1;
-			int oDeg = -1;
-			
-			for(Entry<String, Object> column : row.entrySet()){
-					if(column.getKey().equals("n.vid")){
-						vid = Integer.parseInt("" + column.getValue());
-					}
-					
-					if(column.getKey().equals("count(m)")){
-						oDeg = Integer.parseInt(""+column.getValue());
-					}
-			}
-			
-			if(resMap.containsKey(vid)){
-					int v = resMap.get(vid);
-					v = v + oDeg;
-					resMap.put(vid, v);
-			}else{
-				localGraphSize++;
-				resMap.put(vid, oDeg);
-			}
-		}
+		HashMap<Long, Long> resMap = graphDB.getOutDegreeDistributionHashMap();
 		
 		//Here we get all the edges of the local graph
-		execResult = engine.execute("start n=node(*) match n--m return n, n.vid, m.vid");
-		HashMap<Integer, ArrayList> localSubGraphMap = new HashMap<Integer, ArrayList>();
-		HashSet<Integer> uniqueVertexList = new HashSet<Integer>();
-		for(Map<String, Object> row : execResult){	
-			int startVid = -1;
-			int endVid = -1;
-			
-			for(Entry<String, Object> column : row.entrySet()){
-					if(column.getKey().equals("n.vid")){
-						startVid = Integer.parseInt(column.getValue().toString());
-					}
-					
-					if(column.getKey().equals("m.vid")){
-						endVid = Integer.parseInt(column.getValue().toString());
-					}
-					
-					if((startVid != -1)&&(endVid != -1)){
-						if(localSubGraphMap.containsKey(startVid)){
-							ArrayList lst = localSubGraphMap.get(startVid);
-							lst.add(endVid);
-							localSubGraphMap.put(startVid, lst);
-						}else{
-							ArrayList lst = new ArrayList();
-							lst.add(endVid);
-							localSubGraphMap.put(startVid, lst);
-						}
-												
-						uniqueVertexList.add(startVid);
-						
-						uniqueVertexList.add(endVid);
-						
-						startVid = -1;
-						endVid = -1;
-					}
-			}		
-		}
+//		execResult = engine.execute("start n=node(*) match n--m return n, n.vid, m.vid");
+//		HashMap<Integer, ArrayList> localSubGraphMap = new HashMap<Integer, ArrayList>();
+//		HashSet<Integer> uniqueVertexList = new HashSet<Integer>();
+//		for(Map<String, Object> row : execResult){	
+//			int startVid = -1;
+//			int endVid = -1;
+//			
+//			for(Entry<String, Object> column : row.entrySet()){
+//					if(column.getKey().equals("n.vid")){
+//						startVid = Integer.parseInt(column.getValue().toString());
+//					}
+//					
+//					if(column.getKey().equals("m.vid")){
+//						endVid = Integer.parseInt(column.getValue().toString());
+//					}
+//					
+//					if((startVid != -1)&&(endVid != -1)){
+//						if(localSubGraphMap.containsKey(startVid)){
+//							ArrayList lst = localSubGraphMap.get(startVid);
+//							lst.add(endVid);
+//							localSubGraphMap.put(startVid, lst);
+//						}else{
+//							ArrayList lst = new ArrayList();
+//							lst.add(endVid);
+//							localSubGraphMap.put(startVid, lst);
+//						}
+//												
+//						uniqueVertexList.add(startVid);
+//						
+//						uniqueVertexList.add(endVid);
+//						
+//						startVid = -1;
+//						endVid = -1;
+//					}
+//			}		
+//		}
+		
+		HashSet<Long> uniqueVertexList = new HashSet<Long>();
+		HashMap<Long, HashSet<Long>> localSubGraphMap = graphDB.getUnderlyingHashMap();
+		uniqueVertexList = graphDB.getVertexList();
 		
         String[] hostArr = peerHost.split(",");
-
+        System.out.println("++++++++++++--->1");
         //Next we count the total vertex count
         
         for(String host : hostArr){
@@ -209,7 +215,7 @@ public class ApproxiRank {
         
         int M = localGraphSize + 1;
         //float[][] AapproxTransitionProbMatrix = new float[M][M]; //If we use double here we get heap out of memory exception
-        //+Note on 15th Sept 2014 : In the case of Top-K Pagerank scenario there is no point of creating an entire adjacency matrix
+        //+Note on 15th Sept 2014 : In the case of Top-K Pagerank scenario theGraphDatabaseServicere is no point of creating an entire adjacency matrix
         //in the JVM. Even if we create such matrix we may get Java Heap Out of Memory Error.(E.g., in the case of Hyves graph it will be (353725^2*4) Bytes)
         //Have to find solution for this.
         
@@ -218,8 +224,8 @@ public class ApproxiRank {
         int[] adjacencyIndex = new int[M];
         int counter = 0;
 
-        for(int item : uniqueVertexList){
-        	adjacencyIndex[counter] = item;
+        for(long item : uniqueVertexList){
+        	adjacencyIndex[counter] = (int)item;
         	counter++;
         }
         //The last item we assign -1 to represent the entire world
@@ -245,9 +251,9 @@ public class ApproxiRank {
         for(i = 0; i < M; i++){ //This is for each and every vertex
 	        	if(i < localGraphSize){//First quadrent
 	        		//This obj contains the out degree of the vertex adjacencyIndex[i]  
-	        		Integer obj = resMap.get(adjacencyIndex[i]);
+	        		Long obj = resMap.get((long)adjacencyIndex[i]);
 	        		if(obj != null){
-	        	        ArrayList lst = localSubGraphMap.get(adjacencyIndex[i]);        	        
+	        	        HashSet<Long> lst = localSubGraphMap.get(adjacencyIndex[i]);        	        
 	        	        int numEdges = lst.size();
 	        	        double rank = 1.0;
 	        	        //for (int t = 0; t < T; t++) {

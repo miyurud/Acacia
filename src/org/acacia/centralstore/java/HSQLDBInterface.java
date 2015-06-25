@@ -47,11 +47,48 @@ public class HSQLDBInterface {
     			f.mkdir();
     		}
     		
-    		c = DriverManager.getConnection("jdbc:hsqldb:file:" + loc  + "/" + graphID + "_" + partID);
+    		Class.forName("org.hsqldb.jdbcDriver").newInstance();
+    		c = DriverManager.getConnection("jdbc:hsqldb:file:" + loc  + "/" + graphID + "_" + partID, "SA", "");
     		
     	}catch(SQLException e){
+    		e.printStackTrace();
     		return null;
-    	}
+    	} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+    	
+    	return c;
+    }
+    
+    public static Connection getConnectionReadOnly(String graphID, String partID){
+    	Connection c = null;
+    	try{
+    		String loc = Utils_Java.getAcaciaProperty("org.acacia.centralstore.location")+ "/" + graphID + "_" + partID;
+    		//String loc = "/home/miyurud/tmp/centralstore" + "/" + graphID + "_" + partID;
+    		
+    		File f = new File(loc);
+    		
+    		if(!f.exists()){
+    			f.mkdir();
+    		}
+    		
+    		Class.forName("org.hsqldb.jdbcDriver").newInstance();
+    		c = DriverManager.getConnection("jdbc:hsqldb:file:" + loc  + "/" + graphID + "_" + partID+";readonly=true", "SA", "");
+    		
+    	}catch(SQLException e){
+    		e.printStackTrace();
+    		return null;
+    	} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
     	
     	return c;
     }
@@ -59,11 +96,17 @@ public class HSQLDBInterface {
     public static boolean initDBSchema(String graphID, String partID){
     	Connection dbCon = getConnection(graphID, partID);
     	
+    	if(dbCon == null){
+    		System.out.println("dbcon is null........");
+    	}
+    	
     	try {
     		Statement stmt = dbCon.createStatement();
     		
     		try{
-    			stmt.executeUpdate("CREATE SCHEMA ACACIA_CENTRAL AUTHORIZATION DBA;");    			
+    			stmt.executeUpdate("CREATE SCHEMA ACACIA_CENTRAL AUTHORIZATION DBA;");  
+        		dbCon.commit();
+        		dbCon.close();
     		}catch(SQLSyntaxErrorException ex){
     			Logger_Java.info("The ACACIA_CENTRAL schema already exists.");
     		}
@@ -74,8 +117,8 @@ public class HSQLDBInterface {
     		// stmt.executeUpdate("CREATE TABLE IF NOT EXISTS host(idhost INT NOT NULL IDENTITY, name VARCHAR(45), ip VARCHAR(45));");
     		// stmt.executeUpdate("CREATE TABLE IF NOT EXISTS host_has_partition(host_idhost INT, partition_idpartition INT, partition_graph_idgraph INT);");
     		// System.out.println("Done creating tables");
-    		dbCon.commit();
-    		dbCon.close();
+//    		dbCon.commit();
+//    		dbCon.close();
     	} catch (SQLException e) {
     		//Logger.getLogger(Conts.MANAGER_LOGGER_NAME).error("Error : " + e.getMessage() + "\r\nError Details : \r\n" + Utils.getStackTraceAsString(e));
     		e.printStackTrace();
@@ -87,6 +130,10 @@ public class HSQLDBInterface {
     
     public static boolean createTable(String graphID, String partID, String qr){
     	Connection dbCon = getConnection(graphID, partID);
+    	
+    	if(dbCon == null){
+    		System.out.println("dbcon is null2........");
+    	}
     	
     	try {
     		Statement stmt = dbCon.createStatement();

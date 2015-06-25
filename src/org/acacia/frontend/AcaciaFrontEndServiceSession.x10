@@ -1,3 +1,19 @@
+/**
+Copyright 2015 Acacia Team
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 package org.acacia.frontend;
 
 import x10.compiler.Native;
@@ -144,9 +160,13 @@ public class AcaciaFrontEndServiceSession {
 				if(file.exists()){
                     if(IS_DISTRIBUTED){
 					    AcaciaServer.uploadGraphDistributed(name, path);
+					    out.println(AcaciaFrontEndProtocol.DONE);
+					    out.flush();
                     }else{
                         Console.OUT.println("Uploading the graph locally.");
                         AcaciaServer.uploadGraphLocally(name, path);
+                        out.println(AcaciaFrontEndProtocol.DONE);
+                        out.flush();
                     }
 				}else{
 					out.println(AcaciaFrontEndProtocol.ERROR + ":Graph data file does not exist on the specified path");
@@ -395,8 +415,9 @@ else{
 	    var result:Long = 0;	    
 	    //The following line should ideally receive the list ofrunning hosts.
 	    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
-	    val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
-	    var intermRes:Rail[Long] = new Rail[Long](hostListLen);
+	    //val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
+	    val hostListLen:Int = Place.places().size as Int;//Number of hosts cannot be a long value
+	    val intermRes:Rail[Long] = new Rail[Long](hostListLen);
 	    
 	    // finish for(var i:Int=0n; i < hostListLen; i++){
 		   //  val k:Int = i;
@@ -415,7 +436,7 @@ else{
 	    
 	    //var l:Rail[String] = call_runSelect("SELECT HOST_IDHOST, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    //SELECT NAME,PARTITION_IDPARTITION FROM "ACACIA_META"."HOST_HAS_PARTITION" INNER JOIN "ACACIA_META"."HOST" ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=191;
-	    Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP");
+	    Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
 	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
 	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
@@ -446,6 +467,7 @@ else{
 	    }
 	    
 	    var cntr:Int = 0n;
+	   // finish for (val p in Place.places()){
 	    finish for (val p in Place.places()){
 	        val k:Int = cntr;
 	        val host = PlaceToNodeMapper.getHost(p.id);
@@ -457,18 +479,33 @@ else{
 	            partitionID = partitions.removeFirst();
 	        }
 	        
-	        // Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
+	        Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
 	        
 	        val ptID:String = partitionID;
+	        // async{
+	        //     intermRes(k) = call_countTraingles(host, port, graphID, ptID);
+	        // }
+	        
 	        async{
-	            intermRes(k) = call_countTraingles(host, port, graphID, ptID);
+	        	intermRes(k) = call_countTraingles(host, port, graphID, ptID);
 	        }
+	        
 	        cntr++;
 	    }
-	    	    
+	   
+	    Console.OUT.println("AA@1 : " + hostListLen);
+	    
 	    for(var i:Int=0n; i < hostListLen; i++){
-	    	result += intermRes(i);
+	    	val intermResult = intermRes(i);
+	    
+	        if(intermResult != -1){
+	        	result += intermResult;
+	        }
+	        
+	    	Console.OUT.println("Triangles at (" + i + ") : " + intermResult);
 	    }
+	    
+	    Console.OUT.println("Total triangle count :" + result);
 	    
 	    Console.OUT.println("---------- Now calculating the global only traingles --------");
 	    //Next we need to count the traingles in the global graph only.
@@ -630,7 +667,7 @@ else{
                     ex.printStackTrace();
                 }
             }else{
-                files(i).delete();
+            	delStatus = files(i).delete();
             }
             Console.OUT.println("=======>" + i + " " + files(i).getAbsolutePath()+"--->deleted?-->" + delStatus);
         }
@@ -668,25 +705,28 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
     	hostList.add(",");
     }
 
-    val hstLine:String = hostList.toString();    
-    
+    val hstLine:String = hostList.toString();
     var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 
     var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
     
     for(var i:long=0; i<l.size; i++){
-    val items:Rail[String] = l(i).split(",");
-    //First we have to see whether we already have the host stored inside the HashMap.
-    
-    val pts = mp.get(items(0));
-    var partitions:ArrayList[String] = null;
-    
-    //This means there was no ArrayList object which holds the graph partitions for the host id stored in
-    //items(0)
-    if(pts == null){
-    	partitions = new ArrayList[String]();
-    }else{
-    	partitions = pts as ArrayList[String];
+	    val items:Rail[String] = l(i).split(",");
+	    //First we have to see whether we already have the host stored inside the HashMap.
+	    
+	    val pts = mp.get(items(0));
+	    var partitions:ArrayList[String] = null;
+	    
+	    //This means there was no ArrayList object which holds the graph partitions for the host id stored in
+	    //items(0)
+	    if(pts == null){
+	    	partitions = new ArrayList[String]();
+	    }else{
+	    	partitions = pts as ArrayList[String];
+	    }
+	    
+	    partitions.add(items(1));
+	    mp.put(items(0), partitions);
     }
     
     partitions.add(items(1));

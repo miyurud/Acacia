@@ -760,15 +760,17 @@ public class AcaciaManager{
 		long startVid = -1;
 		long endVid = -1;
 	    int centralPartionCount = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(int)0L]);
+	    //int startPartitionID = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("SELECT IDPARTITION FROM ACACIA_META.PARTITION WHERE GRAPH_IDGRAPH=" + graphID + " ORDER BY IDPARTITION LIMIT 1").value)[(int)0L]);//SELECT IDPARTITION FROM "ACACIA_META"."PARTITION" WHERE GRAPH_IDGRAPH=212 ORDER BY IDPARTITION LIMIT 1
 	    HashMap<Long, Long> edgeList = new HashMap<Long, Long>();
 	    HashMap<Long, TreeSet<Long>> localSubGraphMap = new HashMap<Long, TreeSet<Long>>(); 
 	    TreeSet<Long> vals = new TreeSet<Long>();
 	    //StringBuilder sbPersist = new StringBuilder();
 	    
 	    System.out.println("Started constructing graph");
+	    //System.out.println("Start partition ID : " + startPartitionID);
 	    for(int i = 0; i < centralPartionCount; i++){
 	    	System.out.println("Partition id : " + i);
-	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		try{
 	 			//c.setAutoCommit(false);
 	 			java.sql.Statement stmt = c.createStatement();
@@ -781,12 +783,12 @@ public class AcaciaManager{
 	 						endVid = rs.getLong(2);
 	 						//edgeList.put(fromID, toID);
 	 						//sbPersist.append(startVid + "\t" + endVid + "\n");
-	 						vals.add(startVid);
+	 						vals.add(startVid); 
 	 						vals.add(endVid);
 
 	 						if(localSubGraphMap.containsKey(startVid)){
 	 							TreeSet<Long> lst = localSubGraphMap.get(startVid);
-	 							lst.add(endVid);;
+	 							lst.add(endVid);
 	 							localSubGraphMap.put(startVid, lst);
 	 						}else{
 	 							TreeSet<Long> lst = new TreeSet<Long>();
@@ -810,6 +812,7 @@ public class AcaciaManager{
 	 						endVid = -1;
 	 					}
 	 			}
+	 			c.close();
 	 		}catch(java.sql.SQLException e){
 	 			e.printStackTrace();
 	 		} 
@@ -920,11 +923,11 @@ public class AcaciaManager{
 												traingleCount++;
 //												sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 											}else{
-												//We have discovered this trainge before. It is already recorded in the tree.
+												//We have discovered this triangle before. It is already recorded in the tree.
 											}
 										}else{
 											//This means that the infrmation of the second vertex is still not added to the traingle tree.
-											//This is a fresh round of accounting for v2
+											//This is a fresh round of accounting for v2.
 											ArrayList<Long> newU = new ArrayList<Long>();
 											newU.add(v3);
 											itemRes.put(v2, newU);

@@ -98,6 +98,9 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
         } catch (Exception e) {
             e.printStackTrace();            
         }
+        
+        vertexCount = localSubGraphMap.size();
+        edgeCount = getEdgeCount();
 		
 		return result;
 	}
@@ -163,6 +166,39 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		return edgeCount;
 	}
 	
+	public HashSet<Long> getVertexList(){
+		HashSet<Long> result = new HashSet<Long>();
+		
+		result = (HashSet<Long>) localSubGraphMap.keySet();
+		
+		return result;
+	}
+	
+//	public int[] getOutDegreeDistribution(){
+//		int[] result = new int[(int) vertexCount];
+//		
+//		Iterator<Long> itr = localSubGraphMap.keySet().iterator();
+//		int counter = 0;
+//		while(itr.hasNext()){
+//			result[counter] = localSubGraphMap.get(itr.next()).size();
+//			counter++;
+//		}
+//		
+//		return result;
+//	}
+	
+	public HashMap<Long, Long> getOutDegreeDistributionHashMap(){
+		HashMap<Long, Long> result = new HashMap<Long, Long>();
+		
+		Iterator<Long> itr = localSubGraphMap.keySet().iterator();
+		while(itr.hasNext()){
+			//result[counter] = localSubGraphMap.get(itr.next()).size();
+			Long vertexID = itr.next();
+			result.put(vertexID, new Long(localSubGraphMap.get(vertexID).size()));
+		}
+		
+		return result;
+	}
 	
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
@@ -196,6 +232,10 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		
 	public void shutdown(){
 		
+	}
+	
+	public HashMap<Long, HashSet<Long>> getUnderlyingHashMap(){
+		return localSubGraphMap;
 	}
 
 	@Override

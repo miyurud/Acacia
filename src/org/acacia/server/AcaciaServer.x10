@@ -192,10 +192,20 @@ public class AcaciaServer {
                 }
     	   }
     
-           async{
-            backend = new AcaciaBackEnd();
-            backend.run();
-           }
+           //async{
+            // val tw:java.lang.Thread = new java.lang.Thread(){
+            // public void run(){
+            // 	backend = new AcaciaBackEnd();
+            // 	backend.run();
+            // }
+            // };
+            // tw.start();
+           //}
+    
+		   // async{
+		   //  	backend = new AcaciaBackEnd();
+		   //  	backend.run();
+		   // }
     
 	       frontend = new AcaciaFrontEnd();
 	       frontend.run();
@@ -513,6 +523,7 @@ public class AcaciaServer {
              i++;
         }
         Console.OUT.println("+++++++++++++++++D");
+        MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET UPLOAD_END_TIME='" + call_getCurrentTimeStamp() + "', GRAPH_STATUS_IDGRAPH_STATUS=" + GraphStatus.OPERATIONAL + " WHERE IDGRAPH=" + graphID);
         
      //     for(val filePath:String in batchUploadFileList){
      //         val p:Place = itr.next();

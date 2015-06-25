@@ -46,13 +46,14 @@ import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;
 import org.acacia.events.java.ShutdownEvent;
 import org.acacia.events.java.ShutdownEventListener;
+import org.acacia.localstore.java.AcaciaHashMapLocalStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 
 public class AcaciaInstance{
 	//private GraphDatabaseService graphDB;
-	private HashMap<String, GraphDatabaseService> graphDBMap = new HashMap<String, GraphDatabaseService>();//This HashMap holds the AcaciaInstance objects. 
+	private HashMap<String, AcaciaHashMapLocalStore> graphDBMap = new HashMap<String, AcaciaHashMapLocalStore>();//This HashMap holds the AcaciaInstance objects. 
 	private ServerSocket srv;
 	private ArrayList<AcaciaInstanceServiceSession> sessions;
 	private boolean runFlag = true;
@@ -64,43 +65,43 @@ public class AcaciaInstance{
 		port = Integer.parseInt(System.getProperty("ACACIA_INSTANCE_PORT"));
 	}
 	
-	public void loadNeo4j(String graphID) throws UnknownHostException{
-		//System.out.println("------------ Running from BBBBBBBBBBBBBBBBBBBBBBB --------");
-		Logger_Java.info("Running local server at " + java.net.InetAddress.getLocalHost().getHostName());		
-		String instanceDataFolderLocation = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + "/" + graphID;
-		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
-		
-		File f = new File(instanceDataFolderLocation);
-		
-		if(!f.isDirectory()){
-			f.mkdir();//If the graph db folder does not exists we need to create it
-		}
-		
-		Logger_Java.info("Creating cache provider");
-        //the cache providers
-        ArrayList<CacheProvider> cacheList = new ArrayList<CacheProvider>();
-        cacheList.add( new SoftCacheProvider() );
-        Logger_Java.info("Done cache provider");
-        //the kernel extensions
-//        LuceneKernelExtensionFactory lucene = new LuceneKernelExtensionFactory();
-//        List<KernelExtensionFactory<?>> extensions = new ArrayList<KernelExtensionFactory<?>>();
-//        extensions.add( lucene );
-		
-        
-        GraphDatabaseFactory gdbf = new GraphDatabaseFactory();
-        Logger_Java.info("Done gdb factory creation");
-        //gdbf.setKernelExtensions( extensions );
-        gdbf.setCacheProviders( cacheList );
-        Logger_Java.info("Added provider to list");
-        GraphDatabaseService graphDB = gdbf.newEmbeddedDatabase(instanceDataFolderLocation);
-		IndexManager index = graphDB.index();
-		Index<Node> vertices = index.forNodes("vertexids");
-		//graphDB = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(instanceDataFolderLocation).loadPropertiesFromFile("conf/neo4j.properties").newGraphDatabase();
-		graphDBMap.put(graphID, graphDB);
-		loadedGraphs.add(graphID);
-		Logger_Java.info("Loaded the graph " + graphID + " at " + java.net.InetAddress.getLocalHost().getHostName());
-		//System.out.println("------------ Done Running from BBBBBBBBBBBBBBBBBBBBBBB --------");
-	}
+//	public void loadNeo4j(String graphID) throws UnknownHostException{
+//		//System.out.println("------------ Running from BBBBBBBBBBBBBBBBBBBBBBB --------");
+//		Logger_Java.info("Running local server at " + java.net.InetAddress.getLocalHost().getHostName());		
+//		String instanceDataFolderLocation = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + "/" + graphID;
+//		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
+//		
+//		File f = new File(instanceDataFolderLocation);
+//		
+//		if(!f.isDirectory()){
+//			f.mkdir();//If the graph db folder does not exists we need to create it
+//		}
+//		
+//		Logger_Java.info("Creating cache provider");
+//        //the cache providers
+//        ArrayList<CacheProvider> cacheList = new ArrayList<CacheProvider>();
+//        cacheList.add( new SoftCacheProvider() );
+//        Logger_Java.info("Done cache provider");
+//        //the kernel extensions
+////        LuceneKernelExtensionFactory lucene = new LuceneKernelExtensionFactory();
+////        List<KernelExtensionFactory<?>> extensions = new ArrayList<KernelExtensionFactory<?>>();
+////        extensions.add( lucene );
+//		
+//        
+//        GraphDatabaseFactory gdbf = new GraphDatabaseFactory();
+//        Logger_Java.info("Done gdb factory creation");
+//        //gdbf.setKernelExtensions( extensions );
+//        gdbf.setCacheProviders( cacheList );
+//        Logger_Java.info("Added provider to list");
+//        GraphDatabaseService graphDB = gdbf.newEmbeddedDatabase(instanceDataFolderLocation);
+//		IndexManager index = graphDB.index();
+//		Index<Node> vertices = index.forNodes("vertexids");
+//		//graphDB = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(instanceDataFolderLocation).loadPropertiesFromFile("conf/neo4j.properties").newGraphDatabase();
+//		graphDBMap.put(graphID, graphDB);
+//		loadedGraphs.add(graphID);
+//		Logger_Java.info("Loaded the graph " + graphID + " at " + java.net.InetAddress.getLocalHost().getHostName());
+//		//System.out.println("------------ Done Running from BBBBBBBBBBBBBBBBBBBBBBB --------");
+//	}
 	
 	public void start_running() throws UnknownHostException{	
 		//------------------------------------------------------------------------------------------
@@ -133,7 +134,7 @@ public class AcaciaInstance{
 		Logger_Java.info("XXXXXXXXXXXXXXXXX> Exitting the AcaciaInstance server at " + org.acacia.util.java.Utils_Java.getHostName() + " port : " + port);
 	}
 	
-    private static void registerShutdownHook(final GraphDatabaseService graphDb){
+    private static void registerShutdownHook(final AcaciaHashMapLocalStore graphDb){
     	Runtime.getRuntime().addShutdownHook(new Thread() {
     		@Override
     		public void run(){
@@ -149,7 +150,7 @@ public class AcaciaInstance{
 		while(itr2.hasNext()){
 			String itm = itr2.next();
 			//These types of places (such as "" + itm) need to be reviewed and decide whether  
-			GraphDatabaseService db = graphDBMap.get(itm);
+			AcaciaHashMapLocalStore db = graphDBMap.get(itm);
 			//We need to shutdown the online graph db instance
 			System.out.println("Shutting down graph id : " + itm);
 			db.shutdown();
@@ -162,7 +163,7 @@ public class AcaciaInstance{
 			FileUtils.deleteDirectory(new File(acaciaDataFolder));
 			Logger_Java.info("Done deleting : " + acaciaDataFolder);
 				
-			graphDBMap = new HashMap<String, GraphDatabaseService>();
+			graphDBMap = new HashMap<String, AcaciaHashMapLocalStore>();
 			loadedGraphs = new ArrayList<String>(); 
 			
 			//Next we need to distribute the new graphDB object reference to all the xisting sessions. Because they are still using the old shutdowned session.
@@ -185,7 +186,7 @@ public class AcaciaInstance{
 		
 		while(itr2.hasNext()){
 			String itm = itr2.next();
-			GraphDatabaseService db = graphDBMap.get(itm);
+			AcaciaHashMapLocalStore db = graphDBMap.get(itm);
 			//We need to shutdown the online graph db instance
 			System.out.println("Shutting down graph id : " + itm);
 			db.shutdown();

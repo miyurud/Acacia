@@ -28,9 +28,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.neo4j.cypher.javacompat.ExecutionEngine;
-import org.neo4j.cypher.javacompat.ExecutionResult;
-import org.neo4j.graphdb.GraphDatabaseService;
+import org.acacia.localstore.java.AcaciaHashMapLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaInstanceToManagerAPI;
 import org.acacia.util.java.Utils_Java;
@@ -40,105 +39,35 @@ import org.acacia.util.java.Utils_Java;
  *
  */
 public class Triangles {
-	public static String run(GraphDatabaseService graphDB, String graphID, String partitionID, String serverHostName) {
-		//We need to get the edge list out from this graph database.
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		
-		//Here we get all the edges of the local graph
-		ExecutionResult execResult = engine.execute("start n=node(*) match n--m return n, n.vid, m.vid");
-		HashMap<Long, HashSet<Long>> localSubGraphMap = new HashMap<Long, HashSet<Long>>();//This map holds the local subgraph's edge list
-//		HashSet<Long> uniqueVertexList = new HashSet<Long>();
-		
-		//StringBuilder sbPersist = new StringBuilder();
-		
-		long nEdges = 0;
-		for(Map<String, Object> row : execResult){	
-			long startVid = -1;
-			long endVid = -1;
-			
-			for(Entry<String, Object> column : row.entrySet()){
-					if(column.getKey().equals("n.vid")){
-						startVid = Integer.parseInt(column.getValue().toString());
-					}
-					
-					if(column.getKey().equals("m.vid")){
-						endVid = Integer.parseInt(column.getValue().toString());
-					}		
-															
-					if((startVid != -1)&&(endVid != -1)){
-						nEdges++;
-						
-						//This is to persist
-						//sbPersist.append(startVid + "\t" + endVid + "\n");
-						
-						if(localSubGraphMap.containsKey(startVid)){
-							HashSet<Long> lst = localSubGraphMap.get(startVid);
-							
-							lst.add(endVid);
-							localSubGraphMap.put(startVid, lst);
-						}else{
-							HashSet<Long> lst = new HashSet<Long>();
-							lst.add(endVid);
-							localSubGraphMap.put(startVid, lst);
-						}
-						
-						//We have to make this list undirected...
-						//This is tricky, may be we should say in the query to treat this graph as undirected.
-						//for the moment we do it here...
-						
-						if(localSubGraphMap.containsKey(endVid)){
-							HashSet<Long> lst = localSubGraphMap.get(endVid);
-							
-							lst.add(startVid);
-							localSubGraphMap.put(endVid, lst);
-						}else{
-							HashSet<Long> lst = new HashSet<Long>();
-							lst.add(startVid);
-							localSubGraphMap.put(endVid, lst);
-						}						
-												
-//						uniqueVertexList.add(startVid);
-//						uniqueVertexList.add(endVid);
-						
-						startVid = -1;
-						endVid = -1;
-					}
-			}		
-		}
-		
-		Logger_Java.info("nedges : " + nEdges);
-				
-		//We need to create the degree map as well.
-		execResult = engine.execute("start n=node(*) match n--m return n, n.vid, count(m)");
+	public static String run(AcaciaLocalStore graphDB, String graphID, String partitionID, String serverHostName) {
+		AcaciaHashMapLocalStore hMapLocalStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		hMapLocalStore.loadGraph();
+		HashMap<Long, HashSet<Long>> localSubGraphMap = hMapLocalStore.getUnderlyingHashMap();		
+		long nEdges = hMapLocalStore.getEdgeCount();		
+		Logger_Java.info("nedges : " + nEdges);		
+		HashMap<Long, Long> degreeDist = hMapLocalStore.getOutDegreeDistributionHashMap();
 		TreeMap<Long, TreeSet<Long>> degreeMap = new TreeMap<Long, TreeSet<Long>>(); //<degree><list of vertices>
 		HashMap<Long, Long> degreeReverseLookupMap = new HashMap<Long, Long>();
+		TreeSet<Long> degreeSet = null;
+		long startVid = -1;
+		long degree = -1;
 		
-		for(Map<String, Object> row : execResult){	
-			long startVid = -1;
-			long degree = -1;
-			TreeSet<Long> degreeSet = null;
-			
-			for(Entry<String, Object> column : row.entrySet()){
-					if(column.getKey().equals("n.vid")){
-						startVid = Integer.parseInt(column.getValue().toString());
-					}
-					
-					if(column.getKey().equals("count(m)")){
-						degree = Integer.parseInt(column.getValue().toString());
-						
-						if(degreeMap.containsKey(degree)){
-							degreeSet = degreeMap.get(degree);
-							degreeSet.add(startVid);
-							degreeMap.put(degree, degreeSet);
-						}else{
-							degreeSet = new TreeSet<Long>();
-							degreeSet.add(startVid);
-							degreeMap.put(degree, degreeSet);
-						}
-					}
-					
-					degreeReverseLookupMap.put(startVid, degree);
+		Iterator<Long> itr = degreeDist.keySet().iterator();
+				
+		while(itr.hasNext()){
+			startVid = itr.next();
+			degree = degreeDist.get(startVid);
+			if(degreeMap.containsKey(degree)){
+				degreeSet = degreeMap.get(degree);
+				degreeSet.add(startVid);
+				degreeMap.put(degree, degreeSet);
+			}else{
+				degreeSet = new TreeSet<Long>();
+				degreeSet.add(startVid);
+				degreeMap.put(degree, degreeSet);
 			}
+			
+			degreeReverseLookupMap.put(startVid, degree);
 		}
 		
 		//System.out.println("Started counting algorithm at : " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
@@ -152,10 +81,10 @@ public class Triangles {
 		
 		HashMap<Long, HashMap<Long, ArrayList<Long>>> traingleTree = new HashMap<Long, HashMap<Long, ArrayList<Long>>>(); 
 		ArrayList<Long> degreeListVisited = new ArrayList<Long>();
-//		StringBuilder sb2 = new StringBuilder();
+
 		for(Map.Entry<Long, TreeSet<Long>> item: degreeMap.entrySet()){
 			TreeSet<Long> vVertices = item.getValue();
-			
+
 			//When one of these rounds completes we know that vertex vs has been completely explored for its traingles. Since we treat
 			//a collection of vertices having the same degree at a time, we can do a degree based optimization. That is after this for loop
 			//we can mark the degree as visited. Then for each second and thrid loops can be skipped if the vertices considered there are
@@ -174,6 +103,7 @@ public class Triangles {
 //						}
 						
 						HashSet<Long> nuList = localSubGraphMap.get(u);
+						
 						if(nuList != null){
 							for(long nu : nuList){ //Third for loop
 //								if(degreeReverseLookupMap.containsKey(nu)){
@@ -185,11 +115,9 @@ public class Triangles {
 //									}
 //								}
 								HashSet<Long> nwList = localSubGraphMap.get(nu);
-
+								
 								if((nwList != null) && (nwList.contains(v))){ //We know for sure that v has not been visited yet
-									fullCount++;
-									
-									
+									fullCount++;							
 									//At this point we have discovered a traingle. But now we need to makesure that we have not counted that triangle before.
 									//To do that we use the traingle tree data structure which keeps on track of the triangles we have marked so far.
 									//Note that the traingle tree may not be as efficient as we expect.
@@ -206,6 +134,7 @@ public class Triangles {
 									
 									//The top level vertices are represented by v1
 									HashMap<Long, ArrayList<Long>> itemRes = traingleTree.get(v1);
+									
 									if(itemRes != null){
 										if(itemRes.containsKey(v2)){
 											ArrayList<Long> lst = itemRes.get(v2);
@@ -213,7 +142,7 @@ public class Triangles {
 												lst.add(v3);
 												itemRes.put(v2, lst);
 												traingleTree.put(v1, itemRes);
-												
+												System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
 												traingleCount++;
 //												sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 											}else{
@@ -227,6 +156,7 @@ public class Triangles {
 											itemRes.put(v2, newU);
 											traingleTree.put(v1, itemRes);//here its just replacing the old itemRes
 											
+											System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
 											traingleCount++;
 //											sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 										}
@@ -238,6 +168,7 @@ public class Triangles {
 										itemRes.put(v2, newU);
 										traingleTree.put(v1, itemRes); //here we are adding a new itemRes
 										
+										System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
 										traingleCount++;
 //										sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 									}
@@ -271,9 +202,9 @@ public class Triangles {
 		
         //The following method may return the count of traingles that intersect between the local graph and the world.
 //        traingleCount += AcaciaInstanceToManagerAPI.countIntersectingTraingles(serverHostName, graphID, partitionId);
-//        System.out.println("serverHostName : " + serverHostName);
+        System.out.println("serverHostName : " + serverHostName);
         long intersectCount = AcaciaInstanceToManagerAPI.countIntersectingTraingles(serverHostName, graphID, partitionID, localSubGraphMap, degreeMap, degreeReverseLookupMap);
-//        System.out.println("intersect traingle Count : " + intersectCount);
+        System.out.println("intersect traingle Count : " + intersectCount);
         traingleCount += intersectCount;
 		return "" + traingleCount;
 	}

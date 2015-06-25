@@ -318,9 +318,9 @@ public class AcaciaBackEndServiceSession extends Thread {
             		out.flush();
             
             		String partitionID = buff.readLine();
-            		
+            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234999");
             		long partRes = getIntersectingTraingles(graphID, partitionID);
-//            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234");
+            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234");
             		if(partRes == -1){
 //            			System.out.println("Have to send the global list to the worker");
             			out.println("-1");
@@ -330,10 +330,11 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    long fromID = -1;
             		    long toID = -1;
             		    HashMap<Long, ArrayList<Long>> hmp = new HashMap<Long, ArrayList<Long>>();
-            		    StringBuilder sbPersist = new StringBuilder();
+            		    
             		    
             		    for(int i = 0; i < centralPartionCount; i++){
-            		 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+            		    	StringBuilder sbPersist = new StringBuilder();
+            		 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
             		 		
             		 		try{
             		 			//Here we get all the edges that are comming from the world to the local sub graph.
@@ -362,9 +363,10 @@ public class AcaciaBackEndServiceSession extends Thread {
             		 			c.close();
             		 		}catch(java.sql.SQLException e){
             		 			e.printStackTrace();
-            		 		} 
+            		 		}
+            		 		org.acacia.util.java.Utils_Java.writeToFile(org.acacia.util.java.Utils_Java.getHostName() + "-central-" + i + ".txt", sbPersist);
             		    }
-            		    org.acacia.util.java.Utils_Java.writeToFile(org.acacia.util.java.Utils_Java.getHostName() + "-central.txt", sbPersist);
+            		    
             		    //Where we need to have some batched technique to send the edgelist. Because the edgelist size is going to be very large.
                    		
                 		Iterator itr = hmp.entrySet().iterator();
@@ -466,7 +468,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    long fromIDDegree = 0;
 	    long vval = 0;
 	    for(int i = 0; i < centralPartionCount; i++){
-	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		
 	 		try{
 	 			//Here we get all the edges that are comming from the world to the local sub graph.
@@ -546,7 +548,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    int centralPartionCount = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(int)0L]);
 	    //System.out.println("centralPartionCount : " + centralPartionCount);
 	    for(int i = 0; i < centralPartionCount; i++){
-	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		//System.out.println("running for partionin" + i);
 	 		try{
 	 			//c.setAutoCommit(false);
@@ -593,7 +595,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    int worldOnlyVertexCount = vcnt - partionVertxCount; //This is the (N-n) term in APproxRank algo.
 
 	    for(int i = 0; i < centralPartionCount; i++){
-	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		
 	 		try{
 	 			//Here we get all the edges that are comming from the world to the local sub graph.
@@ -645,7 +647,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    int centralPartionCount = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(int)0L]);
 	    
 	    for(int i = 0; i < centralPartionCount; i++){
-	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		
 	 		try{
 	 			//c.setAutoCommit(false);
@@ -686,7 +688,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    int worldOnlyVertexCount = vcnt - partionVertxCount; //This is the (N-n) term in APproxRank algo.
 //	    System.out.println("--------------------- SSSSSSSSS 2 --------------------------");
 	    for(int i = 0; i < centralPartionCount; i++){
-	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		
 	 		try{
 	 			//Here we get all the edges that are comming from the world to the local sub graph.
@@ -740,7 +742,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    long fromIDDegree = 0;
 	    long vval = 0;
 	    for(int i = 0; i < centralPartionCount; i++){
-	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		
 	 		try{
 	 			//Here we get all the edges that are comming from the world to the local sub graph.
@@ -944,7 +946,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    int centralPartionCount = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(int)0L]);
 	    
 	    for(int i = 0; i < centralPartionCount; i++){
-	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
 	 		try{
 	 			//c.setAutoCommit(false);
 	 			java.sql.Statement stmt = c.createStatement();
@@ -957,9 +959,11 @@ public class AcaciaBackEndServiceSession extends Thread {
 	 						result.put(fromID, fromDegree);
 	 					}
 	 			}
+	 			
+	 			c.close();
 	 		}catch(java.sql.SQLException e){
 	 			e.printStackTrace();
-	 		} 
+	 		}
 	    }
  		//System.out.println("WOnly out deg dist : " + result.toString());
  		
@@ -982,7 +986,9 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    HashMap<Long, Long> edgeList = new HashMap<Long, Long>();
 	    
 	    for(int i = 0; i < centralPartionCount; i++){
-	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+	    	System.out.println("graph ID : " + graphID + "_" + i);
+	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
+	    	
 	 		try{
 	 			//c.setAutoCommit(false);
 	 			java.sql.Statement stmt = c.createStatement();
@@ -998,9 +1004,11 @@ public class AcaciaBackEndServiceSession extends Thread {
 	 			}else{
 	 				Logger_Java.info("========================= getIntersectingTraingles() count is null =========================");
 	 			}
+	 			
+	 			c.close();
 	 		}catch(java.sql.SQLException e){
 	 			e.printStackTrace();
-	 		} 
+	 		}
 	    }
 	    
 	    long globalSize = edgeList.size(); //The size of a Java HashMap is int which is not desirable.

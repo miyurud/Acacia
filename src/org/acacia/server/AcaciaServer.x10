@@ -449,16 +449,18 @@ public class AcaciaServer {
     
     
     public static def uploadGraphLocally(val item:String, val inputFilePath:String):void{
-    	Console.OUT.println("Uploading the following graph locally : " + item);
-        val converter:MetisPartitioner = new MetisPartitioner();
-         
-        val isDistrbutedCentralPartitions:Boolean = true;
-        val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputFilePath + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");
-         
-        converter.convert(item, graphID, inputFilePath, "/home/miyurud/tmp", Place.places().size() as Int, isDistrbutedCentralPartitions);
-        val initialPartID:Int = converter.getInitlaPartitionID();
-        //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
-        var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
+    Console.OUT.println("Uploading the following graph locally : " + item);
+    val converter:MetisPartitioner = new MetisPartitioner();
+    
+    val isDistrbutedCentralPartitions:Boolean = true;
+    val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputFilePath + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");
+    //org.acacia.server.runtime.location
+    //org.acacia.partitioner.local.threads
+    val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
+    converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads);
+    val initialPartID:Int = converter.getInitlaPartitionID();
+    //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
+    var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
         
         
         // var ptnArrLst:ArrayList[String] = new ArrayList[String]();
@@ -501,11 +503,15 @@ public class AcaciaServer {
         
         val hostIDMap:HashMap[String, String] = getLiveHostIDList();
         var i:Long = 0;
+        val fileListLen = batchUploadFileList.size;
+        
         while(itr2.hasNext()){
              val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
+             if(itemHost==null){
+             	return;
+             }
+             
              //0 : <host> : /home/miyurud/tmp/61_254.gz
-             Console.OUT.println("" + itemHost.getKey() + " : " + itemHost.getValue() + " : " + batchUploadFileList(i));
-             Console.OUT.println("========================>Super1");
              val filePath:String = batchUploadFileList(i);
              val partitionID:String = filePath.substring(filePath.indexOf("_")+1n, filePath.indexOf("."));
              call_batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
@@ -521,6 +527,10 @@ public class AcaciaServer {
              val result:Boolean = call_runUpdate("UPDATE ACACIA_META.PARTITION SET VERTEXCOUNT=" + vcount + ", EDGECOUNT=" + ecount + " WHERE GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID);
              Console.OUT.println("Result is : " + result);
              i++;
+             
+             if(i >= fileListLen){
+                 break;
+             }
         }
         Console.OUT.println("+++++++++++++++++D");
         MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET UPLOAD_END_TIME='" + call_getCurrentTimeStamp() + "', GRAPH_STATUS_IDGRAPH_STATUS=" + GraphStatus.OPERATIONAL + " WHERE IDGRAPH=" + graphID);

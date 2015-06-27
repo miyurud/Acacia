@@ -1,5 +1,3 @@
-package org.acacia.frontend;
-
 /**
 Copyright 2015 Acacia Team
 

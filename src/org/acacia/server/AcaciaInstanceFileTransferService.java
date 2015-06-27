@@ -29,18 +29,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.HashMap;
 
-import org.neo4j.cypher.javacompat.ExecutionEngine;
-import org.neo4j.cypher.javacompat.ExecutionResult;
-import org.neo4j.graphdb.NotFoundException;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.kernel.*;
-import org.neo4j.kernel.impl.cache.CacheProvider;
-import org.neo4j.kernel.impl.cache.SoftCacheProvider;
-import org.neo4j.graphdb.index.IndexManager;
-import org.neo4j.graphdb.index.Index;
-import org.neo4j.graphdb.Node;
 import org.apache.commons.io.FileUtils;
 import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;

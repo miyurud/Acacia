@@ -37,23 +37,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.neo4j.cypher.javacompat.ExecutionEngine;
-import org.neo4j.cypher.javacompat.ExecutionResult;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.kernel.impl.cache.CacheProvider;
-import org.neo4j.kernel.impl.cache.SoftCacheProvider;
-import org.neo4j.graphdb.index.UniqueFactory;
-import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.graphdb.index.IndexManager;
-import org.neo4j.graphdb.index.Index;
-import org.neo4j.graphdb.Node;
-import org.neo4j.tooling.GlobalGraphOperations;
-import org.neo4j.helpers.collection.IteratorUtil;
 import org.apache.commons.io.FileUtils;
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
 import org.acacia.log.java.Logger_Java;
@@ -64,13 +47,6 @@ import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;
 import org.acacia.query.algorithms.triangles.Triangles;
 
-import com.tinkerpop.blueprints.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.impls.neo4j.Neo4jGraph;
-import com.tinkerpop.gremlin.java.GremlinPipeline;
-import com.tinkerpop.gremlin.groovy.Gremlin;
-import com.tinkerpop.pipes.Pipe;
-import com.tinkerpop.pipes.util.iterators.SingleIterator;
 import com.google.common.base.Splitter;
 
 import javax.script.ScriptEngine;
@@ -853,45 +829,12 @@ public class AcaciaInstanceServiceSession extends Thread{
 		graphDB.loadGraph();//We need to load the graph explicitly
 		graphDBMap.put(gid, graphDB);
 		loadedGraphs.add(gid);
-		try{
-			Logger_Java.info("Running local server at " + java.net.InetAddress.getLocalHost().getHostName());
-			String gid = graphID + "_" + partitionID;
-			String instanceDataFolderLocation = dataFolder + "/" + gid;
-			Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
-			
-			File f = new File(instanceDataFolderLocation);
-			
-			if(!f.isDirectory()){
-				f.mkdir();//If the graph db folder does not exists we need to create it
-			}
-			
-			Logger_Java.info("Creating cache provider");
-	        //the cache providers
-	        ArrayList<CacheProvider> cacheList = new ArrayList<CacheProvider>();
-	        cacheList.add( new SoftCacheProvider() );
-	        Logger_Java.info("Done cache provider");
-	        //the kernel extensions
-	//        LuceneKernelExtensionFactory lucene = new LuceneKernelExtensionFactory();
-	//        List<KernelExtensionFactory<?>> extensions = new ArrayList<KernelExtensionFactory<?>>();
-	//        extensions.add( lucene );
-			
-	        
-	        GraphDatabaseFactory gdbf = new GraphDatabaseFactory();
-	        Logger_Java.info("Done gdb factory creation");
-	        //gdbf.setKernelExtensions( extensions );
-	        gdbf.setCacheProviders( cacheList );
-	        Logger_Java.info("Added provider to list");
-	        GraphDatabaseService graphDB = gdbf.newEmbeddedDatabase(instanceDataFolderLocation);
-			IndexManager index = graphDB.index();
-			Index<Node> vertices = index.forNodes("vertexids");
-			//graphDB = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(instanceDataFolderLocation).loadPropertiesFromFile("conf/neo4j.properties").newGraphDatabase();
-			graphDBMap.put(gid, graphDB);
-			loadedGraphs.add(gid);
-			Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
-		}catch(UnknownHostException e){
-			e.printStackTrace();
-		}
 		
+		try{
+			Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
+		}catch(UnknownHostException ex){
+			Logger_Java.error("Error : " + ex.getMessage());
+		}
 		System.out.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
 	}
 	
@@ -958,80 +901,12 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	/**
-	 * In this method we assume that we insert edge on a default graph.
-	 * @param startVertexID
-	 * @param endVertexID
-	 */
-	public void insertEdgeUsingIndex(long startVertexID, long endVertexID){	
-		GraphDatabaseService graphDB = null;
-		if (defaultGraph == null){	
-			Logger_Java.error("Error : The default graph database instance is NULL");
-			return;
-		}else{
-			graphDB = defaultGraph;
-		}
-		
-		Node startNode = null;
-		Node endNode = null;
-		
-		long start = -1;
-		long end = -1;
-
-		startNode = getOrCreateVertexWithUniqueFactory("" + defaultGraphID + "-" + startVertexID, graphDB, MapUtil.map("gid", ""+defaultGraphID, "vid", ""+startVertexID));
-		
-		System.out.println("Start node id is : " + startNode.toString());
-		
-		Iterable<String> keys = startNode.getPropertyKeys();
-		Iterator<String> itr = keys.iterator();
-		
-		while(itr.hasNext()){
-			String k = itr.next();
-			System.out.println("key : " + k + " value : " + startNode.getProperty(k));
-		}
-		
-		
-		endNode = getOrCreateVertexWithUniqueFactory("" + defaultGraphID + "-" + endVertexID, graphDB, MapUtil.map("gid", ""+defaultGraphID, "vid", ""+endVertexID));
-		
-		System.out.println("End node id is : " + endNode.toString());
-		
-		Transaction tx = graphDB.beginTx();
-		try{
-			Relationship rel = startNode.createRelationshipTo(endNode, RelTypes.NEXT);
-			rel.setProperty("gid", ""+defaultGraphID);
-			tx.success();
-		}
-		finally{
-			tx.finish();
-		}
-
-		System.out.println("Done adding edge : " + startVertexID + " " + endVertexID);
-	}
-	
-	
-	public Node getOrCreateVertexWithUniqueFactory( String vertex_id, GraphDatabaseService graphDb, final Map<String, Object> props)
-	{
-	    UniqueFactory<Node> factory = new UniqueFactory.UniqueNodeFactory( graphDb, "vertexids" )
-	    {
-	        @Override
-	        protected void initialize( Node created, Map<String, Object> properties )
-	        {
-	            created.setProperty( "vertexids", properties.get( "vertexids" ) );
-	            for(Map.Entry prop : props.entrySet()){
-	            	created.setProperty(""+prop.getKey(), ""+prop.getValue());
-	            }
-	        }
-	    };
-	 
-	    return factory.getOrCreate( "vertexids", vertex_id );
-	}
-	
-	/**
 	 * This method returns the vertex's unique id if one exists. If not returns -1.
 	 * @param graphID
 	 * @param vertexID
 	 * @return
 	 */
-	
+	/*
 	public long vertexExists(long graphID, long vertexID){
 		String resultStr = "-1";
 		GraphDatabaseService graphDB = null;
@@ -1066,7 +941,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 			return -1;
 		}
 	}	
+	*/
 	
+	/*
 	public long deleteAllverticesandEdgesofGraph(String graphID){
 		long vcnt = 0;
 		String resultStr = "";
@@ -1087,24 +964,25 @@ public class AcaciaInstanceServiceSession extends Thread{
 
 		if(itr.hasNext()){
 			resultStr = itr.next().toString();
-			/*
-			System.out.println("1111============================");
-			Pattern p = Pattern.compile("\\d+(,[ ]\\d+)*");
-			System.out.println("2222============================");
-			System.out.println("resultStr : |" + resultStr+"|");
-			Matcher m = p.matcher(resultStr);
-			System.out.println("wwwwww============================");
-			while(m.find()){
-				resultStr = m.group();
-				break;
-			}
-			System.out.println("llllll============================");
-			*/
+//			
+//			System.out.println("1111============================");
+//			Pattern p = Pattern.compile("\\d+(,[ ]\\d+)*");
+//			System.out.println("2222============================");
+//			System.out.println("resultStr : |" + resultStr+"|");
+//			Matcher m = p.matcher(resultStr);
+//			System.out.println("wwwwww============================");
+//			while(m.find()){
+//				resultStr = m.group();
+//				break;
+//			}
+//			System.out.println("llllll============================");
+//			
 			int beginIdx = resultStr.indexOf("[");
 			int endIdx = resultStr.indexOf("]");
 			resultStr = resultStr.substring(beginIdx+1, endIdx);
 		}
-				
+			
+
 		if(!resultStr.contains("collect")){
 			String[] verts=resultStr.split(",");
 			int len= verts.length;
@@ -1133,6 +1011,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 		
 		return vcnt;//We return the number of vertices deleted.
 	}
+	
+	*/
 	
 	public String countVertices(String graphID, String partitionID){
 		String result = "-1";	

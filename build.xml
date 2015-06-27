@@ -23,8 +23,6 @@
     
     <property name="src.dir"     value="src"/>    
     <property name="lib.dir"     value="lib"/>
-    <property name="gremlin-groovy-lib.dir"     value="lib-gremlin-groovy"/>
-    <property name="neo4j-lib.dir"     value="neo4j-lib"/>
     <property name="x10-lib.dir"     value="x10-lib"/>
     <property name="doc.dir"     value="doc"/>
 
@@ -34,12 +32,6 @@
 
     <path id="build.classpath">
         <fileset dir="${lib.dir}">
-          <include name="*.jar" />
-        </fileset>
-        <fileset dir="${gremlin-groovy-lib.dir}">
-          <include name="*.jar" />
-        </fileset>
-        <fileset dir="${neo4j-lib.dir}">
           <include name="*.jar" />
         </fileset>
         <fileset dir="${x10-lib.dir}">

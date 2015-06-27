@@ -727,12 +727,7 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 	    
 	    partitions.add(items(1));
 	    mp.put(items(0), partitions);
-    }
-    
-    partitions.add(items(1));
-    mp.put(items(0), partitions);
-    }
-    
+    }    
     
     finish for(var i:Int=0n; i < hostListLen; i++){
 	    val u:Int = i;

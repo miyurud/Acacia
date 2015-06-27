@@ -35,23 +35,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.neo4j.cypher.javacompat.ExecutionEngine;
-import org.neo4j.cypher.javacompat.ExecutionResult;
-
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.kernel.impl.cache.CacheProvider;
-import org.neo4j.kernel.impl.cache.SoftCacheProvider;
-import org.neo4j.graphdb.index.UniqueFactory;
-import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.graphdb.index.IndexManager;
-import org.neo4j.graphdb.index.Index;
-import org.neo4j.graphdb.Node;
-
 import org.apache.commons.io.FileUtils;
 
 import org.acacia.log.java.Logger_Java;

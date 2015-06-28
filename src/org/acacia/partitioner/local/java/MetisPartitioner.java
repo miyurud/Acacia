@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import org.acacia.util.java.Utils_Java;
+import org.acacia.log.java.Logger_Java;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 import com.google.common.base.Splitter;
@@ -451,6 +452,36 @@ public class MetisPartitioner{
 		
 		//partitionFileList = new String[paths.size()]; //(String[])paths.toArray();
 		System.out.println("Done partitioning...");
+
+		distributeCentralStore(partitionFileList.length,graphID);
+	}
+	
+	public void distributeCentralStore(int n,String graphID){
+		try{
+			Runtime r = Runtime.getRuntime();
+			String workDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore";
+			String destDir = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder.central");
+			Process p;
+			for(int i=0;i<n;i++){
+				String destDirPart = destDir+"/"+graphID+"_"+i;
+				String workDirPart = workDir+"/"+graphID+"_"+i;
+				File f = new File(destDirPart);
+				if(!f.exists()){
+					f.mkdir();
+				}
+				
+					//Zip the folder;					
+					p = r.exec("zip -rj "+destDirPart+"/"+graphID+"_"+i+".zip "+workDirPart);
+					
+					//Unzip the file
+					p = r.exec("unzip "+destDirPart+"/"+graphID+"_"+i+".zip -d "+destDirPart);
+					
+					//clean the dir
+					//p = r.exec("rm -f "+destDirPart+"/"+graphID+"_"+i+".zip");
+			}
+		}catch(Exception e){
+			Logger_Java.info("Error : "+e.getMessage());
+		}
 	}
 	
 	private void partitionWithMetis(int nParts){

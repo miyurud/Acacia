@@ -16,13 +16,18 @@ limitations under the License.
 
 package org.acacia.partitioner.local.java;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -35,9 +40,12 @@ import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
+import org.acacia.server.AcaciaManager;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
+
+import x10.lang.Place;
 
 import com.google.common.base.Splitter;
 
@@ -456,31 +464,85 @@ public class MetisPartitioner{
 		distributeCentralStore(partitionFileList.length,graphID);
 	}
 	
-	public void distributeCentralStore(int n,String graphID){
+	private void distributeCentralStore(int n,String graphID){
+		
 		try{
-			Runtime r = Runtime.getRuntime();
-			String workDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore";
-			String destDir = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder.central");
-			Process p;
 			for(int i=0;i<n;i++){
-				String destDirPart = destDir+"/"+graphID+"_"+i;
-				String workDirPart = workDir+"/"+graphID+"_"+i;
-				File f = new File(destDirPart);
-				if(!f.exists()){
-					f.mkdir();
-				}
-				
-					//Zip the folder;					
-					p = r.exec("zip -rj "+destDirPart+"/"+graphID+"_"+i+".zip "+workDirPart);
-					
-					//Unzip the file
-					p = r.exec("unzip "+destDirPart+"/"+graphID+"_"+i+".zip -d "+destDirPart);
-					
-					//clean the dir
-					//p = r.exec("rm -f "+destDirPart+"/"+graphID+"_"+i+".zip");
+				//@SuppressWarnings("unchecked")
+				//Iterator<Place> itr = (Iterator<Place>) Place.places().iterator();
+				HashMap<Long, String> placeToHostMap = new HashMap<Long, String>();
+				//PlaceToNodeMapper placeToNodeMapper = new PlaceToNodeMapper();
+				Runtime r = Runtime.getRuntime();
+				String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore/"+graphID+"_"+i;
+				System.out.println("zip -rj "+filePath+".zip "+filePath);
+				Process process = r.exec("zip -rj "+filePath+".zip "+filePath);
+				int hostID=0,hostCount = 0,nPlaces=0;
+				for(Long j=0l;j<n;j++){
+		             //Place p = itr.next();
+		             System.out.println("+++++++++++++++++K p.id " + j);
+		             
+		             //-------------------------------------
+		             
+		             nPlaces = (int)Place.places().size$O();
+		             
+		             //
+		             ArrayList<String> hostList = new ArrayList<String>();
+		     	     File f = new File("machines.txt");
+		     	     BufferedReader br = new BufferedReader(new FileReader(f));
+		     	     String str = br.readLine();
+		     	     while(str != null){
+		     	    	hostList.add(str.trim());
+		     	    	str = br.readLine();
+		     	     }
+		     	     br.close();
+		     		 
+		             //
+		             hostCount = hostList.size();
+		             
+		             //val placesPerHost = nPlaces/hostList.size;
+		     	    hostID = (int)(j % hostCount);
+		             
+		     	    String hostName = hostList.get(hostID); 
+		     	   
+		            //-----------------------------------------------------------------------------------------
+		     	    
+		     	   	
+		     	    
+		     	    //-----------------------------------------------------------------------------------------
+
+		             System.out.println("+++++++++++++++++K p.id " + j + " hostName : " + hostName);
+		             placeToHostMap.put(j, hostName);
+		             System.out.println("+++++++++++++++++B");
+		        }
+				System.out.println("+++++++++++++++++C");
+				System.out.println("placeToHostMap.entries() : " + placeToHostMap.entrySet().size());
+		        Iterator<java.util.Map.Entry<Long, String>> itr2 = placeToHostMap.entrySet().iterator();
+		        System.out.println("+++++++++++++++++C");
+		        
+		        //HashMap<String, String> hostIDMap = getLiveHostIDList();
+		        //Long i = 0l;
+		        int fileListLen = 4; //File list size
+		        
+		        while(itr2.hasNext()){
+		             Map.Entry<Long, String> itemHost = itr2.next();
+		             if(itemHost==null){
+		             	return;
+		             }
+		             int port = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
+		             hostID = (int)(itemHost.getKey() % hostCount);
+			     	 int withinPlaceIndex = ((int)(itemHost.getKey() - hostID))/hostCount;
+			     	    
+			     	 int instancePort = port + withinPlaceIndex;
+			     	 int fileTransferport = instancePort + (nPlaces/hostCount);
+		             
+		             AcaciaManager.batchUploadFile(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
+		             
+		        }
 			}
+			
+			
 		}catch(Exception e){
-			Logger_Java.info("Error : "+e.getMessage());
+			System.out.println("Error : "+e.getMessage());
 		}
 	}
 	

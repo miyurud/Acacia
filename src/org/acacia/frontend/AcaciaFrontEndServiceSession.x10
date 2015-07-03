@@ -396,8 +396,8 @@ else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
         		out.flush();				
         	}else{
         		
-        		val result:String =null;        
-        		//should parse query to the intepreter and get the results
+        		val result:String =null;  
+        		val result=call_test("SELECT ?name WHERE { ?person foaf:name ?name .} ");
         		out.println(result);//print the result
         		out.flush();
         	}
@@ -961,4 +961,7 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
     
     @Native("java", "org.acacia.server.AcaciaManager.getFreeSpaceInfo(#1)")
     static native def call_getFreeSpaceInfo(String):String;
+    
+   	@Native("java", "org.acacia.rdf.sparql.Test.test(#1)")
+    static native def call_test(String):String;
 }

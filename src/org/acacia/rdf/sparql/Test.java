@@ -5,7 +5,7 @@ package org.acacia.rdf.sparql;
 	public class Test {
 		
 		
-		public static String test(String str) throws RecognitionException {
+		public static String test(String str){
 			
 			//CharStream stream =new ANTLRStringStream("SELECT ?name WHERE { ?person foaf:name ?name .} ");			
 			//SparqlLexer  lexer=new SparqlLexer((CharStream)stream);

@@ -16,18 +16,13 @@ limitations under the License.
 
 package org.acacia.partitioner.local.java;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -40,12 +35,9 @@ import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import org.acacia.server.AcaciaManager;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
-
-import x10.lang.Place;
 
 import com.google.common.base.Splitter;
 
@@ -74,14 +66,16 @@ public class MetisPartitioner{
 	private String[] partitionFileList;
 	private int nThreads;
 	private int largestVertex;
+	private int nPlaces;
 	
-	public void convert(String graphName, String graphID, String inputFilePath, String outputFilePath, int nParts, boolean isDistributedCentralPartitions, int nThreads){
+	public void convert(String graphName, String graphID, String inputFilePath, String outputFilePath, int nParts, boolean isDistributedCentralPartitions, int nThreads, int nPlaces){
 		this.outputFilePath = outputFilePath;
 		this.nParts = nParts;
 		this.graphName = graphName;
 		this.isDistributedCentralPartitions = isDistributedCentralPartitions;
 		this.graphID = graphID;
 		this.nThreads = nThreads;
+		this.nPlaces = nPlaces;
 		
 		//The following number of Treemap instances is kind of tricky, but it was decided to use nThreads number of TreeMaps to improve the data loading performance.
 		graphStorage = new TreeMap[nThreads];
@@ -467,12 +461,15 @@ public class MetisPartitioner{
 	private void distributeCentralStore(int n,String graphID){
 		
 		try{
+			Runtime r = Runtime.getRuntime();
+			String workDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore";
+			String destDir = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder.central");
+			Process p;
 			for(int i=0;i<n;i++){
 				//@SuppressWarnings("unchecked")
 				//Iterator<Place> itr = (Iterator<Place>) Place.places().iterator();
 				HashMap<Long, String> placeToHostMap = new HashMap<Long, String>();
 				//PlaceToNodeMapper placeToNodeMapper = new PlaceToNodeMapper();
-				Runtime r = Runtime.getRuntime();
 				String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore/"+graphID+"_"+i;
 				System.out.println("zip -rj "+filePath+".zip "+filePath);
 				Process process = r.exec("zip -rj "+filePath+".zip "+filePath);
@@ -483,7 +480,7 @@ public class MetisPartitioner{
 		             
 		             //-------------------------------------
 		             
-		             nPlaces = (int)Place.places().size$O();
+		             //nPlaces = (int)Place.places().size$O();
 		             
 		             //
 		             ArrayList<String> hostList = new ArrayList<String>();
@@ -535,14 +532,15 @@ public class MetisPartitioner{
 			     	 int instancePort = port + withinPlaceIndex;
 			     	 int fileTransferport = instancePort + (nPlaces/hostCount);
 		             
-		             AcaciaManager.batchUploadFile(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
+			     	 //+Miyuru : Calling AcaciaManager.batchUploadFile() is not the correct way of placing a central partition file.
+		             //AcaciaManager.batchUploadFile(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
 		             
 		        }
 			}
 			
 			
 		}catch(Exception e){
-			System.out.println("Error : "+e.getMessage());
+			Logger_Java.info("Error : "+e.getMessage());
 		}
 	}
 	

@@ -136,6 +136,7 @@ public class AcaciaFrontEndServiceSession {
 			out.flush();
 			var name:String = "";
 			var path:String = "";
+
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
@@ -394,9 +395,7 @@ else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
         	if(!graphExistsByID(str)){
         		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
         		out.flush();				
-        	}else{
-        		
-        		val result:String =null;  
+        	}else{ 
         		val result=call_test("SELECT ?name WHERE { ?person foaf:name ?name .} ");
         		out.println(result);//print the result
         		out.flush();

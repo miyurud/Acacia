@@ -149,7 +149,7 @@ public class Triangles {
 												//We have discovered this traingle before. It is already recorded in the tree.
 											}
 										}else{
-											//This means that the infrmation of the second vertex is still not added to the traingle tree.
+											//This means that the information of the second vertex is still not added to the traingle tree.
 											//This is a fresh round of accounting for v2
 											ArrayList<Long> newU = new ArrayList<Long>();
 											newU.add(v3);

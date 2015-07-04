@@ -457,7 +457,7 @@ public class AcaciaServer {
     //org.acacia.server.runtime.location
     //org.acacia.partitioner.local.threads
     val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
-    converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads);
+    converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
     val initialPartID:Int = converter.getInitlaPartitionID();
     //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
     var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());

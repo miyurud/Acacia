@@ -84,6 +84,16 @@ public class AcaciaManager{
 		t.start();
 	}
 	
+	/**
+	 * The following communication happens with the designated AcaciaInstance which is identified the host and the port.
+	 * 
+	 * @param host
+	 * @param port
+	 * @param graphID
+	 * @param filePath
+	 * @param dataPort
+	 * @return
+	 */
 	public static boolean batchUploadFile(String host, int port, long graphID, String filePath, int dataPort){
 		boolean result = true;
 		

@@ -49,16 +49,13 @@ public class AcaciaManager{
 			public void run(){
 				try{
 					Socket socket = new Socket(host, port);
-
 					OutputStream out = socket.getOutputStream();
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-					
+					System.out.println("TTTTTTTTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEESSSSSSSSSSSSSSSSSSSSSSSSSSTTTTTTTTTTTTTTTTTT");
 					File file = new File(filePath);
 					BufferedInputStream bin = new BufferedInputStream(new FileInputStream(file));
-				
 					out.write(fileName.getBytes());
 					out.flush();
-
 					String response = reader.readLine();
 					
 					if (response.equals(AcaciaInstanceProtocol.SEND_FILE)){
@@ -84,18 +81,10 @@ public class AcaciaManager{
 		t.start();
 	}
 	
-	/**
-	 * The following communication happens with the designated AcaciaInstance which is identified the host and the port.
-	 * 
-	 * @param host
-	 * @param port
-	 * @param graphID
-	 * @param filePath
-	 * @param dataPort
-	 * @return
-	 */
-	public static boolean batchUploadFile(String host, int port, long graphID, String filePath, int dataPort){
+	public static boolean batchUploadFile(String host, int port, long graphID, String filePath, int dataPort, String distributeType){
 		boolean result = true;
+		
+		
 		
 		try{
 			System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
@@ -117,6 +106,123 @@ public class AcaciaManager{
 			}
 			
 			out.println(AcaciaInstanceProtocol.BATCH_UPLOAD);
+			out.flush();
+			
+			response = reader.readLine();
+
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+				out.println(graphID);
+				out.flush();
+				response = reader.readLine();
+			
+				String fileName = filePath.substring(filePath.lastIndexOf("/")+1);
+				
+				System.out.println("filePath : " + filePath);
+				System.out.println("fileName : " + fileName);
+				
+				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_NAME))){
+						out.println(fileName);
+						out.flush();
+						
+						response = reader.readLine();
+						
+						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
+							System.out.println("File len : " + new File(filePath).length());
+							out.println(new File(filePath).length());//File length in bytes
+							out.flush();
+							
+							response = reader.readLine();
+							if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_CONT))){
+								sendFileThroughService(host, dataPort, fileName, filePath);
+							}							
+						}			
+					}
+				
+					int counter = 0;
+				
+				    while(true){
+						out.println(AcaciaInstanceProtocol.FILE_RECV_CHK);
+						out.flush();
+						response = reader.readLine();
+
+						if((response != null)&&(response.equals(AcaciaInstanceProtocol.FILE_RECV_WAIT))){
+							System.out.println("Checking file status : " + counter);
+							counter++;
+							
+							try {
+								Thread.currentThread().sleep(1000);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							} //We sleep for 1 second, and try again.
+							continue;
+						}else{
+							break;
+						}
+				    }
+				    System.out.println("File transfer complete...");
+				    
+				    //Next we wait till the batch upload completes
+				    while(true){
+						out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK);
+						out.flush();
+						
+						response = reader.readLine();
+
+						if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT))){
+							try {
+								Thread.currentThread().sleep(1000);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							} //We sleep for 1 second, and try again.
+							continue;
+						}else{
+							break;
+						}
+				    }
+				    
+				    if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK))){
+				    	System.out.println("Batch upload completed...");	
+					}else{
+						System.out.println("There was an error in the upload parocess.");
+					}
+			}
+		}catch(UnknownHostException e){
+			Logger_Java.error(e.getMessage());
+			result = false;
+		}catch(IOException ec){
+			Logger_Java.error(ec.getMessage());
+			result = false;
+		}	
+		
+		return result;
+	}
+	
+	public static boolean batchUploadCentralStore(String host, int port, long graphID, String filePath, int dataPort){
+		boolean result = true;
+		
+		System.out.println(filePath);
+		
+		
+		try{
+			System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
+			Socket socket = new Socket(host, port);
+			PrintWriter out = new PrintWriter(socket.getOutputStream());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			String response = "";
+
+			System.out.println("MMMMMMMMMMMMMMMMMMMMMMMM 1");
+			
+			//First we need to Handshake
+			out.println(AcaciaInstanceProtocol.HANDSHAKE);
+			out.flush();
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+				out.println(java.net.InetAddress.getLocalHost().getHostName());
+				out.flush();
+			}
+			
+			out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_CENTRAL);
 			out.flush();
 			
 			response = reader.readLine();

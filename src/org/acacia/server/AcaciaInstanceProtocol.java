@@ -57,6 +57,7 @@ public class AcaciaInstanceProtocol{
 	public static final String SET_GRAPH_ID = "set-g";//Sets the current graph ID
 	public static final String SET_GRAPH_ID_ACK = "set-g-ack";
 	public static final String BATCH_UPLOAD = "upload-g";		//This is to upload a file as a batch
+	public static final String BATCH_UPLOAD_CENTRAL = "upload-g-c";		//This is to upload centralstore file as a batch
 	public static final String BATCH_UPLOAD_CHK = "upload-g-chk";		//This is to check whether the upload process has finished or not.
 	public static final String BATCH_UPLOAD_WAIT = "upload-g-wait";		//This is to check whether the upload process has finished or not.
 	public static final String BATCH_UPLOAD_ACK = "upload-g-ack";

@@ -357,7 +357,7 @@ public class AcaciaBackEndServiceSession extends Thread {
             		 						
             		 						hmp.put(fromID, itm);
             		 						
-            		 						sbPersist.append(fromID + "\t" + toID + "\n");
+            		 						sbPersist.append(fromID + " " + toID + "\n");
             		 					}
             		 			}
             		 			c.close();

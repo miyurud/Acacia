@@ -49,13 +49,16 @@ public class AcaciaManager{
 			public void run(){
 				try{
 					Socket socket = new Socket(host, port);
+
 					OutputStream out = socket.getOutputStream();
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-					System.out.println("TTTTTTTTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEESSSSSSSSSSSSSSSSSSSSSSSSSSTTTTTTTTTTTTTTTTTT");
+					
 					File file = new File(filePath);
 					BufferedInputStream bin = new BufferedInputStream(new FileInputStream(file));
+				
 					out.write(fileName.getBytes());
 					out.flush();
+
 					String response = reader.readLine();
 					
 					if (response.equals(AcaciaInstanceProtocol.SEND_FILE)){
@@ -81,10 +84,18 @@ public class AcaciaManager{
 		t.start();
 	}
 	
-	public static boolean batchUploadFile(String host, int port, long graphID, String filePath, int dataPort, String distributeType){
+	/**
+	 * The following communication happens with the designated AcaciaInstance which is identified the host and the port.
+	 * 
+	 * @param host
+	 * @param port
+	 * @param graphID
+	 * @param filePath
+	 * @param dataPort
+	 * @return
+	 */
+	public static boolean batchUploadFile(String host, int port, long graphID, String filePath, int dataPort){
 		boolean result = true;
-		
-		
 		
 		try{
 			System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
@@ -231,11 +242,7 @@ public class AcaciaManager{
 				out.println(graphID);
 				out.flush();
 				response = reader.readLine();
-			
 				String fileName = filePath.substring(filePath.lastIndexOf("/")+1);
-				
-				System.out.println("filePath : " + filePath);
-				System.out.println("fileName : " + fileName);
 				
 				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_NAME))){
 						out.println(fileName);

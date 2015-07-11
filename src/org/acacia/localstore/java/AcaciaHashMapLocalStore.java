@@ -72,6 +72,18 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		initialize();
 	}
 	
+	public AcaciaHashMapLocalStore(String instanceDataFolderLocation){
+		super(-1, -1);
+		this.instanceDataFolderLocation = instanceDataFolderLocation;
+		this.graphID = -1;
+		this.partitionID = -1;
+		
+		kryo = new Kryo();
+		kryo.register(HashMap.class, new MapSerializer());
+		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
+		initialize();
+	}
+	
 	public boolean loadGraph(){
 		boolean result = false;
 		String edgeStorePath = instanceDataFolderLocation + File.separator + "acacia.edgestore.db";
@@ -246,5 +258,8 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		if(!file.isDirectory()){
 			file.mkdir();
 		}
+		
+		//We need to create an empty data structure at the begining.
+		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
 	}
 }

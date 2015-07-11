@@ -18,14 +18,10 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 public class AcaciaHashMapCentralStore {
 	private final String VERTEX_STORE_NAME = "acacia.nodestore.db";
 	private final String CENTRAL_STORE_NAME = "acacia.centralstore.db";
-	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";
-	
-	private RandomAccessFile vertexStore;
-	private RandomAccessFile centralStore;
-	private RandomAccessFile attributeStore;
-	
+	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";//There can be vertices who are stored only in the central store.
+																			//in such situations we need to store the attributes as well in the central store
 	private int graphID = -1;
-	private int partitionID = -1;
+	private int partitionID = -1; //This is the central store partition
 	private String instanceDataFolderLocation = null;
 	private HashMap<Long, HashSet<Long>> localSubGraphMap = null;
 	private Kryo kryo = null;
@@ -39,10 +35,11 @@ public class AcaciaHashMapCentralStore {
 		
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
-		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder.central");
+		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");//We should create the central store on the working directory. 
+		                                                                                       //After that we will transfer that to the instance local directory.
 		String gid = graphID + "_" + partitionID;
-		instanceDataFolderLocation= dataFolder + "/" + gid;
-		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
+		instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
+		Logger_Java.info("central store DataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
 	
@@ -97,7 +94,6 @@ public class AcaciaHashMapCentralStore {
 		
 		if(neighbours == null){
 			neighbours = new HashSet<Long>();
-			//System.out.println("new neighbour slist for :" + startVid);
 		}
 		
 		neighbours.add(endVid);
@@ -105,11 +101,19 @@ public class AcaciaHashMapCentralStore {
 	}
 
 	public void initialize() {
+		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");//We should create the central store on the working directory. 
 		File file = new File(instanceDataFolderLocation);
 		
 		//If the directory does not exist we need to create it first.
 		if(!file.isDirectory()){
+			File f = new File(dataFolder + "/" + graphID + "_centralstore");
+			if(!file.isDirectory()){
+				f.mkdir();
+			}
 			file.mkdir();
 		}
+		
+		//We need to create an empty data structure at the begining.
+		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
 	}
 }

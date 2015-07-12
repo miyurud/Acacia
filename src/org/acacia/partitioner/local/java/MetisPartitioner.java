@@ -304,7 +304,7 @@ public class MetisPartitioner{
 		System.out.println("Done partitioning...");
 	}
 	
-	private void distributeCentralStore(int n,String graphID){	
+	private void distributeCentralStore(int n,final String graphID){	
 		try{
 				HashMap<Long, String> placeToHostMap = new HashMap<Long, String>();
 				Runtime r = Runtime.getRuntime();
@@ -334,22 +334,28 @@ public class MetisPartitioner{
 		        
 		        int i = 0;
 		        while(itr2.hasNext()){
-		        	String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
+		        	final String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
 		        	i = i + 1;
 					System.out.println("zip -rj "+filePath+"_trf.zip "+filePath);
 					Process process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
-		             Map.Entry<Long, String> itemHost = itr2.next();
-		             if(itemHost==null){
-		             	return;
-		             }
-		             int port = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
-		             hostID = (int)(itemHost.getKey() % hostCount);
-			     	 int withinPlaceIndex = ((int)(itemHost.getKey() - hostID))/hostCount;
+		            final Map.Entry<Long, String> itemHost = itr2.next();
+		            if(itemHost==null){
+		            	return;
+		            }
+		            int port = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
+		            hostID = (int)(itemHost.getKey() % hostCount);
+			     	int withinPlaceIndex = ((int)(itemHost.getKey() - hostID))/hostCount;
 			     	    
-			     	 int instancePort = port + withinPlaceIndex;
-			     	 int fileTransferport = instancePort + (nPlaces/hostCount);
-		             
-		             AcaciaManager.batchUploadCentralStore(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
+			     	final int instancePort = port + withinPlaceIndex;
+			     	final int fileTransferport = instancePort + (nPlaces/hostCount);
+			     	 
+			     	Thread t = new Thread(){
+			     		public void run(){
+			     			AcaciaManager.batchUploadCentralStore(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
+			     	   }
+			     	};
+
+			     	t.start();   
 		        }		
 		}catch(Exception e){
 			System.out.println("Error : "+e.getMessage());

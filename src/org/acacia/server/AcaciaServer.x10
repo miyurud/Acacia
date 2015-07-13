@@ -153,8 +153,8 @@ public class AcaciaServer {
 			               	Console.OUT.println("Inside place other first time");
 							   async{ 
 							   Console.OUT.println("Inside place other asinc first time");
-								   //try {
-								   //Console.OUT.println("Inside place other asinc try first time");
+								   try {
+								   Console.OUT.println("Inside place other asinc try first time");
 									   at(p){
 									   //PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
 									   java.lang.System.setProperty("logFileName", ""+here.id);
@@ -169,9 +169,9 @@ public class AcaciaServer {
 									   
 									   test.acacia.server.x10.TestAcaciaInstance.main(null);
 									   }
-								   //} catch (e:DeadPlaceException) {
-								   //Console.OUT.println(e.place + " died in 1"); // report failure
-								   //}
+								   } catch (e:DeadPlaceException) {
+								   Console.OUT.println(e.place + " died in 1"); // report failure
+								   }
 								   
 							   }
 			               }
@@ -202,14 +202,14 @@ public class AcaciaServer {
 				        Console.OUT.println("Inside place other 2nd time");
 				         async{ 
 				         Console.OUT.println("TestPartitioner Place other inside async");
-					         //try {
+					         try {
 						         at(p) {
 						         	Console.OUT.println("TestPartitioner Place " + here.id);
 						         	test.acacia.partitioner.index.TestPartitionIndex.main(null);
 						         }
-					         //} catch (e:DeadPlaceException) {
-					         //	Console.OUT.println(e.place + " died in 2"); // report failure
-					         //}
+					         } catch (e:DeadPlaceException) {
+					         	Console.OUT.println(e.place + " died in 2"); // report failure
+					         }
 					         
 				         }
 				        }

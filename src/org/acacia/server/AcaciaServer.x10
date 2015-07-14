@@ -896,7 +896,7 @@ public class AcaciaServer {
      * This method provides a list of host ids that are online.
      * The output from this method will be of the form <host full name><host id>
      */
-    private static def getLiveHostIDList():HashMap[String, String]{
+    public static def getLiveHostIDList():HashMap[String, String]{
         // Console.OUT.println("CCCCCCCCCCCC1");
 	    val hostNameArr:Rail[String] = call_runSelect("SELECT name,idhost FROM ACACIA_META.HOST");
 	    // Console.OUT.println("CCCCCCCCCCCC2");

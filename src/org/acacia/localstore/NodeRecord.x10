@@ -18,21 +18,26 @@ package org.acacia.localstore;
 
 public class NodeRecord {
 
-	private var flag:int;
-	private var firstRelationshipId:int;
-	private var firstPropertyId:long;
+	private var flag:Int;
+	private var firstRelationshipId:Int;
+	private var firstPropertyId:Int;
+		
 	
+	public def this(flag:Int, firstRelationshipId:Int, firstPropertyId:Int){
+	    this.flag = flag;
+	    this.firstRelationshipId = firstRelationshipId;
+	    this.firstPropertyId = firstPropertyId;
+	}
 	
-	
-	public getflag():int{
+	public def getflag():Int{
 		return flag;
 	}
 
-	public getfirstRelationshipId():int{
+	public def getfirstRelationshipId():Int{
 		return firstRelationshipId;
 	}
 	
-	public getfirstPropertyId():long{
+	public def getfirstPropertyId():Int{
 		return firstPropertyId;
 	}
 }

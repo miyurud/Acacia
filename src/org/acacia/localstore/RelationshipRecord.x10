@@ -20,19 +20,19 @@ public class RelationshipRecord {
 
 	//variables for relationship record
 	
-	private var firstNodeId:int;
-	private var secondNodeId:int;
-	private var relationshipTypeId:int;
-	private var firstNodePreviousRelationshipId:int;
-	private var firstNodeNextRelationshipId:int;
-	private var secondNodePreviousRelationshipId:int;
-	private var secondNodeNextRelationshipId:int;
+	private var firstNodeId:Long;
+	private var secondNodeId:Long;
+	private var relationshipTypeId:Int;
+	private var firstNodePreviousRelationshipId:Int;
+	private var firstNodeNextRelationshipId:Int;
+	private var secondNodePreviousRelationshipId:Int;
+	private var secondNodeNextRelationshipId:Int;
 
 //constructor of relationshipNode
 	
-public def this(var firstNodeId:int, var secondNodeId:int,var relationshipTypeId:int,
-				var firstNodePreviousRelationshipId:int, var firstNodeNextRelationshipId:int,
-				var secondNodePreviousRelationshipId:int,var secondNodeNextRelationshipId:int) {
+public def this(var firstNodeId:Long, var secondNodeId:Long,var relationshipTypeId:Int,
+				var firstNodePreviousRelationshipId:Int, var firstNodeNextRelationshipId:Int,
+				var secondNodePreviousRelationshipId:Int,var secondNodeNextRelationshipId:Int) {
 	
 	this.firstNodeId=firstNodeId;
 	this.secondNodeId=secondNodeId;
@@ -44,27 +44,27 @@ public def this(var firstNodeId:int, var secondNodeId:int,var relationshipTypeId
 
 //getters
 
-public getFirstNodeId():int{
+public def getFirstNodeId():Long{
 	return firstNodeId;
 }
 
-public getSecondNodeId():int{
+public def getSecondNodeId():Long{
 	return secondNodeId;
 }
 
-public getFirstNodePreviousRelationshipId():int{
+public def getFirstNodePreviousRelationshipId():Int{
 	return firstNodePreviousRelationshipId;
 }
 
-public getFirstNodeNextRelationshipId():int{
+public def getFirstNodeNextRelationshipId():Int{
 	return firstNodeNextRelationshipId;
 }
 
-public getSecondNodePreviousRelationshipId():int{
+public def getSecondNodePreviousRelationshipId():Int{
 	return secondNodePreviousRelationshipId;
 }
 
-public getSecondNodeNextRelationshipId():int{
+public def getSecondNodeNextRelationshipId():Int{
 	return secondNodeNextRelationshipId;
 }
 

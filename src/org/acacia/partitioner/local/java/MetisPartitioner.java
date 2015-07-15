@@ -333,9 +333,9 @@ public class MetisPartitioner{
 		        Iterator<java.util.Map.Entry<Long, String>> itr2 = placeToHostMap.entrySet().iterator();
 		        
 		        int i = 0;
+		        CustomThread[] tArray = new CustomThread[n];
 		        while(itr2.hasNext()){
 		        	final String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
-		        	i = i + 1;
 					System.out.println("zip -rj "+filePath+"_trf.zip "+filePath);
 					Process process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
 		            final Map.Entry<Long, String> itemHost = itr2.next();
@@ -348,15 +348,38 @@ public class MetisPartitioner{
 			     	    
 			     	final int instancePort = port + withinPlaceIndex;
 			     	final int fileTransferport = instancePort + (nPlaces/hostCount);
-			     	 
-			     	Thread t = new Thread(){
+			     	
+			     	
+			     	tArray[i] = new CustomThread(i){
 			     		public void run(){
 			     			AcaciaManager.batchUploadCentralStore(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
-			     	   }
+			     			setDone();
+			     		}
 			     	};
+			     	
+			     	tArray[i].start();
+			     	i = i + 1;
+			     	   
+		        }
+		        
+		    	while(true){
+					boolean flag = true;
+					for(int x = 0; x < n; x++){
+						if(!tArray[x].isDone()){
+							flag = false;
+						}
+					}
+					if(flag){
+						break;
+					}
+					try {
+						Thread.currentThread().sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
 
-			     	t.start();   
-		        }		
+		        
 		}catch(Exception e){
 			System.out.println("Error : "+e.getMessage());
 		}

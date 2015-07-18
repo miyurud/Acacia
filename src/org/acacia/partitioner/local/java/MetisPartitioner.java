@@ -281,6 +281,8 @@ public class MetisPartitioner{
 		for(int i = 0; i < numberOfCentralPartitions; i++){
 	      //org.acacia.util.java.Utils_Java.writeToFile("centralStore-part-" + i + ".txt", sbCentral[i]);
 			AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) i));
+			
+			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.CPARTITION(IDCPARTITION, IDGRAPH, VERTEXCOUNT, EDGECOUNT) VALUES(" + i + "," + graphID + ",0,0)");
 			central.storeGraph();
 		}
 		
@@ -304,7 +306,7 @@ public class MetisPartitioner{
 		System.out.println("Done partitioning...");
 	}
 	
-	private void distributeCentralStore(int n,final String graphID){	
+	private void distributeCentralStore(int n, final String graphID){	
 		try{
 				HashMap<Long, String> placeToHostMap = new HashMap<Long, String>();
 				Runtime r = Runtime.getRuntime();
@@ -335,7 +337,9 @@ public class MetisPartitioner{
 		        int i = 0;
 		        CustomThread[] tArray = new CustomThread[n];
 		        while(itr2.hasNext()){
+		        	//String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
 		        	final String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
+		        	i = i + 1;
 					System.out.println("zip -rj "+filePath+"_trf.zip "+filePath);
 					Process process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
 		            final Map.Entry<Long, String> itemHost = itr2.next();

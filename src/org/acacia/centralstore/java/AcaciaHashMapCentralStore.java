@@ -6,6 +6,9 @@ import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Utils_Java;
@@ -39,7 +42,7 @@ public class AcaciaHashMapCentralStore {
 		                                                                                       //After that we will transfer that to the instance local directory.
 		String gid = graphID + "_" + partitionID;
 		instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
-		Logger_Java.info("central store DataFolderLocation : " + instanceDataFolderLocation);
+		//Logger_Java.info("central store DataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
 	
@@ -115,5 +118,38 @@ public class AcaciaHashMapCentralStore {
 		
 		//We need to create an empty data structure at the begining.
 		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
+	}
+	
+	public HashMap<Long, HashSet<Long>> getUnderlyingHashMap(){
+		return localSubGraphMap;
+	}
+	
+	public long getVertexCount(){
+		if(vertexCount == 0){
+			vertexCount = localSubGraphMap.keySet().size();
+		}
+		
+		//System.out.println("<<<< Vertex count : " + vertexCount);
+		
+		return vertexCount;
+	}
+	
+	public long getEdgeCount(){
+		if(edgeCount == 0){ 
+			Set<Entry<Long, HashSet<Long>>> entrySet = localSubGraphMap.entrySet();
+			Iterator itr = entrySet.iterator();
+			
+			while(itr.hasNext()){
+				Entry<Long, HashSet<Long>> entry = (Entry<Long, HashSet<Long>>) itr.next();
+				
+				//System.out.println("entry.getValue().size() : " + entry.getValue().size());
+				
+				edgeCount += entry.getValue().size();
+			}
+		}
+		
+		//System.out.println("<<< Edge count : " + edgeCount);
+		
+		return edgeCount;
 	}
 }

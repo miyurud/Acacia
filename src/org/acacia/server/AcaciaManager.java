@@ -27,12 +27,15 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
+import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
@@ -98,14 +101,11 @@ public class AcaciaManager{
 		boolean result = true;
 		
 		try{
-			System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
 			Socket socket = new Socket(host, port);
 			PrintWriter out = new PrintWriter(socket.getOutputStream());
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			String response = "";
 
-			System.out.println("MMMMMMMMMMMMMMMMMMMMMMMM 1");
-			
 			//First we need to Handshake
 			out.println(AcaciaInstanceProtocol.HANDSHAKE);
 			out.flush();
@@ -215,14 +215,12 @@ public class AcaciaManager{
 		
 		
 		try{
-			System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
+			//System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
 			Socket socket = new Socket(host, port);
 			PrintWriter out = new PrintWriter(socket.getOutputStream());
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			String response = "";
 
-			System.out.println("MMMMMMMMMMMMMMMMMMMMMMMM 1");
-			
 			//First we need to Handshake
 			out.println(AcaciaInstanceProtocol.HANDSHAKE);
 			out.flush();
@@ -251,8 +249,22 @@ public class AcaciaManager{
 						response = reader.readLine();
 						
 						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
-							System.out.println("File len : " + new File(filePath).length());
-							out.println(new File(filePath).length());//File length in bytes
+							//We need to have this type of construct to make sure we get the file created before we measure its size.
+							File f = new File(filePath);
+							long l = f.length();
+							
+							while(l == 0){
+								System.out.println("====>File len : " + l);
+								l = f.length();
+								
+								try{
+									Thread.currentThread().sleep(10);
+								}catch(Exception ex){
+									ex.printStackTrace();
+								}
+							}
+							
+							out.println(l);//File length in bytes
 							out.flush();
 							
 							response = reader.readLine();
@@ -366,21 +378,11 @@ public class AcaciaManager{
 				if((response == null)&&(!response.equals(AcaciaInstanceProtocol.OK))){
 					Logger_Java.error("Error in setting the default graph to : " + graphID + " on host : " + host);
 				}
-				
-//				if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
-//					out.println(graphID);
-//					out.flush();
-//				}
-//							
-//				if((response == null)&&(!response.equals(AcaciaInstanceProtocol.SET_GRAPH_ID_ACK))){
-//					Logger_Java.error("Error in setting the default graph to : " + graphID + " on host : " + host);
-//				}
 			}
 			
 			out.println(startVertexID + " " + endVertexID);
 			out.flush();
 			
-//			out.println(AcaciaInstanceProtocol.INSERT_EDGES);//In this method we do only single insert. No much effcient though.
 			out.println(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE); //We need to say we are done with sending edges.
 			out.flush();
 			
@@ -477,12 +479,6 @@ public class AcaciaManager{
 		
 		return true;
 	}
-	
-//	//May be we should implement this as well.	
-//	public static boolean setDefaultGraph(String host, int graphID){
-//		
-//	}
-	
 	
 	public static boolean initializeGraphOnLocalInstance(String host, int graphID){
 		try{
@@ -893,52 +889,32 @@ public class AcaciaManager{
 	    //System.out.println("Start partition ID : " + startPartitionID);
 	    for(int i = 0; i < centralPartionCount; i++){
 	    	System.out.println("Partition id : " + i);
-	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
-	 		try{
-	 			//c.setAutoCommit(false);
-	 			java.sql.Statement stmt = c.createStatement();
-	 			//java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + " and (idpartfrom = " + partitionID + " or idpartto = " + partitionID + ");" );
-	 			java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + ";" );
-	 
-	 			if(rs != null){
-	 					while(rs.next()){
-	 						startVid = rs.getLong(1);
-	 						endVid = rs.getLong(2);
-	 						//edgeList.put(fromID, toID);
-	 						//sbPersist.append(startVid + "\t" + endVid + "\n");
-	 						vals.add(startVid); 
-	 						vals.add(endVid);
-
-	 						if(localSubGraphMap.containsKey(startVid)){
-	 							TreeSet<Long> lst = localSubGraphMap.get(startVid);
-	 							lst.add(endVid);
-	 							localSubGraphMap.put(startVid, lst);
-	 						}else{
-	 							TreeSet<Long> lst = new TreeSet<Long>();
-	 							lst.add(endVid);
-	 							localSubGraphMap.put(startVid, lst);
-	 						}
-	 						
-	 						if(localSubGraphMap.containsKey(endVid)){
-	 							TreeSet<Long> lst = localSubGraphMap.get(endVid);
-	 							lst.add(startVid);
-	 							localSubGraphMap.put(endVid, lst);
-	 						}else{
-	 							TreeSet<Long> lst = new TreeSet<Long>();
-	 							lst.add(startVid);
-	 							localSubGraphMap.put(endVid, lst);
-	 						}
-	 						
-	 						//edgecounter++;
-	 						
-	 						startVid = -1;
-	 						endVid = -1;
-	 					}
-	 			}
-	 			c.close();
-	 		}catch(java.sql.SQLException e){
-	 			e.printStackTrace();
-	 		} 
+	    	
+	    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
+	    	store.loadGraph();
+	    	
+	    	HashMap<Long, HashSet<Long>> edgeList2 = (HashMap<Long, HashSet<Long>>)store.getUnderlyingHashMap();
+	    	Iterator<Map.Entry<Long, HashSet<Long>>> itr = edgeList2.entrySet().iterator();
+	    	long firstVertex = 0l;
+	    	
+	    	while(itr.hasNext()){
+	    		Map.Entry<Long, HashSet<Long>> entr = itr.next();
+	    		firstVertex = entr.getKey();
+	    		TreeSet<Long> hs = (TreeSet<Long>)localSubGraphMap.get(firstVertex);
+	    		
+	    		if(hs == null){
+	    			hs = new TreeSet<Long>();
+	    		}
+	    		
+	    		HashSet<Long> hs2 = entr.getValue();
+	    		
+	    		for(long secondVertex: hs2){
+	    			hs.add(secondVertex);
+	    		}
+	    		
+	    		localSubGraphMap.put(firstVertex, hs);
+	    	}
+	    	
 	    }
 	    
 	    System.out.println("Done constructing graph");
@@ -1231,5 +1207,39 @@ public class AcaciaManager{
 		}
 		
 		return -1;
+	}
+
+	public static boolean downloadCentralStore(int graphID, int i) {
+		boolean result = true;
+		
+		//First need to find where the central store partition is located.
+		String host = null;
+		int port = 0;
+		
+		try{
+			Socket socket = new Socket(host, port);
+			PrintWriter out = new PrintWriter(socket.getOutputStream());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			String response = "";
+
+			//First we need to Handshake
+			out.println(AcaciaInstanceProtocol.HANDSHAKE);
+			out.flush();
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+				out.println(java.net.InetAddress.getLocalHost().getHostName());
+				out.flush();
+			}
+			
+			out.println(AcaciaInstanceProtocol.BATCH_UPLOAD);
+			out.flush();
+		}catch(UnknownHostException e){
+			Logger_Java.error("Connecting to host (8) " + host + " got error message : " + e.getMessage());
+		}catch(IOException ec){
+			Logger_Java.error("Connecting to host (8) " + host + " got error message : " + ec.getMessage());
+		}
+		
+		return result;
 	}
 }

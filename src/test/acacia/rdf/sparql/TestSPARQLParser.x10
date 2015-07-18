@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.resilience;
+package test.acacia.rdf.sparql;
 
-/**
- * Class ZookeeperInterface
- */
-public class ZookeeperInterface {
-    /**
-     * Default constructor 
-     */
-    public def this() {
-        // TODO auto-generated stub
-    }
+public class TestSPARQLParser {
+	public static def test(var str:String):String{
+		//CharStream stream =new ANTLRStringStream("SELECT ?name WHERE { ?person foaf:name ?name .} ");			
+		//SparqlLexer  lexer=new SparqlLexer((CharStream)stream);
+		//TokenStream tokenStream=new CommonTokenStream(lexer);
+		//SparqlParser parser=new SparqlParser(tokenStream);
+		//parser.query();
+		//System.out.print("ok");
+		return "ok";
+	}
 }

@@ -68,7 +68,7 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 		String gid = graphID + "_" + partitionID;
 		instanceDataFolderLocation= dataFolder + "/" + gid;
-		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
+		//Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
 	
@@ -80,7 +80,7 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
-		Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
+		//Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
 	
@@ -154,7 +154,7 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 			vertexCount = localSubGraphMap.keySet().size();
 		}
 		
-		System.out.println("<<<< Vertex count : " + vertexCount);
+		//System.out.println("<<<< Vertex count : " + vertexCount);
 		
 		return vertexCount;
 	}
@@ -173,7 +173,7 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 			}
 		}
 		
-		System.out.println("<<< Edge count : " + edgeCount);
+		//System.out.println("<<< Edge count : " + edgeCount);
 		
 		return edgeCount;
 	}

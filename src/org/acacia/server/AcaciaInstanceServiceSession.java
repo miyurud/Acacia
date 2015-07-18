@@ -89,7 +89,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		graphDBMap = db;
 		loadedGraphs = grp;
 		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
-		System.out.println("MMMMMMMMMMMMM");
+		//System.out.println("MMMMMMMMMMMMM");
 	}
 	
 	public void setGraphDBMap(HashMap<String, AcaciaHashMapLocalStore> db, ArrayList<String> grp){
@@ -99,7 +99,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	public void run(){
-		Logger_Java.info("Running a new AcaciaInstanceServiceSession.");
+		//Logger_Java.info("Running a new AcaciaInstanceServiceSession.");
 		//First we need to check if the directory exist. If not we need to create it.
 		File dir = new File("/tmp/dgr");
 		
@@ -119,7 +119,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			String msg = "";
 			
 			byte[] line = new byte[10];
-			Logger_Java.info("reading line");
+			//Logger_Java.info("reading line");
 			while((msg = buff.readLine())!= null){
 				Logger_Java.info("msg : " + msg);
 				
@@ -131,7 +131,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we get the host name of the main server. We need this information for future
 					//operations.
 					serverHostName = buff.readLine();
-					Logger_Java.info("serverHostName : " + serverHostName);
+					//Logger_Java.info("serverHostName : " + serverHostName);
 					out.flush();
 				}else if(msg.equals(AcaciaInstanceProtocol.CLOSE)){
 					out.println(AcaciaInstanceProtocol.CLOSE_ACK);
@@ -581,22 +581,22 @@ public class AcaciaInstanceServiceSession extends Thread{
 				//We see whether the graph is offline
 				if(isGraphDBExists(g, p)){
 					loadLocalStore(g, p);
-					System.out.println("+++++++++++++++++++++++++++++>");
+					//System.out.println("+++++++++++++++++++++++++++++>");
 				}
 				
 				graphDB = graphDBMap.get(gid);
 				if(graphDB == null){		
 					result = "-1";
-					System.out.println("==++-->The graph db is null");
+					//System.out.println("==++-->The graph db is null");
 					return result;
 				}
 			}
 		}else{
 			graphDB = defaultGraph;
 		}
-		System.out.println("++==++-->now running traingles");
+		//System.out.println("++==++-->now running traingles");
 		result = Triangles.run(graphDB, g, p, Utils_Java.getServerHost());
-		System.out.println("++==++-->result at (1) : " + result);
+		//System.out.println("++==++-->result at (1) : " + result);
 		return result;
 	}
 
@@ -710,19 +710,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @return
 	 */
 	private boolean isGraphDBExists(String graphID, String partitionID){
-		boolean result = false;
-		
 		File f = new File(dataFolder + "/" + graphID + "_" + partitionID);
 		
-		if(f.isDirectory()){
-			System.out.println("*********************>>>The graph db directory exists ****************");
-			result = true;
-		}else{
-			System.out.println("*********************>>>The graph db directory does not exist ****************");
-			result = false;
-		}
-		
-		return result;
+		return f.isDirectory();
 	}
 	
 	private boolean isGraphDBLoaded(String graphID, String graphPartitionID){	
@@ -747,7 +737,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 						System.out.println(line);
 					}
 					
-					System.out.println("Completed unzipping");
+					//System.out.println("Completed unzipping");
 					//Unzipping completed
 			        Splitter splitter = null;
 			        BufferedReader br;
@@ -801,7 +791,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			p = r.exec("rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip");
 			p.waitFor();
 			
-			System.out.println("Completed unzipping");		
+			//System.out.println("Completed unzipping");		
 			
 		} catch (Exception e) {
 			Logger_Java.info("Error : " + e.getMessage());
@@ -921,12 +911,12 @@ public class AcaciaInstanceServiceSession extends Thread{
 		graphDBMap.put(gid, graphDB);
 		loadedGraphs.add(gid);
 		
-		try{
-			Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
-		}catch(UnknownHostException ex){
-			Logger_Java.error("Error : " + ex.getMessage());
-		}
-		System.out.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
+//		try{
+//			//Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
+//		}catch(UnknownHostException ex){
+//			Logger_Java.error("Error : " + ex.getMessage());
+//		}
+		//System.out.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
 	}
 	
 	/**

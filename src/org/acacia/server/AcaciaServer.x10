@@ -136,9 +136,7 @@ public class AcaciaServer {
 			    for (p in Place.places()){
 			            // finish{
 			               if(p.id == 0){
-			               Console.OUT.println("Inside place 0 first time");
 				               async {
-				               Console.OUT.println("Inside place 0 asinc first time");
 					               //PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
 					               java.lang.System.setProperty("logFileName", ""+here.id);
 					               java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
@@ -150,46 +148,35 @@ public class AcaciaServer {
 					               test.acacia.server.x10.TestAcaciaInstance.main(null);
 			               	   }
 			               }else{
-			               	Console.OUT.println("Inside place other first time");
-							   async{ 
-							   Console.OUT.println("Inside place other asinc first time");
-								   try {
-								   Console.OUT.println("Inside place other asinc try first time");
-									   at(p){
-									   //PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
-									   java.lang.System.setProperty("logFileName", ""+here.id);
-									   java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
-									   //ACACIA_INSTANCE_DATA_PORT
-									   java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
-									   
-									   Console.OUT.println("logFileName : " + here.id);      
-									   
-									   Logger_Java.info("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(here.id));
-									   
-									   
-									   test.acacia.server.x10.TestAcaciaInstance.main(null);
-									   }
-								   } catch (e:DeadPlaceException) {
-								   Console.OUT.println(e.place + " died in 1"); // report failure
-								   }
-								   
-							   }
+							   async at(p){
+							    	//PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
+							        java.lang.System.setProperty("logFileName", ""+here.id);
+							        java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
+							        //ACACIA_INSTANCE_DATA_PORT
+							        java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
+							        
+							        //Console.OUT.println("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(p.id));      
+							         
+							         Logger_Java.info("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(here.id));
+							         
+							        
+							        test.acacia.server.x10.TestAcaciaInstance.main(null);
+							    }
 			               }
 						    val curHost:String = PlaceToNodeMapper.getHost(p.id);
 						    
-						    Console.OUT.println("11XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+						    Console.OUT.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 						    Console.OUT.println("Current host is : " + curHost);
-						    Console.OUT.println("11ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
+						    Console.OUT.println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			    }  
 			    
 			    
 			    for (p in Place.places()){
 				    val curHost:String = PlaceToNodeMapper.getHost(p.id);
 				    
-				    Console.OUT.println("22XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+				    Console.OUT.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 				    Console.OUT.println("Current host is : " + curHost);
-				    Console.OUT.println("22ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
-				    Console.OUT.println("Curren");
+				    Console.OUT.println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
 				     if(hostHashMap.get(curHost) == false){
 				        hostHashMap.put(curHost, true);
 				        if(p.id == 0){

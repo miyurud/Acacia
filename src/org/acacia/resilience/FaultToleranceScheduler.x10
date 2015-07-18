@@ -152,6 +152,27 @@ public class FaultToleranceScheduler {
 			
 			}
 		
+			val hostName:String = PlaceToNodeMapper.getHost(p.id);	
+			hostList.add(hostName);
+			Console.OUT.println("resilience p.id " + p.id + " hostName : " + hostName);
+	
+			placeToHostMap.put(p.id, hostName);
+			Console.OUT.println("placeToHostMap entry for place" + p.id);
+		}
+		Console.OUT.println("placeToHostMap Created");
+	
+		//The three methods to get the nHost - nHost
+		val hostLstLen:Int = hostLst.size as Int;
+		val hostIDMapLen:Int = hostIDMap.size() as Int;
+		val hostListLen:Int = hostList.size() as Int;
+		val nHosts:Int = hostListLen;
+	
+		Console.OUT.println("placeToHostMap.entries() : " + placeToHostMap.entries().size());
+		var itr2:Iterator[x10.util.Map.Entry[Long, String]] = placeToHostMap.entries().iterator();
+
+		if(nHosts==1n) {
+val counter:Rail[Int] = new Rail[Int](nPlaces);
+			var i:Int=0n;
 			while(itr2.hasNext()){
 				val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
 				if(itemHost==null){
@@ -162,17 +183,32 @@ public class FaultToleranceScheduler {
 				//val partitionID:String = filePath.substring(filePath.indexOf("_")+1n, filePath.indexOf("."));
 				//call_batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
 				Console.OUT.println("========================>Super2");
+				i++;
 			}
-		
-			
-			//val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.FaultToleranceScheduler.resilienceLevel"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
-			//converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
-			//val initialPartID:Int = converter.getInitlaPartitionID();
-			//val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
-			//var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
-			//var ptnArrLst:Rail[String] = x10.interop.Java.convert(converter.getPartitionIDList());
-			//val fileListLen = batchUploadFileList.size;
 		}
-	}
+		if(nHosts>1) {
 		
+		}
+	
+		while(itr2.hasNext()){
+			val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
+			if(itemHost==null){
+				return;
+			}	
+			//0 : <host> : /home/miyurud/tmp/61_254.gz
+			//val filePath:String = batchUploadFileList(i);
+			//val partitionID:String = filePath.substring(filePath.indexOf("_")+1n, filePath.indexOf("."));
+			//call_batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
+			Console.OUT.println("========================>Super2");
+		}
+	
+		
+		//val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.FaultToleranceScheduler.resilienceLevel"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
+		//converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
+		//val initialPartID:Int = converter.getInitlaPartitionID();
+		//val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
+		//var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
+		//var ptnArrLst:Rail[String] = x10.interop.Java.convert(converter.getPartitionIDList());
+		//val fileListLen = batchUploadFileList.size;
+	}
 }

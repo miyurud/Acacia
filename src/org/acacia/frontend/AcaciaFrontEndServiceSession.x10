@@ -36,10 +36,12 @@ import org.acacia.util.java.Utils_Java;
 import org.acacia.util.Utils;
 
 import org.acacia.server.AcaciaServer;
+import org.acacia.rdf.sparql.AcaciaSPARQLParser;
 import x10.util.StringBuilder;
 import x10.regionarray.Array;
 import x10.util.HashMap;
 import x10.util.ArrayList;
+
 
 //import org.acacia.partitioner.hbase.java.HBaseInterface_Java;
 
@@ -385,19 +387,22 @@ else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
         	
         	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
         	out.flush();
+        	var graphID:String = "";
+
         	
         	try{
-        		str = buff.readLine();
+        		graphID = buff.readLine();
         	}catch(val e:IOException){
         		Logger_Java.error("Error : " + e.getMessage());
         	}
         	
-        	if(!graphExistsByID(str)){
+        	if(!graphExistsByID(graphID)){
         		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
         		out.flush();				
         	}else{ 
-        		val result=call_test("SELECT ?name WHERE { ?person foaf:name ?name .} ");
-        		out.println(result);//print the result
+       		var parser:AcaciaSPARQLParser = new AcaciaSPARQLParser();
+        		response=parser.Parsing(query,graphID);
+        		out.println(response);//print the result
         		out.flush();
         	}
         	
@@ -960,7 +965,4 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
     
     @Native("java", "org.acacia.server.AcaciaManager.getFreeSpaceInfo(#1)")
     static native def call_getFreeSpaceInfo(String):String;
-    
-   	@Native("java", "org.acacia.rdf.sparql.Test.test(#1)")
-    static native def call_test(String):String;
 }

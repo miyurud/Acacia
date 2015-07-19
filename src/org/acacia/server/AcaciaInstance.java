@@ -94,7 +94,7 @@ public class AcaciaInstance{
 	public void start_running() throws UnknownHostException{	
 		//------------------------------------------------------------------------------------------
 		try{
-			Logger_Java.info("######>>>>***** -> Starting the server at : " + org.acacia.util.java.Utils_Java.getHostName());
+			//Logger_Java.info("######>>>>***** -> Starting the server at : " + org.acacia.util.java.Utils_Java.getHostName());
 			srv = new ServerSocket(port);
 			Logger_Java.info("Done creating server");
 			
@@ -102,14 +102,14 @@ public class AcaciaInstance{
 			
 			while(runFlag){
 				Socket socket = srv.accept();
-				Logger_Java.info("===========================>> Got a connection. Now serving...");
+				//Logger_Java.info("===========================>> Got a connection. Now serving...");
 				AcaciaInstanceServiceSession session = new AcaciaInstanceServiceSession(socket, graphDBMap, loadedGraphs);
 				session.addDBTruncateEventListener(new AcaciaDBTruncateEventListener(this));
 				//session.addShutdownEventListener(new AcaciaShutdownEventListener(this));
 				session.start();
 				sessions.add(session);
 				connectionCounter++;
-				Logger_Java.info("+++++++++++++++++++++++++++++ >> Connection count : " + connectionCounter);
+				//Logger_Java.info("+++++++++++++++++++++++++++++ >> Connection count : " + connectionCounter);
 				//This is something fancy we should do later in future.
 				//session.addShutdownEventListener(new InstanceShutdownEventListener(this));
 			}

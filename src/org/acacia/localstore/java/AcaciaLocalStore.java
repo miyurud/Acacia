@@ -41,4 +41,8 @@ public abstract class AcaciaLocalStore {
 	public abstract void addVertex(Object[] attributes);
 	
 	public abstract void addEdge(Long startVid, Long endVid);
+	
+	public abstract long getVertexCount();
+
+	public abstract long getEdgeCount();
 }

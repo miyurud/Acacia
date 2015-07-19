@@ -41,6 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Utils_Java;
+import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.events.java.ShutdownEvent;
 import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.events.java.DBTruncateEvent;
@@ -56,8 +57,9 @@ import org.acacia.query.algorithms.pagerank.ApproxiRank;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.
+ * 
  * @author miyuru
- *
+ * 
  */
 public class AcaciaInstanceServiceSession extends Thread{	
 	private Socket sessionSkt;
@@ -87,7 +89,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		graphDBMap = db;
 		loadedGraphs = grp;
 		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
-		System.out.println("MMMMMMMMMMMMM");
+		//System.out.println("MMMMMMMMMMMMM");
 	}
 	
 	public void setGraphDBMap(HashMap<String, AcaciaHashMapLocalStore> db, ArrayList<String> grp){
@@ -97,7 +99,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	public void run(){
-		Logger_Java.info("Running a new AcaciaInstanceServiceSession.");
+		//Logger_Java.info("Running a new AcaciaInstanceServiceSession.");
 		//First we need to check if the directory exist. If not we need to create it.
 		File dir = new File("/tmp/dgr");
 		
@@ -117,7 +119,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			String msg = "";
 			
 			byte[] line = new byte[10];
-			Logger_Java.info("reading line");
+			//Logger_Java.info("reading line");
 			while((msg = buff.readLine())!= null){
 				Logger_Java.info("msg : " + msg);
 				
@@ -129,7 +131,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we get the host name of the main server. We need this information for future
 					//operations.
 					serverHostName = buff.readLine();
-					Logger_Java.info("serverHostName : " + serverHostName);
+					//Logger_Java.info("serverHostName : " + serverHostName);
 					out.flush();
 				}else if(msg.equals(AcaciaInstanceProtocol.CLOSE)){
 					out.println(AcaciaInstanceProtocol.CLOSE_ACK);
@@ -480,15 +482,86 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we will receve the graph ID
 					msg = buff.readLine().trim();
 					String partitionID = msg;
-					System.out.println("============= MMMMMMMMMMMMMMMMMMMMKKKKKKKKKKKKKKK =====================");
 					msg = countTrainglesLocal(graphID, partitionID);
-					System.out.println(msg);
-					System.out.println("============= XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX =====================");
 					out.println(msg);
 					out.flush();
 					
 				}else if(msg.equals(AcaciaInstanceProtocol.STATUS)){
 					out.println(getInstanceStatus());
+					out.flush();
+				} else if(msg.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_CENTRAL)){
+					out.println(AcaciaInstanceProtocol.OK);
+					out.flush();
+					msg = buff.readLine().trim();
+					System.out.println(msg);
+					String graphID = msg;
+
+					out.println(AcaciaInstanceProtocol.SEND_FILE_NAME);
+					out.flush();
+					msg = buff.readLine().trim();
+					String fileName = msg;
+					System.out.println(msg);
+
+					out.println(AcaciaInstanceProtocol.SEND_FILE_LEN);
+					out.flush();
+
+					msg = buff.readLine().trim();
+					long fileLen = Long.parseLong(msg);
+					System.out.println(msg);
+
+					out.println(AcaciaInstanceProtocol.SEND_FILE_CONT);
+					out.flush();
+
+					// Here we need to get the file size and then check if the
+					// file size has been achieved.
+					// Mere file exitance is not enough to continue, because we
+					// might have another thread writing data to the file.
+
+					String fullFilePath = "/tmp/dgr/" + fileName;
+					File f = new File(fullFilePath);
+
+					while ((!f.exists()) && (f.length() < fileLen)) {
+						msg = buff.readLine().trim();
+
+						Logger_Java.info("curlen : " + f.length()
+								+ " fileLen : " + fileLen);
+
+						if (msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)) {
+							out.println(AcaciaInstanceProtocol.FILE_RECV_WAIT);
+							out.flush();
+						}
+					}
+
+					msg = buff.readLine().trim();
+
+					if (msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)) {
+						out.println(AcaciaInstanceProtocol.FILE_ACK);
+						out.flush();
+					}
+
+					Logger_Java.info("Got the file : " + fileName);
+
+					fileName = fileName.substring(fileName.indexOf("_") + 1,
+							fileName.lastIndexOf("_"));
+					Logger_Java.info("Partition ID : " + fileName);
+					unzipAndBatchUploadCentralStore(graphID, fileName);
+
+					while (!isUploadCompleted(fullFilePath)) {
+						msg = buff.readLine().trim();
+
+						if (msg.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK)) {
+							out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT);
+							out.flush();
+						}
+					}
+
+					out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK);// This
+																			// is
+																			// the
+																			// sign
+																			// of
+																			// upload
+																			// completeion.
 					out.flush();
 				}
 			}
@@ -506,25 +579,24 @@ public class AcaciaInstanceServiceSession extends Thread{
 			graphDB = graphDBMap.get(gid);
 			if(graphDB == null){
 				//We see whether the graph is offline
-				System.out.println("IIIIIIIIAAAAAAAMMM Now here : isGraphDBExists()");
 				if(isGraphDBExists(g, p)){
 					loadLocalStore(g, p);
-					System.out.println("+++++++++++++++++++++++++++++>");
+					//System.out.println("+++++++++++++++++++++++++++++>");
 				}
 				
 				graphDB = graphDBMap.get(gid);
 				if(graphDB == null){		
 					result = "-1";
-					System.out.println("==++-->The graph db is null");
+					//System.out.println("==++-->The graph db is null");
 					return result;
 				}
 			}
 		}else{
 			graphDB = defaultGraph;
 		}
-		System.out.println("++==++-->now running traingles");
+		//System.out.println("++==++-->now running traingles");
 		result = Triangles.run(graphDB, g, p, Utils_Java.getServerHost());
-		System.out.println("++==++-->result at (1) : " + result);
+		//System.out.println("++==++-->result at (1) : " + result);
 		return result;
 	}
 
@@ -638,19 +710,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @return
 	 */
 	private boolean isGraphDBExists(String graphID, String partitionID){
-		boolean result = false;
-		
 		File f = new File(dataFolder + "/" + graphID + "_" + partitionID);
 		
-		if(f.isDirectory()){
-			System.out.println("*********************>>>The graph db directory exists ****************");
-			result = true;
-		}else{
-			System.out.println("*********************>>>The graph db directory does not exist ****************");
-			result = false;
-		}
-		
-		return result;
+		return f.isDirectory();
 	}
 	
 	private boolean isGraphDBLoaded(String graphID, String graphPartitionID){	
@@ -658,21 +720,11 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	public void unzipAndBatchUpload(final String graphID, final String partitionID) {
-		System.out.println("|" + partitionID + "|");
 		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
 		localStore.loadGraph();
 				try{
 					//Unzipping starts here
 					Runtime r = Runtime.getRuntime();
-//					Process p = r.exec("mv /tmp/dgr/file" + fileName + " /tmp/dgr/file" + fileName + ".gz");
-//					p.waitFor();
-//					
-//					BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//					String line = "";
-//					
-//					while((line=b.readLine())!= null){
-//						System.out.println(line);
-//					}
 					
 					//Next, we unzip the file
 					Process p = r.exec("gunzip -f /tmp/dgr/" + graphID + "_" +  partitionID + ".gz");
@@ -685,7 +737,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 						System.out.println(line);
 					}
 					
-					System.out.println("Completed unzipping");
+					//System.out.println("Completed unzipping");
 					//Unzipping completed
 			        Splitter splitter = null;
 			        BufferedReader br;
@@ -717,6 +769,35 @@ public class AcaciaInstanceServiceSession extends Thread{
 				}
 	}
 	
+	private void unzipAndBatchUploadCentralStore(String graphID, String partitionID) {
+		try {
+			File f = new File(Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore");
+			
+			if(!f.isDirectory()){
+				f.mkdir();
+			}
+			
+			Runtime r = Runtime.getRuntime();
+			Process p = r.exec("unzip /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore/" + graphID + "_" + partitionID);
+			p.waitFor();
+
+			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			String line = "";
+
+			while((line=b.readLine())!= null){
+				System.out.println("Central store graph sending " + graphID + "_" + partitionID);
+			}
+			
+			p = r.exec("rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip");
+			p.waitFor();
+			
+			//System.out.println("Completed unzipping");		
+			
+		} catch (Exception e) {
+			Logger_Java.info("Error : " + e.getMessage());
+		}
+	}
+
 	private void writeCatalogRecord(String record) {
         //First we need to check whether the Acacia's data directory exists or not.
         File fileChk = new File(dataFolder);
@@ -830,12 +911,12 @@ public class AcaciaInstanceServiceSession extends Thread{
 		graphDBMap.put(gid, graphDB);
 		loadedGraphs.add(gid);
 		
-		try{
-			Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
-		}catch(UnknownHostException ex){
-			Logger_Java.error("Error : " + ex.getMessage());
-		}
-		System.out.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
+//		try{
+//			//Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
+//		}catch(UnknownHostException ex){
+//			Logger_Java.error("Error : " + ex.getMessage());
+//		}
+		//System.out.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
 	}
 	
 	/**

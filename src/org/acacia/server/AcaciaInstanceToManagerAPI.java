@@ -486,7 +486,7 @@ public class AcaciaInstanceToManagerAPI{
 	public static long countIntersectingTraingles(String serverHost, String graphID, String partitionID, HashMap<Long, HashSet<Long>> localSubGraphMap, TreeMap<Long, TreeSet<Long>> degreeMap, HashMap<Long, Long> degreeReverseLookupMap){
 		long result = -1;
 		Socket socket = null;
-		System.out.println("*********** Counting the intersecting traingles ***********");
+		//System.out.println("*********** Counting the intersecting traingles ***********");
 		try{
 			socket = new Socket(serverHost, Conts_Java.ACACIA_BACKEND_PORT);
 			//socket.setSoTimeout(2000);
@@ -605,7 +605,7 @@ public class AcaciaInstanceToManagerAPI{
 					}
 					
 					//We need to add the record for reverse lookup as well.
-					degreeReverseLookupMap.put((Long) pairs.getKey(), -1l);
+					//degreeReverseLookupMap.put((Long) pairs.getKey(), -1l);
 				}
 				
 				socket.close();//We do not need to communicate with the master from here onwards.
@@ -637,22 +637,22 @@ public class AcaciaInstanceToManagerAPI{
 						HashSet<Long> uList = localSubGraphMap.get(v);
 						if(uList != null){
 						for(long u : uList){
-						    if(degreeReverseLookupMap.containsKey(u)){
-						    	degree = degreeReverseLookupMap.get(u);
-						    	if(degreeListVisited.contains(degree)){
-						    		continue;
-						    	}
-						    }
+//						    if(degreeReverseLookupMap.containsKey(u)){
+//						    	degree = degreeReverseLookupMap.get(u);
+//						    	if(degreeListVisited.contains(degree)){
+//						    		continue;
+//						    	}
+//						    }
 													
 							HashSet<Long> nuList = globalGraphIntersectionMap.get(u); //At this point we move on to the global intersection graph
 							if(nuList != null){
 								for(long nu : nuList){
-								    if(degreeReverseLookupMap.containsKey(nu)){
-								    	long degree2 = degreeReverseLookupMap.get(nu);
-								    	if(degreeListVisited.contains(degree2)){
-								    		continue;
-								    	}
-								    }								
+//								    if(degreeReverseLookupMap.containsKey(nu)){
+//								    	long degree2 = degreeReverseLookupMap.get(nu);
+//								    	if(degreeListVisited.contains(degree2)){
+//								    		continue;
+//								    	}
+//								    }								
 								
 									//The neighbours of u must be chacked in the global intersection graph. There is no point of doing this search in the local graph.
 									//Because if such relationship exists we can detect that at the local graph level. No need to check in the global intersection graph.
@@ -713,7 +713,7 @@ public class AcaciaInstanceToManagerAPI{
 				}
 
 				traingleTree = null; //Here we enable the tree object to be garbage collected.
-				System.out.println("Total Traingles found : " + traingleCount);
+				//System.out.println("Total Traingles found : " + traingleCount);
 				result = traingleCount;
 			}
 		}catch(UnknownHostException e){

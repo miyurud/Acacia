@@ -14,16 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.resilience;
+package org.acacia.localstore;
 
-/**
- * Class ZookeeperInterface
- */
-public class ZookeeperInterface {
-    /**
-     * Default constructor 
-     */
-    public def this() {
-        // TODO auto-generated stub
-    }
+public class NodeRecord {
+
+	private var flag:Int;
+	private var firstRelationshipId:Int;
+	private var firstPropertyId:Int;
+		
+	
+	public def this(flag:Int, firstRelationshipId:Int, firstPropertyId:Int){
+	    this.flag = flag;
+	    this.firstRelationshipId = firstRelationshipId;
+	    this.firstPropertyId = firstPropertyId;
+	}
+	
+	public def getflag():Int{
+		return flag;
+	}
+
+	public def getfirstRelationshipId():Int{
+		return firstRelationshipId;
+	}
+	
+	public def getfirstPropertyId():Int{
+		return firstPropertyId;
+	}
 }

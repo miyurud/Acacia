@@ -44,9 +44,9 @@ public class AcaciaHSQLDBComm {
 	public Connection getDBConnection(){
 		try {
 			Class.forName("org.hsqldb.jdbcDriver").newInstance();
-			//System.out.println("Connecting to : " + connectionString);
+			System.out.println("Connecting to : " + connectionString);
 			Connection con = DriverManager.getConnection(connectionString, "SA", "");
-			//System.out.println("Connected successfully.");
+			System.out.println("Connected successfully.");
 		    if(con != null){
 		    	return con;
 		    }

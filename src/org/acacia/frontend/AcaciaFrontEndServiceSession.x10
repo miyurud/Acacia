@@ -440,9 +440,9 @@ else{
 	    
 	    //var l:Rail[String] = call_runSelect("SELECT HOST_IDHOST, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    //SELECT NAME,PARTITION_IDPARTITION FROM "ACACIA_META"."HOST_HAS_PARTITION" INNER JOIN "ACACIA_META"."HOST" ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=191;
-	    //Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
+	    Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
 	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-	    //Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
+	    Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
 	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
 	    
 	    for(var i:long=0; i<l.size; i++){
@@ -483,7 +483,7 @@ else{
 	            partitionID = partitions.removeFirst();
 	        }
 	        
-	        //Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
+	        Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
 	        
 	        val ptID:String = partitionID;
 	        // async{
@@ -497,7 +497,7 @@ else{
 	        cntr++;
 	    }
 	   
-	    //Console.OUT.println("AA@1 : " + hostListLen);
+	    Console.OUT.println("AA@1 : " + hostListLen);
 	    
 	    for(var i:Int=0n; i < hostListLen; i++){
 	    	val intermResult = intermRes(i);
@@ -511,7 +511,7 @@ else{
 	    
 	    Console.OUT.println("Total triangle count :" + result);
 	    
-	    //Console.OUT.println("---------- Now calculating the global only traingles --------");
+	    Console.OUT.println("---------- Now calculating the global only traingles --------");
 	    //Next we need to count the traingles in the global graph only.
 	    val globalTriangleCount = call_countGlobalTraingles(graphID);
 	    

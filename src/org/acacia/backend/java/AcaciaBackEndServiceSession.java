@@ -22,7 +22,6 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,11 +31,9 @@ import java.io.PrintWriter;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaBackEndProtocol;
 import org.acacia.server.AcaciaInstanceProtocol;
-import org.acacia.server.AcaciaManager;
 import org.acacia.util.java.Conts_Java;
 
 public class AcaciaBackEndServiceSession extends Thread {
@@ -67,7 +64,7 @@ public class AcaciaBackEndServiceSession extends Thread {
                     try{
                     	//Here we should get the host name of the worker.
                     	msg = buff.readLine();
-                    	//Logger_Java.info("Host name of the worker : " + msg);                        
+                    	Logger_Java.info("Host name of the worker : " + msg);                        
                         
                     }catch(IOException e){
                         Logger_Java.error("WWWW Error : " + e.getMessage());
@@ -321,9 +318,9 @@ public class AcaciaBackEndServiceSession extends Thread {
             		out.flush();
             
             		String partitionID = buff.readLine();
-            		//System.out.println("AAAAAAAAAAAAAAAAAAAAA234999");
+            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234999");
             		long partRes = getIntersectingTraingles(graphID, partitionID);
-            		//System.out.println("AAAAAAAAAAAAAAAAAAAAA234");
+            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234");
             		if(partRes == -1){
 //            			System.out.println("Have to send the global list to the worker");
             			out.println("-1");
@@ -332,39 +329,42 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    int centralPartionCount = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(int)0L]);
             		    long fromID = -1;
             		    long toID = -1;
-            		    HashMap<Long, HashSet<Long>> hmp = new HashMap<Long, HashSet<Long>>();
+            		    HashMap<Long, ArrayList<Long>> hmp = new HashMap<Long, ArrayList<Long>>();
             		    
             		    
             		    for(int i = 0; i < centralPartionCount; i++){
-            		    	//Here we should first bring the central store to the working directory and then construct the central store object with the
-            		    	//local copy of the file. This seems to be the only solution we could find at the moment. A much more intelligent technique
-            		    	//will not need to bring down the entire central store partition back to the local disk. Even bringing down the central store
-            		    	//partitions can be done in an intelligent manner such that we do not exceed the disk quota available on the local disk.
-            		    	AcaciaManager.downloadCentralStore(Integer.parseInt(graphID), i);
-            		    	
-            		    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
-            		    	store.loadGraph();
-            		    	HashMap<Long, HashSet<Long>> edgeList = (HashMap<Long, HashSet<Long>>)store.getUnderlyingHashMap();
-            		    	Iterator<Map.Entry<Long, HashSet<Long>>> itr = edgeList.entrySet().iterator();
-            		    	long firstVertex = 0l;
-            		    	
-            		    	while(itr.hasNext()){
-            		    		Map.Entry<Long, HashSet<Long>> entr = itr.next();
-            		    		firstVertex = entr.getKey();
-            		    		HashSet<Long> hs = (HashSet<Long>)hmp.get(firstVertex);
-            		    		
-            		    		if(hs == null){
-            		    			hs = new HashSet<Long>();
-            		    		}
-            		    		
-            		    		HashSet<Long> hs2 = entr.getValue();
-            		    		
-            		    		for(long secondVertex: hs2){
-            		    			hs.add(secondVertex);
-            		    		}
-            		    		
-            		    		hmp.put(firstVertex, hs);
-            		    	}
+            		    	StringBuilder sbPersist = new StringBuilder();
+            		 		java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
+            		 		
+            		 		try{
+            		 			//Here we get all the edges that are comming from the world to the local sub graph.
+            		 			java.sql.Statement stmt = c.createStatement();
+            		 			//java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + " and (idpartto=" + partitionID + " or idpartfrom=" + partitionID + ");" );
+            		 			java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + ";" );
+            		 
+            		 			if(rs != null){
+            		 					while(rs.next()){
+            		 						fromID = rs.getLong(1);
+            		 						toID = rs.getLong(2);
+            		 						
+            		 						ArrayList<Long> itm = hmp.get(fromID);
+            		 						if(itm == null){
+            		 							itm = new ArrayList<Long>();
+            		 							itm.add(toID);
+            		 						}else{
+            		 							itm.add(toID);
+            		 						}
+            		 						
+            		 						hmp.put(fromID, itm);
+            		 						
+            		 						sbPersist.append(fromID + "\t" + toID + "\n");
+            		 					}
+            		 			}
+            		 			c.close();
+            		 		}catch(java.sql.SQLException e){
+            		 			e.printStackTrace();
+            		 		}
+            		 		org.acacia.util.java.Utils_Java.writeToFile(org.acacia.util.java.Utils_Java.getHostName() + "-central-" + i + ".txt", sbPersist);
             		    }
             		    
             		    //Where we need to have some batched technique to send the edgelist. Because the edgelist size is going to be very large.
@@ -375,9 +375,9 @@ public class AcaciaBackEndServiceSession extends Thread {
                 		int WINDOW_SIZE = 1000; //This measure is taken to avoid the memory error thrown by Java sockets.
                 		long key = 0;
                 		while(itr.hasNext()){
-                			Map.Entry<Long, HashSet<Long>> pairs = (Map.Entry)itr.next();
+                			Map.Entry<Long, ArrayList<Long>> pairs = (Map.Entry)itr.next();
                 			key = pairs.getKey();
-                			HashSet<Long> lst2 = pairs.getValue();
+                			ArrayList<Long> lst2 = pairs.getValue();
                 			
                 			/*
                 			 The following method seems much more efficient. But itdoes not deliver all the edges. This is strange. we get lesser triangle count.
@@ -984,15 +984,42 @@ public class AcaciaBackEndServiceSession extends Thread {
 		long toID = -1;
 	    int centralPartionCount = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(int)0L]);
 	    HashMap<Long, Long> edgeList = new HashMap<Long, Long>();
-	    long globalSize = 0;
 	    
-	    for(int i = 0; i < centralPartionCount; i++){	    	
-	    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
-	    	store.loadGraph();
-	    	globalSize += store.getEdgeCount();
+	    for(int i = 0; i < centralPartionCount; i++){
+	    	System.out.println("graph ID : " + graphID + "_" + i);
+	    	java.sql.Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
+	    	
+	 		try{
+	 			//c.setAutoCommit(false);
+	 			java.sql.Statement stmt = c.createStatement();
+	 			//java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + " and (idpartfrom = " + partitionID + " or idpartto = " + partitionID + ");" );
+	 			java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + ";" );
+	 
+	 			if(rs != null){
+	 					while(rs.next()){
+	 						fromID = rs.getLong(1);
+	 						toID = rs.getLong(2);
+	 						edgeList.put(fromID, toID);
+	 					}
+	 			}else{
+	 				Logger_Java.info("========================= getIntersectingTraingles() count is null =========================");
+	 			}
+	 			
+	 			c.close();
+	 		}catch(java.sql.SQLException e){
+	 			e.printStackTrace();
+	 		}
 	    }
 	    
+	    long globalSize = edgeList.size(); //The size of a Java HashMap is int which is not desirable.
+//	    System.out.println("BBBBBBBBCCCBBBBBBBB, the query is as follows: ");
+//	    System.out.println("select EDGECOUNT from ACACIA_META.PARTITION where GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID);
 	    long localSize = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select EDGECOUNT from ACACIA_META.PARTITION where GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID).value)[(int)0L]);
+//	    System.out.println("BBBBBBBBDDDBBBBBBBB");
+//	    System.out.println("partitionID: " + partitionID + " globalSize : " + globalSize);
+//	    System.out.println("partitionID: " + partitionID + " localSize : " + localSize);
+//	    
+//	    System.out.println("count at global : " + ((globalSize > localSize)?"Yes":"No"));
 	    
 	    if(localSize > globalSize){
 	    	result = -1;

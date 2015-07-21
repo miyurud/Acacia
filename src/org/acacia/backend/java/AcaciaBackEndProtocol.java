@@ -33,6 +33,6 @@ public class AcaciaBackEndProtocol {
     public static String LOCAL_TO_WORLD_AUTHFLOW_FOR_PARTITION="lwaf";
     public static String WORLD_TO_LOCAL_FLOW_FROMIDS="wlfi"; //This command gets all the vertices connected with the external graph and their corresponding fromIDs
     public static String INTERSECTING_TRIANGLE_COUNT = "trii"; //This is the command to count the number of traingles available on the global graph.
-    public static String DONE = "done";
+    public static String DONE = "done";    
     public static String PARTITIONS_ON_HOST = "pohs"; //The command to get the list of partitions on particular host
 }

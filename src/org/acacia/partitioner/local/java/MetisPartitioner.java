@@ -16,18 +16,13 @@ limitations under the License.
 
 package org.acacia.partitioner.local.java;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -40,13 +35,9 @@ import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import org.acacia.server.AcaciaManager;
 import org.acacia.util.java.Utils_Java;
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
-
-import x10.lang.Place;
 
 import com.google.common.base.Splitter;
 
@@ -93,15 +84,19 @@ public class MetisPartitioner{
 			graphStorage[i] = new TreeMap<Integer, HashSet<Integer>>();
 		}
 		
+		//System.out.println("----------------------->AAAAAAA-------->");
 		loadDataSet(inputFilePath);
+		//System.out.println("----------------------->BBBBBBB-------->");
 		constructMetisFormat(-1);
+		//System.out.println("----------------------->DDDDDDD-------->");
 		partitionWithMetis(nParts);
+		//System.out.println("----------------------->EEEEEEE-------->");
 		distributeEdges();
+		//System.out.println("----------------------->FFFFFFF-------->");
 	}
 	
 	private void distributeEdges(){
 		final HashMap<Short, PartitionWriter> partitionFilesMap = new HashMap<Short, PartitionWriter>(); 
-		final HashMap<Short, AcaciaHashMapCentralStore> centralStoresMap = new HashMap<Short, AcaciaHashMapCentralStore>(); 
 		
 		//First we travers through the partitions index created by Metis and preparegraphStorage PartitionWriter objects
 		//for each partition.
@@ -116,6 +111,12 @@ public class MetisPartitioner{
 		    String line = br.readLine();
 		    int counter = 0;
 		    short partitionID = 0;
+
+//		    if(zeroVertFlag){
+//		    	counter = 0;
+//		    }else{
+//		    	counter = 1;partitionFilesMap
+//		    }
 		    
 		    PartitionWriter refToWriter = null;
 		    initPartFlag = false;
@@ -126,20 +127,31 @@ public class MetisPartitioner{
 		    	
 		    	if(refToWriter == null){
 		    		String actualPartitionID = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
+		    		//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---12");
 		    		refToWriter = new PartitionWriter(outputFilePath+"/"+graphID+"_"+actualPartitionID);
+		    		//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---13");
 		    		partitionFilesMap.put(partitionID, refToWriter);
+		    		//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---14");
 		    		partitionIDsList.add(actualPartitionID);
 		    		if(!initPartFlag){
 		    			initlaPartitionID = Integer.parseInt(actualPartitionID);
 		    			initPartFlag = true;
+		    			//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---15");
 		    		}
 		    	}
+		    	//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---17");
 		    	line = br.readLine();
+		    	//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---18 --> |" + line + "|");
+		    	//System.out.println("cntr : " + counter + " partition Idx len : " + partitionIndex.length);
 		    	counter++;
 		    }
+		    //System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---91");
 		}catch(IOException e){
 			e.printStackTrace();
 		}
+		
+		//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAA---1");
+		
 		
 		//Next we have to go through the original edgelist and see whether each and every edge falls into the
 		//same partition. If so we can put the edge on to that partition. If not, we have to upload the edge
@@ -154,6 +166,11 @@ public class MetisPartitioner{
 		short fromVertexPartition = 0;
 		short toVertexPartition = 0;
 		
+//		if(numberOfPartitions < nThreads){
+//			nThreads = numberOfPartitions;
+//		}
+		
+		//System.out.println("nThreads---ppp-->" + nThreads);
 		CustomThread[] tArray = new CustomThread[nThreads];
 		
 		for(int i = 0; i < nThreads; i++){
@@ -164,34 +181,59 @@ public class MetisPartitioner{
 					Iterator<Map.Entry<Integer, HashSet<Integer>>> itr = graphStorage[i].entrySet().iterator();
 					int toVertexPartition = 0;
 					int toVertex = 0;
+//					int different = 0;
+//					int same = 0;
 					
 					while(itr.hasNext()){
 						Map.Entry<Integer, HashSet<Integer>> entry = itr.next();
+						//System.out.println("++A");
 						int fromVertex = entry.getKey();
 						int fromVertexPartition = partitionIndex[(int) fromVertex];
+						//System.out.println("++B");
 						HashSet hs = entry.getValue();
+						//System.out.println("++B1");
 						if(hs != null){
 							Iterator<Integer> itr2 = hs.iterator();
+							//System.out.println("++B2");
 							while(itr2.hasNext()){
+								//System.out.println("++B3");
 								toVertex = itr2.next();
+								//System.out.println("++B4 toVertex:"+toVertex);
 								toVertexPartition = partitionIndex[(int) toVertex];
+								//System.out.println("++B5");
 								
 								if(fromVertexPartition != toVertexPartition){
 									this.different++;
+									//System.out.println("============= " + fromVertex + " " + toVertex);
 								}else{
 									this.same++;
 									numVerts[fromVertexPartition]++;
+									//System.out.println("+++++++++++++ " + fromVertex + " " + toVertex);
 								}
 							}
+							//System.out.println("++B7");
 						}else{
+							//System.out.println("++B6");
 							continue;
 						}
+						//System.out.println("++C");
+//						if(fromVertexPartition != toVertexPartition){
+//							this.different++;
+//						}else{
+//							this.same++;
+//							numVerts[fromVertexPartition]++;
+//						}
+						//System.out.println("++D");
 					}
 					setDone();
+					//System.out.println("++D2");
 				}
 			};
+			//System.out.println("++D3");
 			tArray[i].start();
+			//System.out.println("++D4");
 		}
+		//System.out.println("++Deee");
 		while(true){
 			boolean flag = true;
 			for(int x = 0; x < nThreads; x++){
@@ -211,6 +253,8 @@ public class MetisPartitioner{
 			}
 		}
 		
+		//System.out.println("++Dccc");
+		
 		for(int i = 0; i < nThreads; i++){
 			different += tArray[i].different;
 			same += tArray[i].same;
@@ -229,92 +273,216 @@ public class MetisPartitioner{
 		//In the second run we actually separate the graph data to multiple partitions.
 		//The following code assume there is only single central partition
 
-		final int numberOfCentralPartitions = nParts;		
-		for(short i = 0; i < numberOfCentralPartitions; i++){
-			centralStoresMap.put(new Short(i), new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i));
-		}
+		final int numberOfCentralPartitions = nParts;
+		//int numAsyncPerTime = 4;
+		//nParts
 		
+//		if(isDistributedCentralPartitions){
+//			//This is kind of tricky, but we need to get the number of places from the X10 runtime to determine the number of
+//			//partitions that we will create from the central store. At the moment this is kept as a future work.
+//			numberOfCentralPartitions = nParts;
+//		}else{
+//			numberOfCentralPartitions = 1;few-edges1|/home/miyurud/Acacia/Vertica/triangles/input/few-edges1.txt
+//		}
+//		
 		final int edgesPerCentralStore = (int)((different / numberOfCentralPartitions) + 1);
 		
 		System.out.println("--> edgesPerCentralStore : " + edgesPerCentralStore);
 
-		MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET CENTRALPARTITIONCOUNT=" + numberOfCentralPartitions + ", VERTEXCOUNT=" + vertexCount + ", EDGECOUNT=" + edgeCount + " WHERE IDGRAPH=" + graphID);		
-		HashMap<Short, StringBuilder> hmapSB = new HashMap<Short, StringBuilder>();
-		HashMap<Short, StringBuilder> hmapCentral = new HashMap<Short, StringBuilder>();
-		StringBuilder[] sbCentral = new StringBuilder[nThreads];
+		MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET CENTRALPARTITIONCOUNT=" + numberOfCentralPartitions + ", VERTEXCOUNT=" + vertexCount + ", EDGECOUNT=" + edgeCount + " WHERE IDGRAPH=" + graphID);
 		
-		for(int u = 0; u < nThreads; u++){
-			sbCentral[u] = new StringBuilder();
-	
-			Iterator<Integer> itrN = graphStorage[u].keySet().iterator();
+		for(int u=0; u < nThreads; u++){
+			//itr = graphStorage.entrySet().iterator();
 			
-			for(int i = 0; i < numberOfCentralPartitions; i++){								
-				while(itrN.hasNext()){
-					fromVertex = itrN.next();
-					HashSet<Integer> valItem = graphStorage[u].get(fromVertex);
-					fromVertexPartition = partitionIndex[(int) fromVertex];
-					
-					Iterator<Integer> itr2 = valItem.iterator();
-					while(itr2.hasNext()){
-						toVertex = itr2.next();
-						toVertexPartition = partitionIndex[(int) toVertex];
-					
-						if(fromVertexPartition != toVertexPartition){
-							AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) fromVertexPartition));								
-							central.addEdge((long)fromVertex, (long)toVertex);
-						}else{
-							PartitionWriter pw = partitionFilesMap.get(new Short((short) fromVertexPartition));
-							pw.writeEdge(fromVertex, toVertex);
-						}
+			tArray[u] = new CustomThread(u){
+			
+				public void run(){
+					//System.out.println("---------M1--------");
+					int u = getI();
+					int fromVertex = 0;
+					int fromVertexPartition = 0;
+					int toVertex = 0;
+					int toVertexPartition = 0;
+					//System.out.println("---------M2--------");
+					Iterator<Integer> itrN = graphStorage[u].keySet().iterator();
+					//System.out.println("---------M3--------");
+					int j = 0;
+					int lcnt = 0;
+					for(int i = 0; i < numberOfCentralPartitions; i++){
+						//System.out.println("u:" + u + " partition : " + i);
+						//System.out.println("---------M45--------");
+						org.acacia.centralstore.java.HSQLDBInterface.initDBSchema(graphID, "" + i);
+						//System.out.println("---------M46--------");
+						org.acacia.centralstore.java.HSQLDBInterface.createTable(graphID, "" + i, "CREATE TABLE IF NOT EXISTS acacia_central.edgemap(idgraph INT NOT NULL, idfrom INT NOT NULL, idto INT NOT NULL, idpartfrom INT NOT NULL, idpartto INT NOT NULL);");
+						//System.out.println("---------M4--------");
+						lcnt = 0;
+						try{
+								Connection c = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+								//System.out.println("---------M47--------");
+								c.setAutoCommit(false);
+								//System.out.println("---------M48--------");
+							     //The output format will be <startID><startPartitionID><endPartitionID><endID>
+								PreparedStatement prep = c.prepareStatement("INSERT INTO acacia_central.edgemap(idgraph, idfrom, idpartfrom, idpartto, idto) VALUES (?,?,?,?,?)");
+								//System.out.println("---------M49k--------");
+								while(itrN.hasNext()){
+									//Map.Entry<Integer, HashSet<Integer>> entry = itr.next();
+									fromVertex = itrN.next();
+									//System.out.println("---------M49kw--------");
+									HashSet<Integer> valItem = graphStorage[u].get(fromVertex);
+									//System.out.println("---------M49k2--------");
+									
+//									if(valItem==null){
+//										System.out.println("valItem null");
+//									}
+									
+									//System.out.println("---------M66k--------");
+									fromVertexPartition = partitionIndex[(int) fromVertex];
+									//System.out.println("---------M77k--------");
+									
+									Iterator<Integer> itr2 = valItem.iterator();
+									while(itr2.hasNext()){
+										toVertex = itr2.next();
+										toVertexPartition = partitionIndex[(int) toVertex];
+									
+										if(fromVertexPartition != toVertexPartition){
+											if(lcnt > 100000){ //Go by 100 thousand steps to avoid the prepared statement getting conjested.
+												lcnt = 0;
+												prep.executeBatch();
+												prep.clearBatch();
+											}else{
+												lcnt++;
+											     //The output format will be <startID><startPartitionID><endPartitionID><endID>
+												prep.setString(1, graphID);
+												prep.setInt(2, fromVertex);
+												prep.setInt(3, (fromVertexPartition + initlaPartitionID));
+												prep.setInt(4, (toVertexPartition + initlaPartitionID));
+												prep.setInt(5, toVertex);
+												prep.addBatch();
+											}
+										}else{
+//											System.out.println("---------M49--------" + partitionFilesMap.keySet().size());
+//											System.out.println("---------M4922--------" + partitionFilesMap.values().size());
+//											Iterator<Short> ks = partitionFilesMap.keySet().iterator();
+//											while(ks.hasNext()){
+//												System.out.println("=========>"+ks.next());
+//											}
+											
+											
+//											if(partitionFilesMap == null){
+//												System.out.println("---------M49+++++++++++++++--------");
+//											}
+											
+											//System.out.println("---------M49+++++++++++++++--------fromVertexPartition:" + fromVertexPartition);
+
+											PartitionWriter pw = partitionFilesMap.get(new Short((short) fromVertexPartition));
+											//System.out.println("---------M49>>>>>>>>>>--------");
+//											if(pw == null){
+//												System.out.println("---ffff-----M49+++++++++++++++--------");
+//											}
+											pw.writeEdge(fromVertex, toVertex);
+											//System.out.println("u:" + u + " partition : " + i + " | " + fromVertex + "," + toVertex);
+											//System.out.println("---------M50--------");
+										}
+									}
+									j++;
+									if(j > edgesPerCentralStore){
+										j=0;
+										break;
+									}
+								}
+								//System.out.println("---------M51--------");
+								if(lcnt > 0){
+									prep.executeBatch();
+								}
+								//System.out.println("---------M52--------");
+						      prep.close();
+						      c.commit();
+						      c.close();
+						      //System.out.println("---------M53--------");
+						}catch(SQLException e){
+							e.printStackTrace();
+					    }
 					}
-					/*
-					j++;
-					if(j > edgesPerCentralStore){
-						j=0;
-						break;
-					}
-					*/
+					setDone();
+				}
+			};
+			//System.out.println("---------M54--------");
+			tArray[u].start();
+			//System.out.println("---------M55--------");
+		}
+		//System.out.println("---------M6--------");
+		//have to wait till all the threads are done.
+		while(true){
+			boolean flag = true;
+			for(int x = 0; x < nThreads; x++){
+				if(!tArray[x].isDone()){
+					flag = false;
 				}
 			}
-		}
-
-		for(int i = 0; i < numberOfCentralPartitions; i++){
-	      //org.acacia.util.java.Utils_Java.writeToFile("centralStore-part-" + i + ".txt", sbCentral[i]);
-			AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) i));
 			
-			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.CPARTITION(IDCPARTITION, IDGRAPH, VERTEXCOUNT, EDGECOUNT) VALUES(" + i + "," + graphID + ",0,0)");
-			central.storeGraph();
+			if(flag){
+				break;
+			}
+			
+			try {
+				Thread.currentThread().sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		
+		//System.out.println("DDDDDDDDDDDDD...");
 		//Finalize the partitioning process. In the above lines we have written the edges to PartitionWriter objects.
 		//here we are just writing the contents to file system.
 		Iterator<Map.Entry<Short, PartitionWriter>> pItr = partitionFilesMap.entrySet().iterator();
 		ArrayList<String> paths = new ArrayList<String>();
 		partitionFileList = new String[partitionFilesMap.entrySet().size()];
+		//System.out.println("DDDDDDDDDDDDD2...");
 		int k = 0;
 		while(pItr.hasNext()){
 			Map.Entry<Short, PartitionWriter> item = pItr.next();
 			PartitionWriter pw = item.getValue();
+			//System.out.println("DDDDDDDDDDDDD3...");
 			paths.add(pw.getOutputFilePath());
+			//System.out.println("DDDDDDDDDDDDD4...");
 			pw.compress();
+			//System.out.println("DDDDDDDDDDDDD5...");
 			partitionFileList[k] = pw.getOutputFilePath() + ".gz";
 			k++;
 			pw.close();
+			//System.out.println("DDDDDDDDDDDDD6...");
 		}
 		
-		distributeCentralStore(numberOfCentralPartitions,graphID);
+		//partitionFileList = new String[paths.size()]; //(String[])paths.toArray();
 		System.out.println("Done partitioning...");
+
+		distributeCentralStore(partitionFileList.length,graphID);
 	}
 	
-	private void distributeCentralStore(int n, final String graphID){	
+	private void distributeCentralStore(int n,String graphID){
+		
 		try{
+			Runtime r = Runtime.getRuntime();
+			String workDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore";
+			String destDir = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder.central");
+			Process p;
+			for(int i=0;i<n;i++){
+				//@SuppressWarnings("unchecked")
+				//Iterator<Place> itr = (Iterator<Place>) Place.places().iterator();
 				HashMap<Long, String> placeToHostMap = new HashMap<Long, String>();
-				Runtime r = Runtime.getRuntime();
-				
+				//PlaceToNodeMapper placeToNodeMapper = new PlaceToNodeMapper();
+				String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/centralstore/"+graphID+"_"+i;
+				System.out.println("zip -rj "+filePath+".zip "+filePath);
+				Process process = r.exec("zip -rj "+filePath+".zip "+filePath);
 				int hostID=0,hostCount = 0,nPlaces=0;
-				for(Long j=0l;j<n;j++){		             
-		             nPlaces = (int)Place.places().size$O();
-
+				for(Long j=0l;j<n;j++){
+		             //Place p = itr.next();
+		             System.out.println("+++++++++++++++++K p.id " + j);
+		             
+		             //-------------------------------------
+		             
+		             //nPlaces = (int)Place.places().size$O();
+		             
+		             //
 		             ArrayList<String> hostList = new ArrayList<String>();
 		     	     File f = new File("machines.txt");
 		     	     BufferedReader br = new BufferedReader(new FileReader(f));
@@ -325,67 +493,54 @@ public class MetisPartitioner{
 		     	     }
 		     	     br.close();
 		     		 
-		            hostCount = hostList.size();
+		             //
+		             hostCount = hostList.size();
+		             
+		             //val placesPerHost = nPlaces/hostList.size;
 		     	    hostID = (int)(j % hostCount);
 		             
-		     	    String hostName = hostList.get(hostID);
+		     	    String hostName = hostList.get(hostID); 
+		     	   
+		            //-----------------------------------------------------------------------------------------
+		     	    
+		     	   	
+		     	    
+		     	    //-----------------------------------------------------------------------------------------
 
+		             System.out.println("+++++++++++++++++K p.id " + j + " hostName : " + hostName);
 		             placeToHostMap.put(j, hostName);
+		             System.out.println("+++++++++++++++++B");
 		        }
+				System.out.println("+++++++++++++++++C");
+				System.out.println("placeToHostMap.entries() : " + placeToHostMap.entrySet().size());
 		        Iterator<java.util.Map.Entry<Long, String>> itr2 = placeToHostMap.entrySet().iterator();
+		        System.out.println("+++++++++++++++++C");
 		        
-		        int i = 0;
-		        CustomThread[] tArray = new CustomThread[n];
+		        //HashMap<String, String> hostIDMap = getLiveHostIDList();
+		        //Long i = 0l;
+		        int fileListLen = 4; //File list size
+		        
 		        while(itr2.hasNext()){
-		        	//String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
-		        	final String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
-		        	i = i + 1;
-					System.out.println("zip -rj "+filePath+"_trf.zip "+filePath);
-					Process process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
-		            final Map.Entry<Long, String> itemHost = itr2.next();
-		            if(itemHost==null){
-		            	return;
-		            }
-		            int port = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
-		            hostID = (int)(itemHost.getKey() % hostCount);
-			     	int withinPlaceIndex = ((int)(itemHost.getKey() - hostID))/hostCount;
+		             Map.Entry<Long, String> itemHost = itr2.next();
+		             if(itemHost==null){
+		             	return;
+		             }
+		             int port = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
+		             hostID = (int)(itemHost.getKey() % hostCount);
+			     	 int withinPlaceIndex = ((int)(itemHost.getKey() - hostID))/hostCount;
 			     	    
-			     	final int instancePort = port + withinPlaceIndex;
-			     	final int fileTransferport = instancePort + (nPlaces/hostCount);
-			     	
-			     	
-			     	tArray[i] = new CustomThread(i){
-			     		public void run(){
-			     			AcaciaManager.batchUploadCentralStore(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
-			     			setDone();
-			     		}
-			     	};
-			     	
-			     	tArray[i].start();
-			     	i = i + 1;
-			     	   
+			     	 int instancePort = port + withinPlaceIndex;
+			     	 int fileTransferport = instancePort + (nPlaces/hostCount);
+		             
+			     	 //+Miyuru : Calling AcaciaManager.batchUploadFile() is not the correct way of placing a central partition file.
+		             //AcaciaManager.batchUploadFile(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
+		             
 		        }
-		        
-		    	while(true){
-					boolean flag = true;
-					for(int x = 0; x < n; x++){
-						if(!tArray[x].isDone()){
-							flag = false;
-						}
-					}
-					if(flag){
-						break;
-					}
-					try {
-						Thread.currentThread().sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-
-		        
+			}
+			
+			
 		}catch(Exception e){
-			System.out.println("Error : "+e.getMessage());
+			Logger_Java.info("Error : "+e.getMessage());
 		}
 	}
 	
@@ -435,6 +590,7 @@ public class MetisPartitioner{
 	}
 	
 	private void adjustEdgeCount(int vertexCount, int newEdgeCount){
+		System.out.println("----------------------------------------------op");
 		try{
 			Runtime r = Runtime.getRuntime();
 			//Note on May 30 2015 : The following call to sed cannot be executed via Java. This is strange... Therefore, have to stick to
@@ -451,6 +607,7 @@ public class MetisPartitioner{
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		System.out.println("----------------------------------------------oq");
 	}
 	
 	public int getInitlaPartitionID(){
@@ -458,6 +615,15 @@ public class MetisPartitioner{
 	}
 	
 	public String[] getPartitionFileList(){
+//		x10.util.ArrayList<java.lang.String> lst = new x10.util.ArrayList<java.lang.String>((java.lang.System[]) null, x10.rtt.Types.STRING).x10$util$ArrayList$$init$S();
+//		
+//		for(String item: partitionFileList){
+//			((x10.util.ArrayList<java.lang.String>)lst).add__0x10$util$ArrayList$$T$O(((java.lang.String)(item)));
+//		}
+//		
+//		x10.core.Rail arr =  ((x10.util.ArrayList<java.lang.String>)lst).toRail();
+//		return arr;
+		
 		return partitionFileList;		
 	}
 	
@@ -495,7 +661,12 @@ public class MetisPartitioner{
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
 			
-			//Note: in Metis The numbering of the nodes starts from 1			
+			//Note: in Metis The numbering of the nodes starts from 1
+			
+//			if(zeroVertFlag && (adjustEdgestCount == -1)){
+//				largestVertex++;
+//			}
+			
 			vertexCount = largestVertex;
 			
 			if(adjustEdgestCount == -1){
@@ -503,28 +674,43 @@ public class MetisPartitioner{
 			}else{
 				bw.write("" + largestVertex + " " + adjustEdgestCount);
 			}
-
+			//2777418
+			//bw.write("" + largestVertex + " 2777418");
 			bw.write("\r\n");
 			bw.flush();
-
+			//int cn = 0;
 			//Vertex IDs must start from 1
+			//long i = 1;
 			int i = 1;
+			
+//			if(zeroVertFlag){
+//				i = 1;
+//			}
 			
 			for(; i <= largestVertex; i++){
 				HashSet<Integer> itemsList = graphStorage[i%nThreads].get(i);
 
 				if(itemsList == null){
 					if(i == 0){
+						//System.out.println("=========================================00000000000===========================");
 						bw.write("1 \r\n");//if there are no edges for this vertex, we introduce a self edge to avoid Metis's complain which says it detected different number of edges
 											 //this seems to be the only solution at the moment (May 2015)
 					}else{
+						//System.out.println("=========================================22222222222===========================");
 						bw.write("\r\n");
 					}
 					bw.flush();
 					//cn++;
 				}else{
 					Iterator<Integer> itr = itemsList.iterator();
-					while(itr.hasNext()){						
+					while(itr.hasNext()){
+
+//						if(zeroVertFlag){
+//							bw.write(""+(itr.next() + 1));
+//						}else{
+//							bw.write(""+(itr.next()));
+//						}
+						
 						bw.write(""+(itr.next()));
 												
 						if(!itr.hasNext()){
@@ -623,7 +809,15 @@ public class MetisPartitioner{
 		    		vertexSet.add(secondVertex);
 		    		edgeCount++;
 			    	graphStorage[firstVertexIdx].put(firstVertex, vertexSet);
-		    	}else{		    		
+		    	}else{
+//		    		if(vertexSet.contains(secondVertex)){
+//		    			//containsFlag = true;
+//		    		}else{
+//			    		vertexSet.add(secondVertex);
+//			    		edgeCount++;
+//				    	graphStorage.put(firstVertex, vertexSet);
+//		    		}
+		    		
 		    		if(vertexSet.add(secondVertex)){
 		    			edgeCount++;
 		    		}
@@ -640,13 +834,22 @@ public class MetisPartitioner{
 			    	vertexSet.add(firstVertex);
 			    	edgeCount++;
 			    	graphStorage[secondVertexIdx].put(secondVertex, vertexSet);
-		    	}else{		    		
+		    	}else{
+//		    		if(vertexSet.contains(firstVertex)){
+//		    			//containsFlag = true;
+//		    		}else{
+//				    	vertexSet.add(firstVertex);
+//				    	edgeCount++;
+//				    	graphStorage.put(secondVertex, vertexSet);
+//		    		}
+		    		
 			    	if(vertexSet.add(firstVertex)){
 			    		edgeCount++;
 			    	}
 			    	//Note: we are getting a reference, so no need to put it back.
 			    	//graphStorage.put(secondVertex, vertexSet);
 		    	}
+		    	
 
 		    	if(firstVertex > largestVertex){
 		    		largestVertex = firstVertex;
@@ -656,6 +859,10 @@ public class MetisPartitioner{
 		    		largestVertex = secondVertex;
 		    	}
 		    	
+//		    	if(!containsFlag){
+//		    		edgeCount++;
+//		    	}
+				//System.out.println("line : " + line);
 				
 				line = br.readLine();
 		    	while((line != null)&&(line.trim().length() == 0)){
@@ -665,7 +872,11 @@ public class MetisPartitioner{
 		}catch(IOException e){
 			e.printStackTrace();
 		}
-				
+		
+//		if(zeroVertFlag){
+//			largestVertex++;
+//		}
+		
 		System.out.println("Loaded edges (directed) : " + edgeCount);
 		System.out.println("Loaded edges (undirected) : " + (edgeCount/2));
 		edgeCount = edgeCount/2;

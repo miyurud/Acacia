@@ -180,12 +180,24 @@ public class AcaciaServer {
 				     if(hostHashMap.get(curHost) == false){
 				        hostHashMap.put(curHost, true);
 				        if(p.id == 0){
+				        Console.OUT.println("Inside place 0 2nd time");
 				         async {
-				          test.acacia.partitioner.index.TestPartitionIndex.main(null);
+				         	Console.OUT.println("TestPartitioner Place 0");
+				         	test.acacia.partitioner.index.TestPartitionIndex.main(null);
 				         }
 				        }else{
-				         async at(p) {
-				                  test.acacia.partitioner.index.TestPartitionIndex.main(null);
+				        Console.OUT.println("Inside place other 2nd time");
+				         async{ 
+				         Console.OUT.println("TestPartitioner Place other inside async");
+					         try {
+						         at(p) {
+						         	Console.OUT.println("TestPartitioner Place " + here.id);
+						         	test.acacia.partitioner.index.TestPartitionIndex.main(null);
+						         }
+					         } catch (e:DeadPlaceException) {
+					         	Console.OUT.println(e.place + " died in 2"); // report failure
+					         }
+					         
 				         }
 				        }
 				     }
@@ -871,7 +883,7 @@ public class AcaciaServer {
      * This method provides a list of host ids that are online.
      * The output from this method will be of the form <host full name><host id>
      */
-    private static def getLiveHostIDList():HashMap[String, String]{
+    public static def getLiveHostIDList():HashMap[String, String]{
         // Console.OUT.println("CCCCCCCCCCCC1");
 	    val hostNameArr:Rail[String] = call_runSelect("SELECT name,idhost FROM ACACIA_META.HOST");
 	    // Console.OUT.println("CCCCCCCCCCCC2");
@@ -945,10 +957,15 @@ public class AcaciaServer {
     
     private static def truncateLocalInstances(){
     	for (p in Place.places()){
-	    	at(p){
-	    		//call_truncateLocalInstance(System.getenv("HOSTNAME"));
-	            call_truncateLocalInstance(PlaceToNodeMapper.getHost(p.id), PlaceToNodeMapper.getInstancePort(p.id));
-	    	}
+		    try {
+			    at(p){
+			    //call_truncateLocalInstance(System.getenv("HOSTNAME"));
+			    call_truncateLocalInstance(PlaceToNodeMapper.getHost(p.id), PlaceToNodeMapper.getInstancePort(p.id));
+			    }
+		    } catch (e:DeadPlaceException) {
+		    	Console.OUT.println(e.place + " died"); // report failure
+		    }
+	    	
     	}
     }
     
@@ -975,20 +992,30 @@ public class AcaciaServer {
     
     public static def initGraph(val graphID:Int){    	
     	for (p in Place.places()){
-    			at(p){
-    				Console.OUT.println("Initializing graph at : " + Utils.getHostName());
-    				call_initGraph(Utils.getHostName(), graphID);
-    			}
+			    try {
+				    at(p){
+				    Console.OUT.println("Initializing graph at : " + Utils.getHostName());
+				    call_initGraph(Utils.getHostName(), graphID);
+				    }
+			    } catch (e:DeadPlaceException) {
+			    	Console.OUT.println(e.place + " died"); // report failure
+			    }
+    			
     	}
     	
     }
     
     public static def setDefaultGraph(val graphID:Int){
     	for (p in Place.places()){
-    		at(p){
-    			Console.OUT.println("Setting default graph at : " + Utils.getHostName());
-    			call_setGraph(Utils.getHostName(), graphID);
-    		}
+		    try {
+			    at(p){
+			    Console.OUT.println("Setting default graph at : " + Utils.getHostName());
+			    call_setGraph(Utils.getHostName(), graphID);
+			    }
+		    } catch (e:DeadPlaceException) {
+		    	Console.OUT.println(e.place + " died"); // report failure
+		    }
+    		
     	}    	
     }
     
@@ -1026,32 +1053,35 @@ public class AcaciaServer {
         //This find of dynamic hostname, IP lookup via at() might be better so that we can get to know which host is not working.
         //However this has the limitation of the assumption we make. We assume there is only one place per host...
     	finish for(p in Place.places()){
-    		val strhst:String = at(p){
-	            var hst:String = null;
-	            for(line in x10.xrx.Runtime.execForRead("hostname -i").lines()){
-	                  hst = line;
-	            }
-    	            
-    			return hst + ":" + Utils.getHostName();
-    		};
-    
-            val strArr:Rail[String] = strhst.split(":");
-            val hstName:String = strArr(1);
-            val hstIP:String = strArr(0);
-    		//Need to record this for future use
-    		hostPlaceMap.put(hstName, p.id);
-    		
-    		val insrtID:String = call_runSelect("SELECT count(name) FROM ACACIA_META.HOST WHERE name LIKE '" + hstName + "'")(0);
-    		Console.OUT.println("Host status : " + insrtID + " for host " + hstName);
-    		Console.OUT.println("Host name of place : " + p.id + " is " + hstName);
-    		
-    		if(insrtID.equals("0")){
-    			val insertID:String = call_runInsert("INSERT INTO ACACIA_META.HOST(NAME, IP, IS_PUBLIC) VALUES('" + hstName + "','" + hstIP + "', " + Utils.isPublic(hstName) + ")");
-    			Console.OUT.println("Result is : " + insertID);
-    		}else if(insrtID.equals("1")){ //This means there is already a record for the host in the host table. Therefore, have to update that.
-                val result:Boolean = call_runUpdate("UPDATE ACACIA_META.HOST SET IP = '" + hstIP + "', IS_PUBLIC=" + Utils.isPublic(hstName) + " WHERE NAME LIKE '" + hstName + "'");
-                Console.OUT.println("Result is : " + result);
-    		}
+		    try {
+			    val strhst:String = at(p){
+			    var hst:String = null;
+			    for(line in x10.xrx.Runtime.execForRead("hostname -i").lines()){
+			    hst = line;
+			    }
+			    
+			    return hst + ":" + Utils.getHostName();
+			    };
+			    val strArr:Rail[String] = strhst.split(":");
+			    val hstName:String = strArr(1);
+			    val hstIP:String = strArr(0);
+			    //Need to record this for future use
+			    hostPlaceMap.put(hstName, p.id);
+			    
+			    val insrtID:String = call_runSelect("SELECT count(name) FROM ACACIA_META.HOST WHERE name LIKE '" + hstName + "'")(0);
+			    Console.OUT.println("Host status : " + insrtID + " for host " + hstName);
+			    Console.OUT.println("Host name of place : " + p.id + " is " + hstName);
+			    
+			    if(insrtID.equals("0")){
+			    val insertID:String = call_runInsert("INSERT INTO ACACIA_META.HOST(NAME, IP, IS_PUBLIC) VALUES('" + hstName + "','" + hstIP + "', " + Utils.isPublic(hstName) + ")");
+			    Console.OUT.println("Result is : " + insertID);
+			    }else if(insrtID.equals("1")){ //This means there is already a record for the host in the host table. Therefore, have to update that.
+			    val result:Boolean = call_runUpdate("UPDATE ACACIA_META.HOST SET IP = '" + hstIP + "', IS_PUBLIC=" + Utils.isPublic(hstName) + " WHERE NAME LIKE '" + hstName + "'");
+			    Console.OUT.println("Result is : " + result);
+			    }
+		    } catch (e:DeadPlaceException) {
+		    	Console.OUT.println(e.place + " died"); // report failure
+		    }            
     	}
     
         //Next we need to account for public hosts

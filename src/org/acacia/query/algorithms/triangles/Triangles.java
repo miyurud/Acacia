@@ -39,13 +39,17 @@ import org.acacia.util.java.Utils_Java;
  *
  */
 public class Triangles {
+	public static String run(AcaciaLocalStore graphDB, String serverHostName) {
+		return run(graphDB, null, null, serverHostName);
+	}
+	
 	public static String run(AcaciaLocalStore graphDB, String graphID, String partitionID, String serverHostName) {
-		AcaciaHashMapLocalStore hMapLocalStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
-		hMapLocalStore.loadGraph();
-		HashMap<Long, HashSet<Long>> localSubGraphMap = hMapLocalStore.getUnderlyingHashMap();		
-		long nEdges = hMapLocalStore.getEdgeCount();		
-		Logger_Java.info("nedges : " + nEdges);		
-		HashMap<Long, Long> degreeDist = hMapLocalStore.getOutDegreeDistributionHashMap();
+		//AcaciaHashMapLocalStore hMapLocalStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		//hMapLocalStore.loadGraph();
+		HashMap<Long, HashSet<Long>> localSubGraphMap = ((AcaciaHashMapLocalStore)graphDB).getUnderlyingHashMap();		
+		long nEdges = graphDB.getEdgeCount();		
+		//Logger_Java.info("nedges : " + nEdges);		
+		HashMap<Long, Long> degreeDist = ((AcaciaHashMapLocalStore)graphDB).getOutDegreeDistributionHashMap();
 		TreeMap<Long, TreeSet<Long>> degreeMap = new TreeMap<Long, TreeSet<Long>>(); //<degree><list of vertices>
 		HashMap<Long, Long> degreeReverseLookupMap = new HashMap<Long, Long>();
 		TreeSet<Long> degreeSet = null;
@@ -67,7 +71,7 @@ public class Triangles {
 				degreeMap.put(degree, degreeSet);
 			}
 			
-			degreeReverseLookupMap.put(startVid, degree);
+			//degreeReverseLookupMap.put(startVid, degree);
 		}
 		
 		//System.out.println("Started counting algorithm at : " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
@@ -94,8 +98,8 @@ public class Triangles {
 				if(uList != null){ //Because in local subgraph map we may mark only u -> v, but v may not have corresponding record in the map (i.e., v -> u).
 					for(long u : uList){//second for loop
 //						if(degreeReverseLookupMap.containsKey(u)){
-//							long degree = degreeReverseLookupMap.get(u);
-//							if(degreeListVisited.contains(degree)){
+//							long degree2 = degreeReverseLookupMap.get(u);
+//							if(degreeListVisited.contains(degree2)){
 //								//There is no point of considering the vertices of this degree. We have already counted traingales for all the
 //								//vertices with this degree
 //								continue;
@@ -142,7 +146,7 @@ public class Triangles {
 												lst.add(v3);
 												itemRes.put(v2, lst);
 												traingleTree.put(v1, itemRes);
-												System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
+												//System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
 												traingleCount++;
 //												sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 											}else{
@@ -156,7 +160,7 @@ public class Triangles {
 											itemRes.put(v2, newU);
 											traingleTree.put(v1, itemRes);//here its just replacing the old itemRes
 											
-											System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
+											//System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
 											traingleCount++;
 //											sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 										}
@@ -168,7 +172,7 @@ public class Triangles {
 										itemRes.put(v2, newU);
 										traingleTree.put(v1, itemRes); //here we are adding a new itemRes
 										
-										System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
+										//System.out.println("v1:" + v1 + " v2:" + v2 + " v3:" + v3 );
 										traingleCount++;
 //										sb2.append("" + v1 + " " + v2 + " " + v3 + "\n");
 									}
@@ -202,10 +206,12 @@ public class Triangles {
 		
         //The following method may return the count of traingles that intersect between the local graph and the world.
 //        traingleCount += AcaciaInstanceToManagerAPI.countIntersectingTraingles(serverHostName, graphID, partitionId);
-        System.out.println("serverHostName : " + serverHostName);
-        long intersectCount = AcaciaInstanceToManagerAPI.countIntersectingTraingles(serverHostName, graphID, partitionID, localSubGraphMap, degreeMap, degreeReverseLookupMap);
-        System.out.println("intersect traingle Count : " + intersectCount);
-        traingleCount += intersectCount;
+        if(serverHostName != null){
+        	//System.out.println("serverHostName : " + serverHostName);
+        	long intersectCount = AcaciaInstanceToManagerAPI.countIntersectingTraingles(serverHostName, graphID, partitionID, localSubGraphMap, degreeMap, degreeReverseLookupMap);
+        	System.out.println("intersect traingle Count : " + intersectCount);
+        	traingleCount += intersectCount;
+        }
 		return "" + traingleCount;
 	}
 }

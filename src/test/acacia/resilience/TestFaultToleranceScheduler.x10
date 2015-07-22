@@ -14,16 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.resilience;
+package test.acacia.resilience;
 
-/**
- * Class ZookeeperInterface
- */
-public class ZookeeperInterface {
-    /**
-     * Default constructor 
-     */
-    public def this() {
-        // TODO auto-generated stub
-    }
+public class TestFaultToleranceScheduler {
 }

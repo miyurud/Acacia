@@ -55,6 +55,7 @@ public class FaultToleranceScheduler {
 
 			//counterForHoasts is for used in the case where nHosts>1
 			val counterForHoasts:HashMap[String, Int] = new HashMap[String, int]();
+			val counterForPlacesByHost:HashMap[String, HashMap[Int,Int]] = new HashMap[String, HashMap[Int,Int]]();
 
 			//hostToPlaceMap maps list of places to the corresponding host 
 			val hostToPlaceMap:HashMap[String, ArrayList[Int]] = new HashMap[String, ArrayList[Int]]();
@@ -73,6 +74,9 @@ public class FaultToleranceScheduler {
 				val hostName:String = PlaceToNodeMapper.getHost(p.id);	
 				if(hostPlaceCounter.containsKey(hostName))
 				{
+					var PlaceConterMap:HashMap[Int,Int] = counterForPlacesByHost.get(hostName);
+					PlaceConterMap.put(p.id as Int,0n);
+					counterForPlacesByHost.put(hostName,PlaceConterMap);
 					hostPlaceCounter.put(hostName,hostPlaceCounter.get(hostName) + 1n);
 					var temp:ArrayList[Int] = hostToPlaceMap.get(hostName);
 					temp.add(p.id as Int);
@@ -82,6 +86,16 @@ public class FaultToleranceScheduler {
 				{
 					hostPlaceCounter.put(hostName,1n);
 					counterForHoasts.put(hostName,0n);
+					var PlaceConterMap:HashMap[Int,Int] = new HashMap[Int,Int]();
+					//usedHostsCounter is the counter of hosts that exceeded the reference number.
+					PlaceConterMap.put(-1n,0n);
+					//ReferenceForHosts is the reference number for the counter values. 
+					PlaceConterMap.put(-2n,0n);
+					//nextLevel is a counter of Hosts that exceeded the reference number+1. Only used in one case
+					PlaceConterMap.put(-3n,0n);
+
+					PlaceConterMap.put(p.id as Int,0n);
+					counterForPlacesByHost.put(hostName,PlaceConterMap);
 					var temp:ArrayList[Int] = new ArrayList[Int]();
 					temp.add(p.id as Int);
 					hostToPlaceMap.put(hostName, temp);
@@ -106,10 +120,10 @@ public class FaultToleranceScheduler {
 			if(resilienceLevel >= nPlaces - 1n){
 				while(itr2.hasNext()){
 					var frequency:Int=nPlaces;
-					val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
-					val pid:Int=itemHost.getKey() as int;
+					val itemPlace:x10.util.Map.Entry[Long, String] = itr2.next();
+					val pid:Int=itemPlace.getKey() as int;
 					var resultString:String = "";
-					if(itemHost==null){
+					if(itemPlace==null){
 						break;
 					}
 					for (var k:Int = 0n; k < nPlaces; k++){
@@ -134,10 +148,10 @@ public class FaultToleranceScheduler {
 				//nextLevel is a counter of places that exceeded the reference number+1. Only used in one case
 				var nextLevel:Int=0n;
 				while(itr2.hasNext()){
-					val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
-					val pid:Int=itemHost.getKey() as int;
+					val itemPlace:x10.util.Map.Entry[Long, String] = itr2.next();
+					val pid:Int=itemPlace.getKey() as int;
 					var resultString:String = "";
-					if(itemHost==null){
+					if(itemPlace==null){
 						break;
 					}
 					for (var k:Int = 0n; k < resilienceLevel; k++){
@@ -184,8 +198,8 @@ public class FaultToleranceScheduler {
 				return result;
 			}
 			if(nHosts>1) {
-				if(nHosts == resilienceLevel)
-				{
+				//if(nHosts <= resilienceLevel)
+				//{
 					//counterForHoasts created in the begining will be used as the counter
 					//usedHostsCounter is the counter of hosts that exceeded the reference number.
 					var usedHostsCounter:Int=0n;
@@ -194,42 +208,85 @@ public class FaultToleranceScheduler {
 					//nextLevel is a counter of Hosts that exceeded the reference number+1. Only used in one case
 					var nextLevelForHosts:Int=0n;
 					while(itr2.hasNext()){
-						val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
-						if(itemHost==null){
+						val itemPlace:x10.util.Map.Entry[Long, String] = itr2.next();
+						val pid:Int=itemPlace.getKey() as int;
+						var resultString:String = "";
+						if(itemPlace==null){
 							break;
 						}
-						
+						val hostName:String = itemPlace.getValue();
+						//var hostItr:Iterator[x10.util.Map.Entry[String, HashMap[Int,Int]]] = counterForPlacesByHost.entries().iterator();
+						var hostItr:Iterator[x10.util.Map.Entry[String, ArrayList[Int]]] = hostToPlaceMap.entries().iterator();
+						while(hostItr.hasNext())
+						{
+							val itemHost:x10.util.Map.Entry[String, ArrayList[Int]] = hostItr.next();
+							val hostID:String = itemHost.getKey();
+							var placeList:ArrayList[Int] = itemHost.getValue();
+							// val itemHost:x10.util.Map.Entry[String, HashMap[Int,Int]] = hostItr.next();
+							// val hostID:String = itemHost.getKey();
+							// var counterListByPlaces:HashMap[Int,Int] = itemHost.getValue();
+							var counterListByPlaces:HashMap[Int,Int] = counterForPlacesByHost.get(hostID);
+							var i:Int = counterListByPlaces.get(-2n);
+							var completed:Boolean = false;
+							var placeItr:Iterator[Int] = placeList.iterator();
+							while(placeItr.hasNext()){
+								var j:Int = placeItr.next();
+								if(pid != j){
+									if(counterListByPlaces.get(j) == i) {
+		
+										counterListByPlaces.put(j,counterListByPlaces.get(j)+1n);
+										resultString = resultString + j;
+										counterListByPlaces.put(-1n,counterListByPlaces.get(-1n)+1n);
+										completed = true;
+										if(counterListByPlaces.get(-1n) == placeList.size() as Int){
+											counterListByPlaces.put(-1n,counterListByPlaces.get(-3n));
+											i++;
+											counterListByPlaces.put(-2n,i);
+											counterListByPlaces.put(-3n,0n);
+										}
+										break;
+									}
+								}
+							}
+							if(completed == false){
+								var placeItr2:Iterator[Int] = placeList.iterator();
+								while(placeItr2.hasNext()){
+									var j:Int = placeItr2.next();
+									if(pid != j){
+										if(counterListByPlaces.get(j) == i+1n) {
+										
+											counterListByPlaces.put(j,counterListByPlaces.get(j)+1n);
+											resultString = resultString + j;
+											counterListByPlaces.put(-3n,counterListByPlaces.get(-3n)+1n);
+											completed = true;											
+											break;
+										}
+									}
+								}								
+							}
+							if(hostItr.hasNext())
+							{
+								resultString = resultString + ",";
+							}
+
+						}
+						resultString = resultString + "$";
+						result.put(pid,resultString);
 						//Console.OUT.println("More than One Host - Replications " + i+1 + " in" + counter(nPlaces)+ "places. Replications "+i+2+ "in "+nextLevel+" places. All other have "+i+"Replications.");
 
 					}
-				}
-				if(nHosts > resilienceLevel)
-				{
+				//}
+				// if(nHosts > resilienceLevel)
+				// {
+				// 
+				// }
+				// if(nHosts < resilienceLevel)
+				// {
+				// //Will be implemented in future. For now use one replication for a host.
+				// }
 				
-				}
-				if(nHosts < resilienceLevel)
-				{
-				
-				}
-				while(itr2.hasNext()){
-					val itemHost:x10.util.Map.Entry[Long, String] = itr2.next();
-					if(itemHost==null){
-						break;
-					}
-					//val filePath:String = batchUploadFileList(i);
-					//val partitionID:String = filePath.substring(filePath.indexOf("_")+1n, filePath.indexOf("."));
-					//call_batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
-
-					//Console.OUT.println("More than One Host - Replications " + i+1 + " in" + counter(nPlaces)+ "places. Replications "+i+2+ "in "+nextLevel+" places. All other have "+i+"Replications.");
-				}
 			}
-			//val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.FaultToleranceScheduler.resilienceLevel"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
-			//converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
-			//val initialPartID:Int = converter.getInitlaPartitionID();
-			//val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
-			//var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
-			//var ptnArrLst:Rail[String] = x10.interop.Java.convert(converter.getPartitionIDList());
-			//val fileListLen = batchUploadFileList.size;
+			
 			return result;
 		}
 		return null;

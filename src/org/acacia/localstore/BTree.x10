@@ -51,6 +51,7 @@ import x10.util.*;
 	  			this.value = value;
 	  			this.next  = next;
 	  		}
+  	  
   	  		def getKey():Key{
   	       		return key;
   	  		}
@@ -121,7 +122,10 @@ import x10.util.*;
  	  	public def put(key:Key, value:Any):void {
   			var u:Node = insert(root, key, value, height); 
   			keyValPairs++;
-  			if (u == null) return;
+  
+  			if (u == null) {
+  				return;
+  			}
   	  	
 		  	// need to split root
 		  	splitRoot:Node = new Node(2n);
@@ -163,48 +167,46 @@ import x10.util.*;
   			}
   			h.childrenArray(j) = t;
   			h.nodeChildren++;
-  			if (h.nodeChildren < sizeM) 
+  
+  			if (h.nodeChildren < sizeM) {
   				return null;
-  			else         
+  			}else{         
   				return split(h);
+  			}
    		}
 
   		// split node in half
    		private def split(h:Node):Node{
 	  		t:Node = new Node(sizeM/2n);
 	  		h.nodeChildren = sizeM/2n;
-	  		for (j:Int = 0n; j < sizeM/2n; j+1n)
+	  		for (j:Int = 0n; j < sizeM/2n; j+1n){
 	  			t.childrenArray(j) = h.childrenArray(sizeM/2n+j); 
+	  		}
 	  		return t;    
   		}
    
    		public def delete(x:Node,key:Key, height:Int):void{
-   
-   		var children:Rail[Entry] = x.getNodeChildrenArray();
-   		
-   		if (height == 0n) {
-   			for (j:Int = 0n; j < x.nodeChildren; j+1n) {
-   				if(key.CompareTo(children(j).getKey().getKeyVal()) == 0n){
-                	children(j) = null;
-   				}
-   			}
+	   		var children:Rail[Entry] = x.getNodeChildrenArray();
+	   		
+	   		if (height == 0n) {
+	   			for (j:Int = 0n; j < x.nodeChildren; j+1n) {
+	   				if(key.CompareTo(children(j).getKey().getKeyVal()) == 0n){
+	                	children(j) = null;
+	   				}
+	   			}
+	   		} else {
+	   			for (j:Int = 0n; j < x.nodeChildren; j+1n) {
+	   				if (j+1n == x.nodeChildren){
+	   					children(j) = null;
+	   				}
+	   
+	   				if(key.CompareTo(x.childrenArray(j+1).getKey().getKeyVal()) < 0n){
+	   					children(j) = children(j-1).next.childrenArray(size);
+	   					children(j-1).next.childrenArray(size) = null;
+	   				}
+	   			}
+	   		}   				  		
    		}
-   
-   		else {
-   			for (j:Int = 0n; j < x.nodeChildren; j+1n) {
-   				if (j+1n == x.nodeChildren){
-   					children(j) = null;
-   				}
-   
-   				if(key.CompareTo(x.childrenArray(j+1).getKey().getKeyVal()) < 0n){
-   					children(j) = children(j-1).next.childrenArray(size);
-   					children(j-1).next.childrenArray(size) = null;
-   				}
-   			}
-   		}
-   				  		
-   		}
- 
  }
   
  

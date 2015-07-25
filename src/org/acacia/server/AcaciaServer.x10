@@ -39,6 +39,7 @@ import org.acacia.metadata.db.HSQLDBInterface;
 import org.acacia.frontend.AcaciaFrontEnd;
 import org.acacia.backend.AcaciaBackEnd;
 import org.acacia.vertexcounter.VertexCounter;
+import org.acacia.partitioner.local.AcaciaRDFPartitioner;
 
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
@@ -473,24 +474,7 @@ public class AcaciaServer {
     val initialPartID:Int = converter.getInitlaPartitionID();
     //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
     var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
-        
-        
-        // var ptnArrLst:ArrayList[String] = new ArrayList[String]();
-        // var initlaPartitionID:String = null;
-        // var initPartFlag:Boolean = false;
-        // val partitionedFileCount:Long = batchUploadFileList.size;
-        // for(var i:Int = 0n; i < partitionedFileCount; i++){
-        // 	val partitionid:String = call_runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + " )");    			
-        // 	Console.OUT.println("The new partition id : " + partitionid);
-        // 	
-        // 	if(!initPartFlag){
-        // 		initlaPartitionID = partitionid;
-        // 		initPartFlag = true;
-        // 	}
-        // 	
-        // 	ptnArrLst.add(partitionid);
-        // }
-        
+                
         var ptnArrLst:Rail[String] = x10.interop.Java.convert(converter.getPartitionIDList());
         
         
@@ -562,6 +546,18 @@ public class AcaciaServer {
      //     }
     }
     
+    public static def uploadRDFGraphLocally(val item:String, val inputFilePath:String):void{
+	    Console.OUT.println("Uploading the following graph locally : " + item);
+	    val rdfParser:AcaciaRDFPartitioner = new AcaciaRDFPartitioner();
+	    val converter:MetisPartitioner = new MetisPartitioner();
+	    
+	    val isDistrbutedCentralPartitions:Boolean = true;
+	    val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputFilePath + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");
+	    
+	    rdfParser.readFile(inputFilePath);
+	    
+	    
+    }
        
     /**
      * This method distributed the graph partitions from HDFS on to the local servers.

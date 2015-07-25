@@ -197,7 +197,50 @@ public class AcaciaFrontEndServiceSession {
 				out.flush();
 			}			
 			
-		}else if(msg.equals(AcaciaFrontEndProtocol.ECOUNT)){
+		}else if(msg.equals(AcaciaFrontEndProtocol.ADRDF)){ //Add graph from outside
+            //we get the name and the path to graph as a pair separated by |.
+            out.println(AcaciaFrontEndProtocol.SEND);
+            out.flush();
+            var name:String = "";
+            var path:String = "";
+
+            try{
+            	str = buff.readLine();
+            }catch(val e:IOException){
+            	Logger_Java.error("Error : " + e.getMessage());
+            }
+
+            val strArr:Rail[String] = str.split("|");
+
+            if(strArr.size != 2){
+            	out.println(AcaciaFrontEndProtocol.ERROR + ":Message format not recognized");
+            	out.flush();
+            	return;
+            }
+
+            name=strArr(0);
+            path=strArr(1);
+
+            if(graphExists(path)){
+            	out.println(AcaciaFrontEndProtocol.ERROR + ":Graph exists");
+            	out.flush();				
+            }else{
+            	var file:File = new File(path);
+            	if(file.exists()){
+            		if(IS_DISTRIBUTED){
+                        //This needs to be implemented in future.
+            		}else{
+            			Console.OUT.println("Uploading the rdf graph locally.");
+            			AcaciaServer.uploadRDFGraphLocally(name, path);
+            			out.println(AcaciaFrontEndProtocol.DONE);
+            			out.flush();
+            		}
+            	}else{
+            		out.println(AcaciaFrontEndProtocol.ERROR + ":Graph data file does not exist on the specified path");
+            		out.flush();	
+            	}
+            }
+        }else if(msg.equals(AcaciaFrontEndProtocol.ECOUNT)){
 			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
 			out.flush();
 			

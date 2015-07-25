@@ -35,64 +35,57 @@ public class RelationshipRecord {
 
 //constructor of relationshipNode
 	
-public def this(var flag:Int, var firstNodeId:Long, var secondNodeId:Long,var relationshipTypeId:Int,
-				var firstNodePreviousRelationshipId:Int, var firstNodeNextRelationshipId:Int,
-				var secondNodePreviousRelationshipId:Int,var secondNodeNextRelationshipId:Int) {
+	public def this(var flag:Int, var firstNodeId:Long, var secondNodeId:Long,var relationshipTypeId:Int,
+					var firstNodePreviousRelationshipId:Int, var firstNodeNextRelationshipId:Int,
+					var secondNodePreviousRelationshipId:Int,var secondNodeNextRelationshipId:Int) {
+		this.flag=flag;
+	 	this.firstNodeId=firstNodeId;
+		this.secondNodeId=secondNodeId;
+		this.firstNodePreviousRelationshipId=firstNodePreviousRelationshipId;
+		this.firstNodeNextRelationshipId=firstNodeNextRelationshipId;
+		this.secondNodePreviousRelationshipId=secondNodePreviousRelationshipId;
+		this.secondNodeNextRelationshipId=secondNodeNextRelationshipId;
+	}
+
+	//getters
 	
-	this.flag=flag;
- 	this.firstNodeId=firstNodeId;
-	this.secondNodeId=secondNodeId;
-	this.firstNodePreviousRelationshipId=firstNodePreviousRelationshipId;
-	this.firstNodeNextRelationshipId=firstNodeNextRelationshipId;
-	this.secondNodePreviousRelationshipId=secondNodePreviousRelationshipId;
-	this.secondNodeNextRelationshipId=secondNodeNextRelationshipId;
-}
-
-//getters
-
-public def getFlag():Int{
- 	return flag;
-}
-
-public def getFirstNodeId():Long{
-	return firstNodeId;
-}
-
-public def getSecondNodeId():Long{
-	return secondNodeId;
-}
-
-public def getFirstNodePreviousRelationshipId():Int{
-	return firstNodePreviousRelationshipId;
-}
-
-public def getFirstNodeNextRelationshipId():Int{
-	return firstNodeNextRelationshipId;
-}
-
-public def getSecondNodePreviousRelationshipId():Int{
-	return secondNodePreviousRelationshipId;
-}
-
-public def getSecondNodeNextRelationshipId():Int{
-	return secondNodeNextRelationshipId;
-}
-
-public def getbyteArrayRelationship():Rail[Byte]{
- 	return byteArrayRelationship;
-}
-
-public def readByteArrayRelationshipRecord(){
- 	var path:String=Utils.call_getAcaciaProperty("org.acacia.server.runtime.location");		
- 	var file:File = new File(path);
- 	for (line in file.lines()) {
-
- 	}
-}
-
-
-
-
-
-
+	public def getFlag():Int{
+	 	return flag;
+	}
+	
+	public def getFirstNodeId():Long{
+		return firstNodeId;
+	}
+	
+	public def getSecondNodeId():Long{
+		return secondNodeId;
+	}
+	
+	public def getFirstNodePreviousRelationshipId():Int{
+		return firstNodePreviousRelationshipId;
+	}
+	
+	public def getFirstNodeNextRelationshipId():Int{
+		return firstNodeNextRelationshipId;
+	}
+	
+	public def getSecondNodePreviousRelationshipId():Int{
+		return secondNodePreviousRelationshipId;
+	}
+	
+	public def getSecondNodeNextRelationshipId():Int{
+		return secondNodeNextRelationshipId;
+	}
+	
+	public def getbyteArrayRelationship():Rail[Byte]{
+	 	return byteArrayRelationship;
+	}
+	
+	public def readByteArrayRelationshipRecord(){
+	 	var path:String=Utils.call_getAcaciaProperty("org.acacia.server.runtime.location");		
+	 	var file:File = new File(path);
+	 	for (line in file.lines()) {
+	       
+	 	}
+	}
 }

@@ -63,9 +63,11 @@ import x10.util.*;
   	  		def Key(key:Int){
   	   			this.key = key;
   	  		}
+  	  
   	  		def getKeyVal():Int{
   	  			return key;
   	  		}
+  	  
   	  		def CompareTo(k:Int):Int{
 		  	    var returnVal:Int = 0n;
 		  	    if(k < key){ returnVal = -1n; }
@@ -187,7 +189,8 @@ import x10.util.*;
    
    		public def delete(x:Node,key:Key, height:Int):void{
 	   		var children:Rail[Entry] = x.getNodeChildrenArray();
-	   		
+	   		var childrenArray:Rail[Entry] = null;
+	   
 	   		if (height == 0n) {
 	   			for (j:Int = 0n; j < x.nodeChildren; j+1n) {
 	   				if(key.CompareTo(children(j).getKey().getKeyVal()) == 0n){
@@ -201,8 +204,9 @@ import x10.util.*;
 	   				}
 	   
 	   				if(key.CompareTo(x.childrenArray(j+1).getKey().getKeyVal()) < 0n){
-	   					children(j) = children(j-1).next.childrenArray(size);
-	   					children(j-1).next.childrenArray(size) = null;
+	   					childrenArray = children(j-1).next.childrenArray;
+	   					children(j) = childrenArray(childrenArray.size - 1);
+	   					childrenArray(childrenArray.size - 1) = null;
 	   				}
 	   			}
 	   		}   				  		

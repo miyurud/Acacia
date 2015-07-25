@@ -1,3 +1,19 @@
+/**
+Copyright 2015 Acacia Team
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 package org.acacia.partitioner.local;
 
 import x10.io.File;
@@ -34,52 +50,62 @@ public class AcaciaRDFPartitioner {
  	private val location = Utils.call_getAcaciaProperty("org.acacia.server.runtime.location")+"/rdfFiles/";
 
     public def this() {
-        // TODO auto-generated stub
     	val f = new File(location);
     	if(!f.exists()){
     		f.mkdir();
     	}
     }
     
-    public def readFile():void{
-    	val inputFile:String	= "/home/isuru/Dropbox/fyp2015_Acacia-RDF/Datasets/Temp/University0_0.owl";
-	// create an empty model
+    public def readFile(val inputFile:String):void{
+		// create an empty model
     	Console.OUT.println("creating model");
     	var model:Model = ModelFactory.createDefaultModel();
     	Console.OUT.println("model created");
-	
+        var fis:java.io.FileInputStream = null;
+        try{
+        	fis = new java.io.FileInputStream(new java.io.File(inputFile));
+        }catch(val e:java.io.FileNotFoundException){
+            e.printStackTrace();
+        }
     	// read the RDF/XML file
-	model.read(inputFile);
-
-	iter:StmtIterator = model.listStatements();
- 	while (iter.hasNext()) {
- 		stmt:Statement		= iter.nextStatement();  // get next statement
- 	    	subject:Resource   	= stmt.getSubject();     // get the subject
- 	    	predicate:Property 	= stmt.getPredicate();   // get the predicate
- 	    	object:RDFNode    	= stmt.getObject();      // get the object
- 	    
- 	    	//Console.OUT.println("Subject : "+subject.toString());
- 	    	var fromNode:Long = addToStore(nodes,subject.toString());
- 	    
- 	    	//Console.OUT.println("Predicate : "+ predicate.toString() + " ");
- 	    	var relation:Long = addToStore(predicates,predicate.toString());
- 	    
- 	    	//Console.OUT.println("Object : "+object.toString());
- 	    	var toNode:Long;
-	    	if (object instanceof Resource) {
-	    		toNode = addToStore(nodes,object.toString());
-	    		addToMap(relationsMap,fromNode,relation,toNode);
- 	    	} else {
- 	    		// object is a literal
- 	    		addToMap(attributeMap,fromNode,relation,object.toString());
- 	    	}
- 
-	    	//Console.OUT.println("------------------------------------------------------");
- 	}
- 	writeStore(nodes,"nodeStore");
- 	writeStore(predicates,"predicateStore");
- 	writeMap(attributeMap,"attributeMap");
- 	writeMap(relationsMap,"relationMap");
+		model.read(fis, null, "RDF/XML");
+Console.OUT.println("model created2");
+		iter:StmtIterator = model.listStatements();
+Console.OUT.println("model created3");
+	 	while (iter.hasNext()) {
+	 		stmt:Statement		= iter.nextStatement();  // get next statement
+	 	    subject:Resource   	= stmt.getSubject();     // get the subject
+	 	    predicate:Property 	= stmt.getPredicate();   // get the predicate
+	 	    object:RDFNode    	= stmt.getObject();      // get the object
+	 	    
+	 	    //Console.OUT.println("Subject : "+subject.toString());
+	 	    var fromNode:Long = addToStore(nodes,subject.toString());
+	 	    
+	 	    //Console.OUT.println("Predicate : "+ predicate.toString() + " ");
+	 	    var relation:Long = addToStore(predicates,predicate.toString());
+	 	    
+	 	    //Console.OUT.println("Object : "+object.toString());
+	 	    var toNode:Long;
+		    
+	 	    if (object instanceof Resource) {
+		    	toNode = addToStore(nodes,object.toString());
+		    	addToMap(relationsMap,fromNode,relation,toNode);
+	 	    } else {
+	 	    	// object is a literal
+	 	    	addToMap(attributeMap,fromNode,relation,object.toString());
+	 	    }
+	 
+		    //Console.OUT.println("------------------------------------------------------");
+	 	}
+	 Console.OUT.println("model created4");
+	 	writeStore(nodes,"nodeStore");
+	 Console.OUT.println("model created5");
+	 	writeStore(predicates,"predicateStore");
+	 Console.OUT.println("model created6");
+	 	writeMap(attributeMap,"attributeMap");
+	 Console.OUT.println("model created7");
+	 	writeMap(relationsMap,"relationMap");
+	 Console.OUT.println("model created8");
     }
  
     private def addToStore(val map:HashMap[Long,String],val URI:String):Long{
@@ -129,7 +155,7 @@ public class AcaciaRDFPartitioner {
     	    	//Console.OUT.println(attributeItem.getKey()+" "+attributeItem.getValue());
     	    	P.println(attributeItem.getKey()+" "+attributeItem.getValue());
     	}
-   	P.flush();
+   	    P.flush();
     }
     
     public def writeMap(val map:HashMap[Long,HashMap[Long,LinkedList]],val fileName:String):void{
@@ -157,5 +183,4 @@ public class AcaciaRDFPartitioner {
     	}
     	P.flush();
     }
-    
 }

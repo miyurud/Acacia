@@ -77,7 +77,12 @@ public class MetisPartitioner{
 	private int largestVertex;
 	private int nPlaces;
 	
-	public void convert(String graphName, String graphID, String inputFilePath, String outputFilePath, int nParts, boolean isDistributedCentralPartitions, int nThreads, int nPlaces){
+	public void convert(String graphName, String graphID, String inputFilePath, String outputFilePath, int nParts, boolean isDistributedCentralPartitions, int nThreads, int nPlaces){		
+		convertWithoutDistribution(graphName, graphID, inputFilePath, outputFilePath, nParts, isDistributedCentralPartitions, nThreads, nPlaces);
+		distributeEdges();
+	}
+	
+	public void convertWithoutDistribution(String graphName, String graphID, String inputFilePath, String outputFilePath, int nParts, boolean isDistributedCentralPartitions, int nThreads, int nPlaces){
 		this.outputFilePath = outputFilePath;
 		this.nParts = nParts;
 		this.graphName = graphName;
@@ -697,6 +702,10 @@ public class MetisPartitioner{
 		}else{
 			System.out.println("No data on graph structure...");
 		}
+	}
+	
+	public int getVertexCount(){
+		return vertexCount;
 	}
 	
 	class CustomThread extends Thread{

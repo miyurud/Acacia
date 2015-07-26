@@ -19,7 +19,9 @@ package org.acacia.partitioner.local;
 import x10.io.File;
 import x10.util.HashMap;
 import x10.util.HashSet;
+
 import org.acacia.util.Utils;
+
 import java.util.LinkedList;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -30,7 +32,15 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+
 import x10.util.ListIterator;
+
+import org.apache.commons.io.FileDeleteStrategy;
+import org.apache.commons.io.FileUtils;
+
+import org.acacia.partitioner.local.java.MetisPartitioner;
+import org.acacia.partitioner.local.java.PartitionWriter;
+import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 
 /**
  * Class AcaciaRDFPartitioner
@@ -50,11 +60,45 @@ public class AcaciaRDFPartitioner {
  	private val location = Utils.call_getAcaciaProperty("org.acacia.server.runtime.location")+"/rdfFiles/";
  	private val edgeListPath = location+"edgeList.dl";
  
+    private var converter:MetisPartitioner = null;
+ 
     public def this() {
     	val f = new File(location);
     	if(!f.exists()){
     		f.mkdir();
+    	}else{
+            //Delete the existing files
+    		val dir:java.io.File = new java.io.File(location);
+            val files:x10.interop.Java.array[java.io.File] = dir.listFiles();
+            
+            for(var i:Int = 0n; i < files.length; i++ ){
+            	var delStatus:Boolean = false;
+            
+	            try{
+		            if(files(i).isDirectory()){
+			            FileUtils.deleteDirectory(files(i));
+		            }else{
+		            	delStatus = files(i).delete();
+		            }
+	            }catch(var ex:java.io.IOException){
+	            	ex.printStackTrace();
+	            }
+            }
     	}
+    
+        converter = new MetisPartitioner();
+    }
+    
+    public def convert(val item:String, val graphName:String, val graphID:String, val inputFilePath:String, val outputFilePath:String, val nParts:Int, val isDistributedCentralPartitions:Boolean, val nThreads:Int, val nPlaces:Int){
+    	//converter.convertWithoutDistribution(item, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
+    }
+    
+    public def getPartitionFileList():Rail[String]{
+        return null;
+    }
+    
+    public def getPartitionIDList():Rail[String]{
+       return null;
     }
     
     public def readFile(val inputFile:String):void{
@@ -107,15 +151,10 @@ public class AcaciaRDFPartitioner {
 	 	//flush the printer
 	 	printer.flush();
 	 
-	 Console.OUT.println("model created4");
 	 	writeStore(nodes,"nodeStore");
-	 Console.OUT.println("model created5");
 	 	writeStore(predicates,"predicateStore");
-	 Console.OUT.println("model created6");
 	 	writeMap(attributeMap,"attributeMap");
-	 Console.OUT.println("model created7");
 	 	writeMap(relationsMap,"relationMap");
-	 Console.OUT.println("model created8");
     }
     
     private def addToStore(val map:HashMap[Long,String],val URI:String):Long{
@@ -189,12 +228,27 @@ public class AcaciaRDFPartitioner {
     			//Console.OUT.println();
     			P.println();
     		}
-    		
     	}
     	P.flush();
     }
     
     public def getEdgeList():String{
     	return edgeListPath;
+    }
+    
+    /**
+     * Once an RDF graph's edge list has been partitioned by MetisPartitioner, we have to distribute
+     * the contents of the RDF data set across the workers. This is different from distriuting a simple
+     * edgelist because we have to handle the vertex, edge properties as well.
+     */
+    public def distributePartitionedData():void{
+    	val partitionFilesMap:HashMap[Short, PartitionWriter]  = new HashMap[Short, PartitionWriter](); 
+    	val centralStoresMap:HashMap[Short, AcaciaHashMapCentralStore]  = new HashMap[Short, AcaciaHashMapCentralStore]();
+    
+        
+    }
+    
+    public def getInitlaPartitionID():Int{
+         return -1;
     }
 }

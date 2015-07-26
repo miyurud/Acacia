@@ -376,7 +376,8 @@ public class AcaciaFrontEndServiceSession {
 		        out.flush();
 	        }
         }
-else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
+        else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
+        
         	out.println(AcaciaFrontEndProtocol.S_QUERY_SEND);
         	out.flush();
         	try{
@@ -400,15 +401,59 @@ else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
         		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
         		out.flush();				
         	}else{ 
-       		var parser:AcaciaSPARQLParser = new AcaciaSPARQLParser();
-        		response=parser.Parsing(query,graphID);
-        		out.println(response);//print the result
+        
+        		out.println("Do you want to write results to a file?[y/n]");
+        		out.flish();
+        		var isFile:String=buff.readLine();
+        
+        		if(isFile.equals("y")){
+        
+        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
+        			out.flush();
+        			var fileName:String=buff.readLine();
+        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
+        			out.flush();
+        			var filePath:String=buff.readLine();
+        
+        			var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
+        			var results:ArrayList[String]=queryExecutor.executeQuery(query,graphID);
+        
+       				//write the result file
+        
+        
+        		}
+        		else if(isFile.equals("n")){
+        
+        			var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
+        			var results:ArrayList[String]=queryExecutor.executeQuery(query,graphID);
+        
+        			if(results.size()<=100){
+        
+        			for(var i:Int=0n; i < results.size(); i++){  	
+        			out.println(results.get(i));//print the result     
+        			}
+        
+        			out.flush();
+        			}
+        			else{
+        
+        			for(var i:Int=0n; i < 100; i++){  	//100 limited results
+        			out.println(results.get(i));//print the result     
+        			}
+        
+        			out.flush();
+        			}
+        		}
+        	else{
+        		out.println("Error");
         		out.flush();
+        	}
+       			
         	}
         	
         }
 
-else{
+        else{
 			//This is the default response
 			out.println(AcaciaFrontEndProtocol.SEND);
 			out.flush();

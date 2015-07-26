@@ -55,4 +55,6 @@ public class AcaciaFrontEndProtocol {
     public static val TRIANGLES = "trian";       //This command counts the number of triangles in a graph.
     public static val SPARQL = "sparql";		//This command is to tell next commands are related with rdf graphs.
     public static val S_QUERY_SEND = "s_query-send"; 	//This requets SPARQL query to be executed
+    public static val OUTPUT_FILE_NAME= "outputFile-name-send"; 	//This command requets the file name that results should be written
+    public static val OUTPUT_FILE_PATH= "outputFile-path-send"; 	//This command requets the file path
 }

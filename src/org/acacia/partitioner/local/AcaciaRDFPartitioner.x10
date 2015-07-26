@@ -48,7 +48,8 @@ public class AcaciaRDFPartitioner {
 	private val RELATIONSHIP_GENRE 	= "Relationship";
 
  	private val location = Utils.call_getAcaciaProperty("org.acacia.server.runtime.location")+"/rdfFiles/";
-
+ 	private val edgeListPath = location+"edgeList.dl";
+ 
     public def this() {
     	val f = new File(location);
     	if(!f.exists()){
@@ -57,7 +58,11 @@ public class AcaciaRDFPartitioner {
     }
     
     public def readFile(val inputFile:String):void{
-		// create an empty model
+		// create poniter to edgeList file
+    	val edgeList = new File(edgeListPath);
+    	val printer = edgeList.printer();
+    
+    	// create an empty model
     	Console.OUT.println("creating model");
     	var model:Model = ModelFactory.createDefaultModel();
     	Console.OUT.println("model created");
@@ -69,9 +74,9 @@ public class AcaciaRDFPartitioner {
         }
     	// read the RDF/XML file
 		model.read(fis, null, "RDF/XML");
-Console.OUT.println("model created2");
+ 		Console.OUT.println("model created2");
 		iter:StmtIterator = model.listStatements();
-Console.OUT.println("model created3");
+ 		Console.OUT.println("model created3");
 	 	while (iter.hasNext()) {
 	 		stmt:Statement		= iter.nextStatement();  // get next statement
 	 	    subject:Resource   	= stmt.getSubject();     // get the subject
@@ -90,6 +95,7 @@ Console.OUT.println("model created3");
 	 	    if (object instanceof Resource) {
 		    	toNode = addToStore(nodes,object.toString());
 		    	addToMap(relationsMap,fromNode,relation,toNode);
+		    	printer.println(fromNode+" "+toNode);
 	 	    } else {
 	 	    	// object is a literal
 	 	    	addToMap(attributeMap,fromNode,relation,object.toString());
@@ -97,6 +103,10 @@ Console.OUT.println("model created3");
 	 
 		    //Console.OUT.println("------------------------------------------------------");
 	 	}
+	
+	 	//flush the printer
+	 	printer.flush();
+	 
 	 Console.OUT.println("model created4");
 	 	writeStore(nodes,"nodeStore");
 	 Console.OUT.println("model created5");
@@ -107,7 +117,7 @@ Console.OUT.println("model created3");
 	 	writeMap(relationsMap,"relationMap");
 	 Console.OUT.println("model created8");
     }
- 
+    
     private def addToStore(val map:HashMap[Long,String],val URI:String):Long{
     	var itr:Iterator[x10.util.Map.Entry[Long,String]] = map.entries().iterator();
     	while(itr.hasNext()){
@@ -182,5 +192,9 @@ Console.OUT.println("model created3");
     		
     	}
     	P.flush();
+    }
+    
+    public def getEdgeList():String{
+    	return edgeListPath;
     }
 }

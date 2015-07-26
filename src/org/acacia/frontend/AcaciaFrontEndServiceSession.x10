@@ -197,7 +197,50 @@ public class AcaciaFrontEndServiceSession {
 				out.flush();
 			}			
 			
-		}else if(msg.equals(AcaciaFrontEndProtocol.ECOUNT)){
+		}else if(msg.equals(AcaciaFrontEndProtocol.ADRDF)){ //Add graph from outside
+            //we get the name and the path to graph as a pair separated by |.
+            out.println(AcaciaFrontEndProtocol.SEND);
+            out.flush();
+            var name:String = "";
+            var path:String = "";
+
+            try{
+            	str = buff.readLine();
+            }catch(val e:IOException){
+            	Logger_Java.error("Error : " + e.getMessage());
+            }
+
+            val strArr:Rail[String] = str.split("|");
+
+            if(strArr.size != 2){
+            	out.println(AcaciaFrontEndProtocol.ERROR + ":Message format not recognized");
+            	out.flush();
+            	return;
+            }
+
+            name=strArr(0);
+            path=strArr(1);
+
+            if(graphExists(path)){
+            	out.println(AcaciaFrontEndProtocol.ERROR + ":Graph exists");
+            	out.flush();				
+            }else{
+            	var file:File = new File(path);
+            	if(file.exists()){
+            		if(IS_DISTRIBUTED){
+                        //This needs to be implemented in future.
+            		}else{
+            			Console.OUT.println("Uploading the rdf graph locally.");
+            			AcaciaServer.uploadRDFGraphLocally(name, path);
+            			out.println(AcaciaFrontEndProtocol.DONE);
+            			out.flush();
+            		}
+            	}else{
+            		out.println(AcaciaFrontEndProtocol.ERROR + ":Graph data file does not exist on the specified path");
+            		out.flush();	
+            	}
+            }
+        }else if(msg.equals(AcaciaFrontEndProtocol.ECOUNT)){
 			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
 			out.flush();
 			
@@ -485,9 +528,9 @@ public class AcaciaFrontEndServiceSession {
 	    
 	    //var l:Rail[String] = call_runSelect("SELECT HOST_IDHOST, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    //SELECT NAME,PARTITION_IDPARTITION FROM "ACACIA_META"."HOST_HAS_PARTITION" INNER JOIN "ACACIA_META"."HOST" ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=191;
-	    Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
+	    //Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
 	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-	    Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
+	    //Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
 	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
 	    
 	    for(var i:long=0; i<l.size; i++){
@@ -528,7 +571,7 @@ public class AcaciaFrontEndServiceSession {
 	            partitionID = partitions.removeFirst();
 	        }
 	        
-	        Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
+	        //Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
 	        
 	        val ptID:String = partitionID;
 	        // async{
@@ -542,7 +585,7 @@ public class AcaciaFrontEndServiceSession {
 	        cntr++;
 	    }
 	   
-	    Console.OUT.println("AA@1 : " + hostListLen);
+	    //Console.OUT.println("AA@1 : " + hostListLen);
 	    
 	    for(var i:Int=0n; i < hostListLen; i++){
 	    	val intermResult = intermRes(i);
@@ -556,7 +599,7 @@ public class AcaciaFrontEndServiceSession {
 	    
 	    Console.OUT.println("Total triangle count :" + result);
 	    
-	    Console.OUT.println("---------- Now calculating the global only traingles --------");
+	    //Console.OUT.println("---------- Now calculating the global only traingles --------");
 	    //Next we need to count the traingles in the global graph only.
 	    val globalTriangleCount = call_countGlobalTraingles(graphID);
 	    

@@ -21,6 +21,7 @@ public class AcaciaFrontEndProtocol {
     //between Acacia and Humans.
     //The commands ending with -send are asking the graph id to be sent. The precommand
 	public static val ADGR:String = "adgr";		//To add a graph located on the NFS
+    public static val ADRDF:String = "adrdf";	//To add an RDF graph data set to Acacia
 	public static val RMGR:String = "rmgr";		//To remove a graph that is stored on Acacia
 	public static val TRUNCATE:String = "trnc"; //To truncate Acacia completely
 	public static val DONE:String = "done";		//To indicate some operation (long running) is completed

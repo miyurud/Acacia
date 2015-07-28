@@ -41,6 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.acacia.partitioner.local.java.MetisPartitioner;
 import org.acacia.partitioner.local.java.PartitionWriter;
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 
 /**
  * Class AcaciaRDFPartitioner
@@ -89,8 +90,8 @@ public class AcaciaRDFPartitioner {
         converter = new MetisPartitioner();
     }
     
-    public def convert(val item:String, val graphName:String, val graphID:String, val inputFilePath:String, val outputFilePath:String, val nParts:Int, val isDistributedCentralPartitions:Boolean, val nThreads:Int, val nPlaces:Int){
-    	//converter.convertWithoutDistribution(item, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
+    public def convert(val graphName:String, val graphID:String, val inputFilePath:String, val outputFilePath:String, val nParts:Int, val isDistributedCentralPartitions:Boolean, val nThreads:Int, val nPlaces:Int){
+    	converter.convertWithoutDistribution(graphName, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistributedCentralPartitions, nThreads, Place.places().size() as Int);
     }
     
     public def getPartitionFileList():Rail[String]{
@@ -242,13 +243,13 @@ public class AcaciaRDFPartitioner {
      * edgelist because we have to handle the vertex, edge properties as well.
      */
     public def distributePartitionedData():void{
-    	val partitionFilesMap:HashMap[Short, PartitionWriter]  = new HashMap[Short, PartitionWriter](); 
+    	val partitionFilesMap:HashMap[Short, AcaciaHashMapNativeStore]  = new HashMap[Short, AcaciaHashMapNativeStore](); 
     	val centralStoresMap:HashMap[Short, AcaciaHashMapCentralStore]  = new HashMap[Short, AcaciaHashMapCentralStore]();
     
         
     }
     
     public def getInitlaPartitionID():Int{
-         return -1;
+         return -1n;
     }
 }

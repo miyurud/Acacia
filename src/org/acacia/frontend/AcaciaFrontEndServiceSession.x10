@@ -36,7 +36,7 @@ import org.acacia.util.java.Utils_Java;
 import org.acacia.util.Utils;
 
 import org.acacia.server.AcaciaServer;
-import org.acacia.rdf.sparql.AcaciaSPARQLParser;
+import org.acacia.rdf.sparql.AcaciaSPARQLQueryExecutor;
 import x10.util.StringBuilder;
 import x10.regionarray.Array;
 import x10.util.HashMap;
@@ -444,59 +444,52 @@ public class AcaciaFrontEndServiceSession {
         		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
         		out.flush();				
         	}else{ 
-        
-        		out.println("Do you want to write results to a file?[y/n]");
-        		out.flish();
-        		var isFile:String=buff.readLine();
-        
-        		if(isFile.equals("y")){
-        
-        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
-        			out.flush();
-        			var fileName:String=buff.readLine();
-        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
-        			out.flush();
-        			var filePath:String=buff.readLine();
-        
-        			var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
-        			var results:ArrayList[String]=queryExecutor.executeQuery(query,graphID);
-        
-       				//write the result file
-        
-        
-        		}
-        		else if(isFile.equals("n")){
-        
-        			var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
-        			var results:ArrayList[String]=queryExecutor.executeQuery(query,graphID);
-        
-        			if(results.size()<=100){
-        
-        			for(var i:Int=0n; i < results.size(); i++){  	
-        			out.println(results.get(i));//print the result     
-        			}
-        
-        			out.flush();
-        			}
-        			else{
-        
-        			for(var i:Int=0n; i < 100; i++){  	//100 limited results
-        			out.println(results.get(i));//print the result     
-        			}
-        
-        			out.flush();
-        			}
-        		}
-        	else{
-        		out.println("Error");
-        		out.flush();
+			        try{
+			        		out.println("Do you want to write results to a file?[y/n]");
+			        		out.flush();
+			        		var isFile:String=buff.readLine();
+			        
+			        		if(isFile.equals("y")){
+			        
+			        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
+			        			out.flush();
+			        			var fileName:String=buff.readLine();
+			        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
+			        			out.flush();
+			        			var filePath:String=buff.readLine();
+			        
+			        			var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
+			        			var results:ArrayList[String]=queryExecutor.executeQuery(query,graphID);
+			        
+			       				//write the result file
+					        }else if(isFile.equals("n")){
+					        
+						        var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
+						        var results:ArrayList[String]=queryExecutor.executeQuery(query,graphID);
+						        
+						        if(results.size()<=100){
+						        
+							        for(var i:Int=0n; i < results.size(); i++){  	
+							        out.println(results.get(i));//print the result     
+							        }
+							        
+							        out.flush();
+						        }else{
+							        for(var i:Int=0n; i < 100; i++){  	//100 limited results
+							        	out.println(results.get(i));//print the result     
+							        }
+							        
+							        out.flush();
+						        }
+					        }else{
+					        	out.println("Error");
+					        	out.flush();
+					        }
+				        }catch(val e:IOException){
+				        	Logger_Java.error("Error : " + e.getMessage());
+				        }
         	}
-       			
-        	}
-        	
-        }
-
-        else{
+        }else{
 			//This is the default response
 			out.println(AcaciaFrontEndProtocol.SEND);
 			out.flush();

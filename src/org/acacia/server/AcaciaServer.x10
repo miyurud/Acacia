@@ -530,26 +530,11 @@ public class AcaciaServer {
         }
         Console.OUT.println("+++++++++++++++++D");
         MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET UPLOAD_END_TIME='" + call_getCurrentTimeStamp() + "', GRAPH_STATUS_IDGRAPH_STATUS=" + GraphStatus.OPERATIONAL + " WHERE IDGRAPH=" + graphID);
-        
-     //     for(val filePath:String in batchUploadFileList){
-     //         val p:Place = itr.next();
-     //      //    val hostName:String = at(p){
-     //     	// 	var hst:String = null;
-     //     	// 	// for(line in x10.xrx.Runtime.execForRead("hostname").lines()){
-     //     	// 	// 	hst = line;
-     //     	// 	// }
-     //     	// 	
-     //     	// 	return hst;
-     //     	// };
-     //     	
-     // //    	call_batchUploadFile(hostName, PlaceToNodeMapper.getInstancePort(p.id), Long.parse(graphID), filePath);
-     //     }
     }
     
     public static def uploadRDFGraphLocally(val item:String, val inputFilePath:String):void{
 	    Console.OUT.println("Uploading the following graph locally : " + item);
 	    val rdfPartitioner:AcaciaRDFPartitioner = new AcaciaRDFPartitioner();
-
 	    
 	    val isDistrbutedCentralPartitions:Boolean = true;
 	    val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputFilePath + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");

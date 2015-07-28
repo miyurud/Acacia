@@ -342,9 +342,8 @@ public class MetisPartitioner{
 		        int i = 0;
 		        CustomThread[] tArray = new CustomThread[n];
 		        while(itr2.hasNext()){
-		        	//String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
 		        	final String filePath = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+i;
-		        	i = i + 1;
+		        	//i = i + 1;
 					System.out.println("zip -rj "+filePath+"_trf.zip "+filePath);
 					Process process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
 		            final Map.Entry<Long, String> itemHost = itr2.next();
@@ -358,10 +357,11 @@ public class MetisPartitioner{
 			     	final int instancePort = port + withinPlaceIndex;
 			     	final int fileTransferport = instancePort + (nPlaces/hostCount);
 			     	
-			     	
 			     	tArray[i] = new CustomThread(i){
 			     		public void run(){
 			     			AcaciaManager.batchUploadCentralStore(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
+			     			String hostDI = ((String[])MetaDataDBInterface.runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + itemHost.getValue() + "'").value)[(int)0L];
+				            MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_CPARTITION(HOST_IDHOST, CPARTITION_IDCPARTITION, CPARTITION_GRAPH_IDCGRAPH) VALUES(" + hostDI + "," + getI() + "," + graphID + ")");
 			     			setDone();
 			     		}
 			     	};
@@ -387,8 +387,6 @@ public class MetisPartitioner{
 						e.printStackTrace();
 					}
 				}
-
-		        
 		}catch(Exception e){
 			System.out.println("Error : "+e.getMessage());
 		}

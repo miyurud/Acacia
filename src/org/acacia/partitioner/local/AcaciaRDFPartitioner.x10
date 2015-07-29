@@ -68,23 +68,23 @@ public class AcaciaRDFPartitioner {
     	if(!f.exists()){
     		f.mkdir();
     	}else{
-            //Delete the existing files
+            	//Delete the existing files
     		val dir:java.io.File = new java.io.File(location);
-            val files:x10.interop.Java.array[java.io.File] = dir.listFiles();
+            	val files:x10.interop.Java.array[java.io.File] = dir.listFiles();
             
-            for(var i:Int = 0n; i < files.length; i++ ){
-            	var delStatus:Boolean = false;
+            	for(var i:Int = 0n; i < files.length; i++ ){
+            		var delStatus:Boolean = false;
             
-	            try{
+	            	try{
 		            if(files(i).isDirectory()){
 			            FileUtils.deleteDirectory(files(i));
 		            }else{
 		            	delStatus = files(i).delete();
 		            }
-	            }catch(var ex:java.io.IOException){
-	            	ex.printStackTrace();
-	            }
-            }
+	            	}catch(var ex:java.io.IOException){
+	            		ex.printStackTrace();
+	            	}
+            	}
     	}
     
         converter = new MetisPartitioner();
@@ -95,7 +95,8 @@ public class AcaciaRDFPartitioner {
     }
     
     public def getPartitionFileList():Rail[String]{
-        return null;
+    	return x10.interop.Java.convert(converter.getPartitionFileList());    
+    	//return null;
     }
     
     public def getPartitionIDList():Rail[String]{
@@ -103,7 +104,7 @@ public class AcaciaRDFPartitioner {
     }
     
     public def readFile(val inputFile:String):void{
-		// create poniter to edgeList file
+	
     	val edgeList = new File(edgeListPath);
     	val printer = edgeList.printer();
     
@@ -123,7 +124,7 @@ public class AcaciaRDFPartitioner {
 		iter:StmtIterator = model.listStatements();
  		Console.OUT.println("model created3");
 	 	while (iter.hasNext()) {
-	 		stmt:Statement		= iter.nextStatement();  // get next statement
+	 	    stmt:Statement		= iter.nextStatement();  // get next statement
 	 	    subject:Resource   	= stmt.getSubject();     // get the subject
 	 	    predicate:Property 	= stmt.getPredicate();   // get the predicate
 	 	    object:RDFNode    	= stmt.getObject();      // get the object

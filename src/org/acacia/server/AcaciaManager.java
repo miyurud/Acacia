@@ -333,6 +333,44 @@ public class AcaciaManager{
 		return result;
 	}
 	
+	public static boolean batchUploadRDFStore(String host, int port, long graphID, String filePath, int dataPort){
+		boolean result = true;
+		
+		System.out.println(filePath);
+		
+		
+		try{
+			//System.out.println(">>>>> Connecting to host : " + host + " port : " + port);
+			Socket socket = new Socket(host, port);
+			PrintWriter out = new PrintWriter(socket.getOutputStream());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			String response = "";
+
+			//First we need to Handshake
+			out.println(AcaciaInstanceProtocol.HANDSHAKE);
+			out.flush();
+			response = reader.readLine();
+			
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+				out.println(java.net.InetAddress.getLocalHost().getHostName());
+				out.flush();
+			}
+			
+			out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_RDF);
+			out.flush();
+			
+			response = reader.readLine();
+			
+			}catch(UnknownHostException e){
+				Logger_Java.error(e.getMessage());
+				result = false;
+			}catch(IOException ec){
+				Logger_Java.error(ec.getMessage());
+				result = false;
+			}
+		return result;
+	}
+	
 	/**
 	 * This method is used to insert new edge to Acacia Local Instance.
 	 * @param host

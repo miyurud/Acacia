@@ -563,6 +563,12 @@ public class AcaciaInstanceServiceSession extends Thread{
 																			// upload
 																			// completeion.
 					out.flush();
+				}else if(msg.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_RDF)){
+					out.println(AcaciaInstanceProtocol.OK);
+					out.flush();
+					msg = buff.readLine().trim();
+					System.out.println("RDF msg recieved"+msg);
+					String graphID = msg;
 				}
 			}
 		}catch(IOException e){

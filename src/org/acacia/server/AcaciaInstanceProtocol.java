@@ -72,4 +72,5 @@ public class AcaciaInstanceProtocol{
 	public static final String FILE_RECV_ERROR = "file-error";
 	public static final String FILE_ACK = "file-ok";
 	public static final String STATUS = "status";//This is sent to the client to check its status.
+	public static final String BATCH_UPLOAD_RDF = "btch-rdf";
 }

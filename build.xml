@@ -49,6 +49,7 @@
          <compilerarg value="-Xlint:unchecked" />
          <!--<compilerarg value="-Xlint:none" />-->
         </javac>
+        <!--<exec executable="./compile_java.sh" />-->
 		<exec executable="./compile_x10.sh" />
     </target>
   	

@@ -250,6 +250,7 @@ public class AcaciaManager{
 						
 						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
 							//We need to have this type of construct to make sure we get the file created before we measure its size.
+							System.out.println("file path:" + filePath);
 							File f = new File(filePath);
 							long l = f.length();
 							

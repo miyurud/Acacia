@@ -539,7 +539,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 						out.flush();
 					}
 
-					Logger_Java.info("Got the file : " + fileName);
+					Logger_Java.info("Got the file--> : " + fileName);
 
 					fileName = fileName.substring(fileName.indexOf("_") + 1,
 							fileName.lastIndexOf("_"));
@@ -794,10 +794,12 @@ public class AcaciaInstanceServiceSession extends Thread{
 				System.out.println("Central store graph sending " + graphID + "_" + partitionID);
 			}
 			
+			System.out.println("Deleting676767");
+			System.out.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip|");
 			p = r.exec("rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip");
 			p.waitFor();
 			
-			//System.out.println("Completed unzipping");		
+			System.out.println("Completed unzipping");		
 			
 		} catch (Exception e) {
 			Logger_Java.info("Error : " + e.getMessage());

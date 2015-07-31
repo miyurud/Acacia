@@ -101,7 +101,6 @@ public class MetisPartitioner{
 		loadDataSet(inputFilePath);
 		constructMetisFormat(-1);
 		partitionWithMetis(nParts);
-		distributeEdges();
 	}
 	
 	private void distributeEdges(){
@@ -133,6 +132,7 @@ public class MetisPartitioner{
 		    		String actualPartitionID = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
 		    		refToWriter = new PartitionWriter(outputFilePath+"/"+graphID+"_"+actualPartitionID);
 		    		partitionFilesMap.put(partitionID, refToWriter);
+		    		
 		    		partitionIDsList.add(actualPartitionID);
 		    		if(!initPartFlag){
 		    			initlaPartitionID = Integer.parseInt(actualPartitionID);
@@ -368,9 +368,9 @@ public class MetisPartitioner{
 			     	
 			     	tArray[i].start();
 			     	i = i + 1;
-			     	   
 		        }
 		        
+		        System.out.println("---AAAA--------");
 		    	while(true){
 					boolean flag = true;
 					for(int x = 0; x < n; x++){
@@ -387,6 +387,7 @@ public class MetisPartitioner{
 						e.printStackTrace();
 					}
 				}
+		    	System.out.println("---BBBB--------");
 		}catch(Exception e){
 			System.out.println("Error : "+e.getMessage());
 		}
@@ -722,6 +723,7 @@ public class MetisPartitioner{
 		
 		public void setDone(){
 			this.done = true;
+			System.out.println("Done:" + i);
 		}
 		
 		public boolean isDone(){

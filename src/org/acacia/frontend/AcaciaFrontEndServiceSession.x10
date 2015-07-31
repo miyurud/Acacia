@@ -42,15 +42,12 @@ import x10.regionarray.Array;
 import x10.util.HashMap;
 import x10.util.ArrayList;
 
-
-//import org.acacia.partitioner.hbase.java.HBaseInterface_Java;
-
 /**
  * Class AcaciaFrontEndServiceSession
  */
 public class AcaciaFrontEndServiceSession {
 	private var sessionSkt:Socket = null;
-    private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
+    //private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
     private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
     
 	public def this(val socket:Socket){
@@ -277,8 +274,8 @@ public class AcaciaFrontEndServiceSession {
             out.flush();
             
             //Next we get the Gremlin commands in an interactive session
-            gremlinInterpreter = new AcaciaGremlinInterpreter(buff, out);
-            gremlinInterpreter.run();
+            // gremlinInterpreter = new AcaciaGremlinInterpreter(buff, out);
+            // gremlinInterpreter.run();
             out.println("Exitted here...");
             out.flush();
             

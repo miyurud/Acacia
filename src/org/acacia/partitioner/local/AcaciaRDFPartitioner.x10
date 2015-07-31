@@ -62,6 +62,8 @@ public class AcaciaRDFPartitioner {
  	private val edgeListPath = location+"edgeList.dl";
  
     private var converter:MetisPartitioner = null;
+    
+    private var partitionIndex:Rail[Short];
  
     public def this() {
     	val f = new File(location);
@@ -247,7 +249,7 @@ public class AcaciaRDFPartitioner {
     	val partitionFilesMap:HashMap[Short, AcaciaHashMapNativeStore]  = new HashMap[Short, AcaciaHashMapNativeStore](); 
     	val centralStoresMap:HashMap[Short, AcaciaHashMapCentralStore]  = new HashMap[Short, AcaciaHashMapCentralStore]();
     
-        
+    	//partitionIndex = new Rail[Short]((vertexCount+1) as Int);
     }
     
     public def getInitlaPartitionID():Int{

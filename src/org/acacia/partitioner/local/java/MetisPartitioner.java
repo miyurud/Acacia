@@ -308,10 +308,13 @@ public class MetisPartitioner{
 		}
 		
 		distributeCentralStore(numberOfCentralPartitions,graphID);
+		//MetisPartitioner distributes only central store partitions.
+		//The distribution of the local store partitions happen at the AcaciaSever. See the uploadGraphLocally() method
+		//which calls this method for details.
 		System.out.println("Done partitioning...");
 	}
 	
-	private void distributeCentralStore(int n, final String graphID){	
+	public void distributeCentralStore(int n, final String graphID){	
 		try{
 				HashMap<Long, String> placeToHostMap = new HashMap<Long, String>();
 				Runtime r = Runtime.getRuntime();

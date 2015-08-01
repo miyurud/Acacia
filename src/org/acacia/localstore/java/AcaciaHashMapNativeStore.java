@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
@@ -38,7 +39,8 @@ import org.acacia.log.java.Logger_Java;
 
 public class AcaciaHashMapNativeStore {
 	private final String VERTEX_STORE_NAME = "acacia.nodestore.db";
-	private final String RELATIONSHIP_STORE_NAME = "acacia.relationshipstore.db";
+	private final String EDGE_STORE_NAME = "acacia.edgestore.db";
+	private final String RELATIONSHIP_STORE_NAME = "acacia.relationshipstore-";//Each of these files will have its own property extension ID
 	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";
 	
 	private String instanceDataFolderLocation = null;
@@ -46,21 +48,25 @@ public class AcaciaHashMapNativeStore {
 	//private HashMap<Long,RelationshipRecord> relationshipMap = null;
 	
 	//The following is just a map of the each vertex with a list of properties.
-	private HashMap<Long, HashSet<Long>> vertexPropertyMap;
+	//VERTEX_STORE_NAME
+	private HashMap<Long, HashSet<String>> vertexPropertyMap;
 	//We need to keep the main graph structure as a plain adjacency list since we may want to answer some basic
 	//graph algorithms which just needs the adjacency list structure of the graph.
 	//This will enable fast access to relationships between vertices
+	//EDGE_STORE_NAME
 	private HashMap<Long, HashSet<Long>> localSubGraphMap;
 	
 	//The following is an array of adjacency lists. Each array element corresponds to one type of relationship that
 	//exists between two vertices. Hence in this data structure the edges are grouped based on the type of the relationship
 	//(i.e., predicate) through which they are linked. Each array element correspond to a particulat predicate.
+	//RELATIONSHIP_STORE_NAME
 	private HashMap<Long, HashSet<Long>>[] relationshipMapWithProperties;
 	
-	//The following is an attribute map. The original vertex name properties lsted in nodeStore file will be mapped to
+	//The following is an attribute map. The original vertex name properties listed in nodeStore file will be mapped to
 	//a property called ID in the attributeMap. In that way we need not to have a separate file called nodeStore.
 	//The attributedMap may store both vertex properties as well as edge properties.
-	private HashMap<Long, LinkedList<Long>> attributeMap;
+	//ATTRIBUTE_STORE_NAME
+	private HashMap<Long, HashMap<Integer, HashSet<String>>> attributeMap;
 	
 	private HashMap<Integer, String> predicateStore; //This is exactly same as the predicate map.
 	
@@ -68,17 +74,77 @@ public class AcaciaHashMapNativeStore {
 	
 	private long vertexCount = 0;
 	private long edgeCount = 0;
+	private int predicateCount = 0;
 	
-	public AcaciaHashMapNativeStore(int graphID, int partitionID){
+	public AcaciaHashMapNativeStore(int graphID, int partitionID, String baseDir, boolean isCentralStore){
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
-		String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
+		String dataFolder = baseDir;
 		String gid = graphID + "_" + partitionID;
-		instanceDataFolderLocation= dataFolder + "/" + gid;
+		
+		if(!isCentralStore){
+			instanceDataFolderLocation= dataFolder + "/" + gid;
+		}else{
+			instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
+		}
 		System.out.println("instanceDataFolderLocation:" + instanceDataFolderLocation);
+		
 		//Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
+	
+	public boolean storeGraph(){
+		boolean result = true;
+		
+        try {
+            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + EDGE_STORE_NAME);
+            Output output = new Output(stream);
+            this.kryo.writeObject(output, localSubGraphMap);
+            stream.flush();
+            output.close();
+        } catch (Exception e) {
+        	result = false;
+        	 e.printStackTrace();
+        }
+        
+        try {
+            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME);
+            Output output = new Output(stream);
+            this.kryo.writeObject(output, vertexPropertyMap);
+            stream.flush();
+            output.close();
+        } catch (Exception e) {
+        	result = false;
+        	 e.printStackTrace();
+        }
+        
+        for(int i=0; i < predicateCount; i++){
+	        try {
+	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db");
+	            Output output = new Output(stream);
+	            this.kryo.writeObject(output, relationshipMapWithProperties[i]);
+	            stream.flush();
+	            output.close();
+	        } catch (Exception e) {
+	        	result = false;
+	        	 e.printStackTrace();
+	        }
+        }
+        
+        try {
+            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME);
+            Output output = new Output(stream);
+            this.kryo.writeObject(output, attributeMap);
+            stream.flush();
+            output.close();
+        } catch (Exception e) {
+        	result = false;
+        	 e.printStackTrace();
+        }
+        
+		return result;
+	}
+	
 	
 	/**
 	 * This method adds a single vertex with a single property to the native store's data structure.
@@ -87,11 +153,11 @@ public class AcaciaHashMapNativeStore {
 	 * @param vertexID
 	 * @param vertexProperty
 	 */
-	public void addVertexWithProperty(long vertexID, long vertexProperty){
-		HashSet<Long> vertexSet = vertexPropertyMap.get(vertexID);
+	public void addVertexWithProperty(long vertexID, String vertexProperty){
+		HashSet<String> vertexSet = vertexPropertyMap.get(vertexID);
 		
 		if(vertexSet == null){
-			vertexSet = new HashSet<Long>();
+			vertexSet = new HashSet<String>();
 		}
 		
 		vertexSet.add(vertexProperty);
@@ -106,31 +172,37 @@ public class AcaciaHashMapNativeStore {
 	 * @param toVertex
 	 * @param predicateID
 	 */
-	public void addRelationship(long fromVertex, long toVertex, int predicateID){
-		if(predicateID == -1){
-			HashSet<Long> neighboursList = localSubGraphMap.get(fromVertex);
+	public void addRelationship(Long fromVertex, Long toVertex, Integer predicateID){
+		//Whether the relationship has an associated type or not, we have to add it to the general adjacency list.
+		HashSet<Long> neighboursList = localSubGraphMap.get(fromVertex);
 			
-			if(neighboursList == null){
-				neighboursList = new HashSet<Long>();
-				neighboursList.add(toVertex);
-				localSubGraphMap.put(toVertex, neighboursList);
-			}else{
-				neighboursList.add(toVertex);
-			}
-		}else if(predicateID > -1){
+		if(neighboursList == null){
+			neighboursList = new HashSet<Long>();
+			neighboursList.add(toVertex);
+			localSubGraphMap.put(toVertex, neighboursList);
+		}else{
+			neighboursList.add(toVertex);
+		}
+
+		if(predicateID > -1){
 			if(predicateID < relationshipMapWithProperties.length){
 				HashMap<Long, HashSet<Long>> subGraphMap = relationshipMapWithProperties[predicateID];
-				HashSet<Long> neighboursList = subGraphMap.get(fromVertex);
+				HashSet<Long> neighboursList2 = subGraphMap.get(fromVertex);
 				
-				if(neighboursList == null){
-					neighboursList = new HashSet<Long>();
-					neighboursList.add(toVertex);
-					localSubGraphMap.put(toVertex, neighboursList);
+				if(neighboursList2 == null){
+					neighboursList2 = new HashSet<Long>();
+					neighboursList2.add(toVertex);
+					subGraphMap.put(toVertex, neighboursList2);
 				}else{
-					neighboursList.add(toVertex);
+					//Since we already have the reference in the subGraphMap, we need not add neighboursList2 again to the subGraphMap.
+					neighboursList2.add(toVertex);
 				}
 			}else{
 				Logger_Java.info("Error: The specified predicate ID is out of range.");
+			}
+			
+			if(predicateID > predicateCount){
+				predicateCount = predicateID;
 			}
 		}
 	}
@@ -140,19 +212,29 @@ public class AcaciaHashMapNativeStore {
 	 * @param predicateID
 	 * @param preidateString
 	 */
-	public void addAttributeByValue(int predicateID, String predicateString){
-		predicateStore.put(predicateID, predicateString);
+	public void addPredicate(Integer predicateID, String predicateString){
+		predicateStore.put(predicateID.intValue(), predicateString);
 	}
 	
-	public void addAttributeByID(int vertexID, long attributedID){
-		LinkedList<Long> vertexAttributeList = attributeMap.get(attributedID);
+	public void addAttributeByValue(Integer vertexID, Integer relationshipType, String attribute){
+		//String attribute = "";
+		HashMap<Integer, HashSet<String>> vertexAttributeList = attributeMap.get(vertexID);
 		
 		if(vertexAttributeList == null){
-			vertexAttributeList = new LinkedList<Long>();
-			vertexAttributeList.add(attributedID);
+			vertexAttributeList = new HashMap<Integer, HashSet<String>>();
+			HashSet<String> hs = new HashSet<String>();
+			hs.add(attribute);
+			vertexAttributeList.put(relationshipType, hs);
 			attributeMap.put(new Long(vertexID), vertexAttributeList);
-		}else{
-			vertexAttributeList.add(attributedID);
+		}else{						
+			HashSet<String> hs = vertexAttributeList.get(relationshipType);
+			if(hs == null){
+				hs = new HashSet<String>();
+			}
+			
+			hs.add(attribute);
+			vertexAttributeList.put(relationshipType, hs);
+			attributeMap.put(new Long(vertexID), vertexAttributeList);
 		}
 	}
 	
@@ -172,9 +254,9 @@ public class AcaciaHashMapNativeStore {
 //		nodeRecordMap = new HashMap<Long, NodeRecord>();
 //		relationshipMap = new HashMap<Long, RelationshipRecord>();
 		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
-		vertexPropertyMap = new HashMap<Long, HashSet<Long>>();
+		vertexPropertyMap = new HashMap<Long, HashSet<String>>();
 		relationshipMapWithProperties = null;
-		attributeMap = new HashMap<Long, LinkedList<Long>>();
+		attributeMap = new HashMap<Long, HashMap<Integer, HashSet<String>>>();
 		predicateStore = new HashMap<Integer, String>();
 		System.out.println("Done init");
 	}

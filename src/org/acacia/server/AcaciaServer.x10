@@ -160,7 +160,6 @@ public class AcaciaServer {
 							         
 							         Logger_Java.info("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(here.id));
 							         
-							        
 							        test.acacia.server.x10.TestAcaciaInstance.main(null);
 							    }
 			               }

@@ -19,21 +19,5 @@ package org.acacia.localstore;
 import x10.util.HashMap;
 
 public class AcaciaNativeLocalStore {
-    private var nodeRecord:NodeRecord=null;
-    private var relationshipRecord:RelationshipRecord=null;
-    private var nodeProperties:HashMap[Int,Int];
-    private var relationshipProperties:HashMap[Int,Int];
 
-    public def this(var nodeRecord:NodeRecord, var relationshipRecord:RelationshipRecord) {
-        this.nodeRecord=nodeRecord;
-        this.relationshipRecord=relationshipRecord;
-    }
-    
-    public def getNodeRecord():NodeRecord{
-    	return nodeRecord;
-    }
-    
-    public def getRelationshipRecord():RelationshipRecord{
-    	return relationshipRecord;
-    }
 }

@@ -10,12 +10,10 @@ import org.acacia.localstore.java.RelationshipRecord;
 import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 
 public class FileSerializer {
-
  	val nodes:HashMap[Long,org.acacia.localstore.java.NodeRecord] = new HashMap[Long,org.acacia.localstore.java.NodeRecord]();
  	val relationships:HashMap[Long,RelationshipRecord] = new HashMap[Long,RelationshipRecord]();
  	val relationshipList:HashMap[Long,HashSet[Int]] = new HashMap[Long,HashSet[Int]]();
- 
- 	val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(100n);
+ 	//val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(100n);
  
  	private val location = Utils.call_getAcaciaProperty("org.acacia.server.runtime.location")+"/rdfFiles/";
  
@@ -85,7 +83,7 @@ public class FileSerializer {
  //Console.OUT.println("Test----------------------------5 : "+secondNodeNext);
  				var relationshipRecord:RelationshipRecord = new RelationshipRecord(1n,nodeId,listItem,relType,firstNodePrev,firstNodeNext,secondNodePrev,secondNodeNext);
  				relationships.put(nodeId,relationshipRecord);
- 				Console.OUT.println(relationshipID+" : "+1n+","+nodeId+","+listItem+","+relType+","+firstNodePrev+","+firstNodeNext+","+secondNodePrev+","+secondNodeNext);
+ 				//Console.OUT.println(relationshipID+" : "+1n+","+nodeId+","+listItem+","+relType+","+firstNodePrev+","+firstNodeNext+","+secondNodePrev+","+secondNodeNext);
  				relationshipID++;
  				j++;
  			}
@@ -117,6 +115,7 @@ public class FileSerializer {
  		if(set == null){
  			return -1n;
  		}
+ 
  		var itr:Iterator[Int] = set.iterator();
  		while(itr.hasNext()){
  			val setItem:Int = itr.next();
@@ -153,7 +152,5 @@ public class FileSerializer {
  			//Console.OUT.println();
  	 		//break;
  		}
- 
  	}
-
 }

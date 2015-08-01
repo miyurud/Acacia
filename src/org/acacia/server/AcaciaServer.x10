@@ -531,14 +531,14 @@ public class AcaciaServer {
         MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET UPLOAD_END_TIME='" + call_getCurrentTimeStamp() + "', GRAPH_STATUS_IDGRAPH_STATUS=" + GraphStatus.OPERATIONAL + " WHERE IDGRAPH=" + graphID);
     }
     
-    public static def uploadRDFGraphLocally(val item:String, val inputFilePath:String):void{
+    public static def uploadRDFGraphLocally(val item:String, val inputDirectory:String):void{
 	    Console.OUT.println("Uploading the following graph locally : " + item);
 	    val rdfPartitioner:AcaciaRDFPartitioner = new AcaciaRDFPartitioner();
 	    
 	    val isDistrbutedCentralPartitions:Boolean = true;
-	    val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputFilePath + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");
+	    val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputDirectory + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");
 	    
-	    rdfPartitioner.readFile(inputFilePath);
+	    rdfPartitioner.readDirectory(inputDirectory);
 	    	    
 	    val edgeListPath = rdfPartitioner.getEdgeList();
 	    

@@ -85,6 +85,9 @@ public class AcaciaRDFPartitioner {
     private var partitionIDsList:ArrayList[String];
     //private var graphStorage:Rail[HashMap[Int, x10.util.HashSet[Int]]];
     private var graphStorage:HashMap[Int, x10.util.HashSet[Int]];
+    
+    val edgeList = new File(edgeListPath);
+    val printer = edgeList.printer();
  
     public def this() {
     	val f = new File(location);
@@ -139,10 +142,23 @@ public class AcaciaRDFPartitioner {
     public def getPartitionIDList():Rail[String]{
        return null;
     }
+    
+    public def readDirectory(val inputDirectory:String):void{
+    	val dir = new File(inputDirectory);
+    	val files = dir.list();
+    	for(var i:Int=0n;i<files.size;i++){
+    		readFile(files(i));
+    	}
+    	//flush the printer
+    	printer.flush();
+    	
+    	writeStore(nodes,"nodeStore");
+    	writeStore(predicates,"predicateStore");
+    	writeMap(attributeMap,"attributeMap");
+    	writeMap(relationsMap,"relationMap");
+    }
        
     public def readFile(val inputFile:String):void{
-    	val edgeList = new File(edgeListPath);
-    	val printer = edgeList.printer();
     
     	if(graphStorage == null){
             graphStorage = new HashMap[Int, x10.util.HashSet[Int]]();
@@ -243,13 +259,7 @@ public class AcaciaRDFPartitioner {
 	 	    }
 	 	}
 	
-	 	//flush the printer
-	 	printer.flush();
-	 
-	 	writeStore(nodes,"nodeStore");
-	 	writeStore(predicates,"predicateStore");
-	 	writeMap(attributeMap,"attributeMap");
-	 	writeMap(relationsMap,"relationMap");
+	 	
     }
     
     private def addToStore(val map:HashMap[Long,String],val URI:String):Long{

@@ -42,15 +42,12 @@ import x10.regionarray.Array;
 import x10.util.HashMap;
 import x10.util.ArrayList;
 
-
-//import org.acacia.partitioner.hbase.java.HBaseInterface_Java;
-
 /**
  * Class AcaciaFrontEndServiceSession
  */
 public class AcaciaFrontEndServiceSession {
 	private var sessionSkt:Socket = null;
-    private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
+    //private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
     private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
     
 	public def this(val socket:Socket){
@@ -277,8 +274,8 @@ public class AcaciaFrontEndServiceSession {
             out.flush();
             
             //Next we get the Gremlin commands in an interactive session
-            gremlinInterpreter = new AcaciaGremlinInterpreter(buff, out);
-            gremlinInterpreter.run();
+            // gremlinInterpreter = new AcaciaGremlinInterpreter(buff, out);
+            // gremlinInterpreter.run();
             out.println("Exitted here...");
             out.flush();
             
@@ -539,9 +536,9 @@ public class AcaciaFrontEndServiceSession {
 	    
 	    //var l:Rail[String] = call_runSelect("SELECT HOST_IDHOST, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    //SELECT NAME,PARTITION_IDPARTITION FROM "ACACIA_META"."HOST_HAS_PARTITION" INNER JOIN "ACACIA_META"."HOST" ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=191;
-	    Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
+	    //Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
 	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-	    Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
+	    //Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
 	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
 	    
 	    for(var i:long=0; i<l.size; i++){
@@ -582,7 +579,7 @@ public class AcaciaFrontEndServiceSession {
 	            partitionID = partitions.removeFirst();
 	        }
 	        
-	        Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
+	        //Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
 	        
 	        val ptID:String = partitionID;
 	        // async{
@@ -596,7 +593,7 @@ public class AcaciaFrontEndServiceSession {
 	        cntr++;
 	    }
 	   
-	    Console.OUT.println("AA@1 : " + hostListLen);
+	    //Console.OUT.println("AA@1 : " + hostListLen);
 	    
 	    for(var i:Int=0n; i < hostListLen; i++){
 	    	val intermResult = intermRes(i);
@@ -610,7 +607,7 @@ public class AcaciaFrontEndServiceSession {
 	    
 	    Console.OUT.println("Total triangle count :" + result);
 	    
-	    Console.OUT.println("---------- Now calculating the global only traingles --------");
+	    //Console.OUT.println("---------- Now calculating the global only traingles --------");
 	    //Next we need to count the traingles in the global graph only.
 	    val globalTriangleCount = call_countGlobalTraingles(graphID);
 	    

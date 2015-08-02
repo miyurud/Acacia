@@ -265,6 +265,7 @@ public class MetisPartitioner{
 						toVertexPartition = partitionIndex[(int) toVertex];
 					
 						if(fromVertexPartition != toVertexPartition){
+							//Here the assumption is that we will create same number of central store partitions as the number of local store partitions.
 							AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) fromVertexPartition));								
 							central.addEdge((long)fromVertex, (long)toVertex);
 						}else{

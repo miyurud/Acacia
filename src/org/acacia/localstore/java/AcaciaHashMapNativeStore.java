@@ -60,7 +60,10 @@ public class AcaciaHashMapNativeStore {
 	//exists between two vertices. Hence in this data structure the edges are grouped based on the type of the relationship
 	//(i.e., predicate) through which they are linked. Each array element correspond to a particulat predicate.
 	//RELATIONSHIP_STORE_NAME
-	private HashMap<Long, HashSet<Long>>[] relationshipMapWithProperties;
+	//private HashMap<Long, HashSet<Long>>[] relationshipMapWithProperties;
+	private HashMap[] relationshipMapWithProperties;
+	
+	//private HashMap<Long, Long>[] hmp;
 	
 	//The following is an attribute map. The original vertex name properties listed in nodeStore file will be mapped to
 	//a property called ID in the attributeMap. In that way we need not to have a separate file called nodeStore.
@@ -75,12 +78,15 @@ public class AcaciaHashMapNativeStore {
 	private long vertexCount = 0;
 	private long edgeCount = 0;
 	private int predicateCount = 0;
+	private String dataFolder;
+	private int graphID;
 	
 	public AcaciaHashMapNativeStore(int graphID, int partitionID, String baseDir, boolean isCentralStore){
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
-		String dataFolder = baseDir;
+		dataFolder = baseDir;
 		String gid = graphID + "_" + partitionID;
+		this.graphID = graphID;
 		
 		if(!isCentralStore){
 			instanceDataFolderLocation= dataFolder + "/" + gid;
@@ -96,50 +102,64 @@ public class AcaciaHashMapNativeStore {
 	public boolean storeGraph(){
 		boolean result = true;
 		
-        try {
-            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + EDGE_STORE_NAME);
-            Output output = new Output(stream);
-            this.kryo.writeObject(output, localSubGraphMap);
-            stream.flush();
-            output.close();
-        } catch (Exception e) {
-        	result = false;
-        	 e.printStackTrace();
-        }
-        
-        try {
-            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME);
-            Output output = new Output(stream);
-            this.kryo.writeObject(output, vertexPropertyMap);
-            stream.flush();
-            output.close();
-        } catch (Exception e) {
-        	result = false;
-        	 e.printStackTrace();
-        }
-        
-        for(int i=0; i < predicateCount; i++){
+		if(localSubGraphMap != null){
 	        try {
-	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db");
+	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + EDGE_STORE_NAME);
 	            Output output = new Output(stream);
-	            this.kryo.writeObject(output, relationshipMapWithProperties[i]);
+	            this.kryo.writeObject(output, localSubGraphMap);
 	            stream.flush();
 	            output.close();
 	        } catch (Exception e) {
 	        	result = false;
 	        	 e.printStackTrace();
 	        }
+		}else{
+			System.out.println("localSubGraphMap is null.");
+		}
+        
+		if(vertexPropertyMap != null){
+	        try {
+	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME);
+	            Output output = new Output(stream);
+	            this.kryo.writeObject(output, vertexPropertyMap);
+	            stream.flush();
+	            output.close();
+	        } catch (Exception e) {
+	        	result = false;
+	        	 e.printStackTrace();
+	        }
+		}else{
+			System.out.println("vertexPropertyMap is null.");
+		}
+		
+        for(int i=0; i < predicateCount; i++){
+        	if(relationshipMapWithProperties[i] != null){
+		        try {
+		            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db");
+		            Output output = new Output(stream);
+		            this.kryo.writeObject(output, relationshipMapWithProperties[i]);
+		            stream.flush();
+		            output.close();
+		        } catch (Exception e) {
+		        	result = false;
+		        	 e.printStackTrace();
+		        }
+        	}else{
+        		System.out.println("relationshipMapWithProperties["+i+"] is null.");
+        	}
         }
         
-        try {
-            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME);
-            Output output = new Output(stream);
-            this.kryo.writeObject(output, attributeMap);
-            stream.flush();
-            output.close();
-        } catch (Exception e) {
-        	result = false;
-        	 e.printStackTrace();
+        if(attributeMap != null){
+	        try {
+	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME);
+	            Output output = new Output(stream);
+	            this.kryo.writeObject(output, attributeMap);
+	            stream.flush();
+	            output.close();
+	        } catch (Exception e) {
+	        	result = false;
+	        	 e.printStackTrace();
+	        }
         }
         
 		return result;
@@ -173,9 +193,11 @@ public class AcaciaHashMapNativeStore {
 	 * @param predicateID
 	 */
 	public void addRelationship(Long fromVertex, Long toVertex, Integer predicateID){
+		//System.out.println("fromVertex:" + fromVertex + " toVertex:" + toVertex);
+		//System.out.println("---C1-----");
 		//Whether the relationship has an associated type or not, we have to add it to the general adjacency list.
 		HashSet<Long> neighboursList = localSubGraphMap.get(fromVertex);
-			
+		//System.out.println("---C2-----");
 		if(neighboursList == null){
 			neighboursList = new HashSet<Long>();
 			neighboursList.add(toVertex);
@@ -183,28 +205,44 @@ public class AcaciaHashMapNativeStore {
 		}else{
 			neighboursList.add(toVertex);
 		}
-
+		//System.out.println("---C3-----");
 		if(predicateID > -1){
+			//System.out.println("---C3--1-----"+predicateID);
+						
 			if(predicateID < relationshipMapWithProperties.length){
+				//System.out.println("---C5-----");
 				HashMap<Long, HashSet<Long>> subGraphMap = relationshipMapWithProperties[predicateID];
-				HashSet<Long> neighboursList2 = subGraphMap.get(fromVertex);
-				
-				if(neighboursList2 == null){
-					neighboursList2 = new HashSet<Long>();
-					neighboursList2.add(toVertex);
-					subGraphMap.put(toVertex, neighboursList2);
+				//System.out.println("---C5-----2");
+				if(subGraphMap != null){
+					HashSet<Long> neighboursList2 = subGraphMap.get(fromVertex);
+					//System.out.println("---C5-----4");
+					if(neighboursList2 == null){
+						neighboursList2 = new HashSet<Long>();
+						neighboursList2.add(toVertex);
+						subGraphMap.put(fromVertex, neighboursList2);
+					}else{
+						//Since we already have the reference in the subGraphMap, we need not add neighboursList2 again to the subGraphMap.
+						neighboursList2.add(toVertex);
+					}
 				}else{
-					//Since we already have the reference in the subGraphMap, we need not add neighboursList2 again to the subGraphMap.
+					subGraphMap = new HashMap<Long, HashSet<Long>>();
+					HashSet<Long> neighboursList2 = new HashSet<Long>();
 					neighboursList2.add(toVertex);
+					subGraphMap.put(fromVertex, neighboursList2);
+					relationshipMapWithProperties[predicateID] = subGraphMap;
 				}
+				//System.out.println("---C6-----");
 			}else{
 				Logger_Java.info("Error: The specified predicate ID is out of range.");
 			}
 			
+			//System.out.println("---C7-----");
 			if(predicateID > predicateCount){
 				predicateCount = predicateID;
 			}
+			//System.out.println("---C8-----");
 		}
+		//System.out.println("---C4-----");
 	}
 	
 	/**
@@ -255,9 +293,25 @@ public class AcaciaHashMapNativeStore {
 //		relationshipMap = new HashMap<Long, RelationshipRecord>();
 		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
 		vertexPropertyMap = new HashMap<Long, HashSet<String>>();
-		relationshipMapWithProperties = null;
 		attributeMap = new HashMap<Long, HashMap<Integer, HashSet<String>>>();
 		predicateStore = new HashMap<Integer, String>();
-		System.out.println("Done init");
+
+		//If the directory does not exist we need to create it first.
+		if(!file.isDirectory()){
+			File f = new File(dataFolder + "/" + graphID + "_centralstore");
+			if(!file.isDirectory()){
+				f.mkdir();
+			}
+			file.mkdir();
+		}
+	}
+	
+	public void initializeRelationshipMapWithProperties(Integer predicateSize){
+		//private HashMap<Long, HashSet<Long>>[] relationshipMapWithProperties;
+		relationshipMapWithProperties = new HashMap[predicateSize];
+		
+		//System.out.println("=========Len=====>"+relationshipMapWithProperties.length);
+		
+		//hmp = new HashMap[predicateSize];
 	}
 }

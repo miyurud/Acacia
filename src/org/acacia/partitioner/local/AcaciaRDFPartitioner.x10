@@ -635,7 +635,7 @@ public class AcaciaRDFPartitioner {
         }
         
         distributeCentralStore(numberOfCentralPartitions,graphID);
-        //distributeLocalStore(nParts, graphID);
+        distributeLocalStore(nParts, graphID);
         Console.OUT.println("Done partitioning...");
     }
     

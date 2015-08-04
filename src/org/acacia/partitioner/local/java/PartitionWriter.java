@@ -54,7 +54,7 @@ public class PartitionWriter{
 		Runtime r = Runtime.getRuntime();
 		Process p;
 		try {
-			p = r.exec("gzip "+ partitionFilePath);
+			p = r.exec("zip -rj "+ partitionFilePath);
 			p.waitFor();
 			
 			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));

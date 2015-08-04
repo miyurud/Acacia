@@ -303,7 +303,7 @@ public class MetisPartitioner{
 			PartitionWriter pw = item.getValue();
 			paths.add(pw.getOutputFilePath());
 			pw.compress();
-			partitionFileList[k] = pw.getOutputFilePath() + ".gz";
+			partitionFileList[k] = pw.getOutputFilePath() + ".zip";
 			k++;
 			pw.close();
 		}

@@ -719,15 +719,15 @@ public class AcaciaRDFPartitioner {
     			hostName = hostList.get(hostID);
                 val actualPartID:String = partitionIDsMap.get(j);
     			val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_" + actualPartID;
-    			Console.OUT.println("zip -rj "+filePath+"_trf.zip "+filePath);
-    			val process:java.lang.Process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
+    			Console.OUT.println("zip -rj "+filePath+".zip "+filePath);
+    			val process:java.lang.Process = r.exec("zip -rj "+filePath+".zip "+filePath);
     
     			val port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
     			val withinPlaceIndex:Int = ((j - hostID) as Int)/hostCount;
     			val instancePort:Int = port + withinPlaceIndex;
     			val fileTransferport:Int = instancePort + (nPlaces/hostCount);
     
-    			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
+    			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
     			val hostDI:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + hostName + "'")(0);
     			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(HOST_IDHOST, CPARTITION_IDPARTITION, PARTITION_GRAPH_IDGRAPH) VALUES(" + hostDI + "," + actualPartID + "," + graphID + ")");
     		}

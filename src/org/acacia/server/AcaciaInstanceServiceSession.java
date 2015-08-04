@@ -733,7 +733,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					Runtime r = Runtime.getRuntime();
 					
 					//Next, we unzip the file
-					Process p = r.exec("gunzip -f /tmp/dgr/" + graphID + "_" +  partitionID + ".gz");
+					Process p = r.exec("unzip /tmp/dgr/" + graphID + "_" +  partitionID + ".zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator  + graphID + "_" + partitionID);
 					p.waitFor();
 					
 					BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -745,6 +745,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					//System.out.println("Completed unzipping");
 					//Unzipping completed
+					/*
+					 * August 3 2015 10 50pm: Wee need not have the following code since we are sending the serialized files.
 			        Splitter splitter = null;
 			        BufferedReader br;
 		            br = new BufferedReader(new FileReader("/tmp/dgr/" + graphID + "_" +  partitionID), 10 * 1024 * 1024);
@@ -766,7 +768,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		            }
 		            
 		            localStore.storeGraph();
-		            
+		            */
 					//Also we need to add a catalog record in the instance's local data store about the graph and its partition IDs
 					writeCatalogRecord("" + graphID + ":" + partitionID);
 					

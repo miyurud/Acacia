@@ -735,13 +735,18 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Next, we unzip the file
 					Process p = r.exec("unzip /tmp/dgr/" + graphID + "_" +  partitionID + ".zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator  + graphID + "_" + partitionID);
 					p.waitFor();
-					
+					System.out.println("Check 1");
 					BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
 					String line = "";
-					
+					System.out.println("Check 2");
 					while((line=b.readLine())!= null){
 						System.out.println(line);
 					}
+					System.out.println("Check 3");
+					
+					System.out.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip|");
+					p = r.exec("rm /tmp/dgr/" + graphID + "_" + partitionID + ".zip");
+					p.waitFor();
 					
 					//System.out.println("Completed unzipping");
 					//Unzipping completed
@@ -771,6 +776,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		            */
 					//Also we need to add a catalog record in the instance's local data store about the graph and its partition IDs
 					writeCatalogRecord("" + graphID + ":" + partitionID);
+					System.out.println("Check 4");
 					
 				}catch(Exception e){
 					e.printStackTrace();

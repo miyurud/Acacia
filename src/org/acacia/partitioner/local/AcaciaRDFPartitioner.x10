@@ -712,7 +712,8 @@ public class AcaciaRDFPartitioner {
     		hostCount = hostList.size() as Int;
     
     		Console.OUT.println("hostSize:" + hostCount);
-    
+                Console.OUT.println("n:" + n);
+
     		for(var j:Int = 0n; j < n; j++){		             
     			nPlaces = Place.places().size as Int;
     			hostID = (j % hostCount) as Int;
@@ -725,6 +726,7 @@ public class AcaciaRDFPartitioner {
     			val port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
     			val withinPlaceIndex:Int = ((j - hostID) as Int)/hostCount;
     			val instancePort:Int = port + withinPlaceIndex;
+                        Console.OUT.println("withinPlaceIndex:" + withinPlaceIndex + " instancePort:" + instancePort);
     			val fileTransferport:Int = instancePort + (nPlaces/hostCount);
     
     			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);

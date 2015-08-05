@@ -1191,6 +1191,22 @@ public class AcaciaManager{
 	}
 	
 	/**
+	 * Per each worker we have to run the SPARQL query in parallel.
+	 * @param host
+	 * @param port
+	 * @param graphID
+	 * @param partitionID
+	 * @return
+	 */
+	public static String[] runSPARQL(String host, int port, String graphID, String partitionID){
+		String[] result = null;
+		
+		
+		
+		return result;
+	}
+	
+	/**
 	 * This method is used to remove the vertices of a particular graph.
 	 * @param host
 	 */

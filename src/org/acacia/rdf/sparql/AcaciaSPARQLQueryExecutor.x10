@@ -52,15 +52,16 @@ public class AcaciaSPARQLQueryExecutor {
 return result;
 }*/
 
-	public def executeQuery(val query:String, val graphID:String):ArrayList[String]{
+	public def executeQuery(val query:String, val graphID:String, val partitionID:String):ArrayList[String]{
 
-		var stream :ANTLRStringStream  =new ANTLRStringStream(query);			
+		var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
 		var lexer: SparqlLexer  =new SparqlLexer(stream);
 		var tokenStream: CommonTokenStream =new CommonTokenStream(lexer);
 		var parser: SparqlParser =new SparqlParser(tokenStream);     
         var index:Int;
         var result:ArrayList[String]=null;
 		var k:Int=0n;
+        val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + "/" + graphID + "_" + partitionID;
 
 		try {
 	        parser.query(); 

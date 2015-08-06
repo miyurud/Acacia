@@ -99,6 +99,123 @@ public class AcaciaHashMapNativeStore {
 		initialize();
 	}
 	
+	@SuppressWarnings("unchecked")
+	public boolean loadGraph(){
+		boolean result = false;
+		
+		System.out.println("Loading subGraphs");
+		String edgeStorePath = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
+		File f = new File(edgeStorePath);
+		
+		if(!f.exists()) {
+			localSubGraphMap = new HashMap<Long, HashSet<Long>>();
+			return result;
+		}
+		
+        try {
+            FileInputStream stream = new FileInputStream(edgeStorePath);
+            Input input = new Input(stream);
+            localSubGraphMap = (HashMap<Long, HashSet<Long>>)this.kryo.readObject(input, HashMap.class);
+            input.close();//This will close the FileInputStream as well.
+            
+            if(localSubGraphMap != null){
+            	result = true;
+            }else{
+            	localSubGraphMap = new HashMap<Long, HashSet<Long>>();
+            }
+            
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();            
+        }
+        System.out.println("Loaded subGraphs");
+        
+        System.out.println("Loading vertexPropertyMap");
+        String vertexPropertyMapPath = instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME;
+		f = new File(vertexPropertyMapPath);
+		
+		if(!f.exists()) {
+			vertexPropertyMap = new HashMap<Long, HashSet<String>>();
+			return result;
+		}
+		
+        try {
+            FileInputStream stream = new FileInputStream(vertexPropertyMapPath);
+            Input input = new Input(stream);
+            vertexPropertyMap = (HashMap<Long, HashSet<String>>)this.kryo.readObject(input, HashMap.class);
+            input.close();//This will close the FileInputStream as well.
+            
+            if(vertexPropertyMap != null){
+            	result = true;
+            }else{
+            	vertexPropertyMap = new HashMap<Long, HashSet<String>>();
+            }
+            
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();            
+        }
+        System.out.println("Loaded vertexPropertyMap");
+        
+        System.out.println("Loading relationshipMapWithProperties");
+        for(int i=0; i < predicateCount; i++){
+        	String relationshipMapWithPropertiesPath = instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db";
+        	f = new File(relationshipMapWithPropertiesPath);
+    		
+    		if(!f.exists()) {
+    			relationshipMapWithProperties[i] = new HashMap<Long, HashSet<Long>>();
+    			return result;
+    		}
+    		
+            try {
+                FileInputStream stream = new FileInputStream(relationshipMapWithPropertiesPath);
+                Input input = new Input(stream);
+                relationshipMapWithProperties[i] = (HashMap<Long, HashSet<Long>>)this.kryo.readObject(input, HashMap.class);
+                input.close();//This will close the FileInputStream as well.
+                
+                if(relationshipMapWithProperties[i] != null){
+                	result = true;
+                }else{
+                	relationshipMapWithProperties[i] = new HashMap<Long, HashSet<Long>>();
+                }
+                
+                result = true;
+            } catch (Exception e) {
+                e.printStackTrace();            
+            }
+        }
+        System.out.println("Loaded relationshipMapWithProperties");
+        
+        System.out.println("Loading attributeMap");
+        String attributeMapPath = instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME;
+		f = new File(attributeMapPath);
+		
+		if(!f.exists()) {
+			attributeMap = new HashMap<Long, HashMap<Integer,HashSet<String>>>();
+			return result;
+		}
+		
+        try {
+            FileInputStream stream = new FileInputStream(attributeMapPath);
+            Input input = new Input(stream);
+            attributeMap = (HashMap<Long, HashMap<Integer,HashSet<String>>>)this.kryo.readObject(input, HashMap.class);
+            input.close();//This will close the FileInputStream as well.
+            
+            if(attributeMap != null){
+            	result = true;
+            }else{
+            	attributeMap = new HashMap<Long, HashMap<Integer,HashSet<String>>>();
+            }
+            
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();            
+        }
+        System.out.println("Loaded attributeMap");
+		
+		return result;
+	}
+	
 	public boolean storeGraph(){
 		boolean result = true;
 		

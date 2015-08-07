@@ -61,7 +61,7 @@ return result;
         var index:Int;
         var result:ArrayList[String]=null;
 		var k:Int=0n;
-        val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + "/" + graphID + "_" + partitionID;
+        //val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + "/" + graphID + "_" + partitionID;
 
 		try {
 	        parser.query(); 
@@ -340,10 +340,6 @@ return result;
 		return temp;
 	}
 
-//@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
-//static native def call_runSelect(String):Rail[String];
 
-//@Native("java", "org.acacia.rdf.sparql.ConnectWorkers.connect(#1,#2)")
-//static native def call_connect(String,Int):void;
 
 }

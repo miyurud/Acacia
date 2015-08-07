@@ -54,6 +54,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.acacia.query.algorithms.pagerank.ApproxiRank;
+import org.acacia.rdf.sparql.ExecuteQuery;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.
@@ -569,6 +570,47 @@ public class AcaciaInstanceServiceSession extends Thread{
 					msg = buff.readLine().trim();
 					System.out.println("RDF msg recieved"+msg);
 					String graphID = msg;
+				}
+				else if(msg.equals(AcaciaInstanceProtocol.EXECUTE_QUERY)){
+					
+					out.println(AcaciaInstanceProtocol.SEND_QUERY);
+					out.flush();
+					msg = buff.readLine().trim();
+					String query=msg;
+					
+					out.println(AcaciaInstanceProtocol.SEND_GID);
+					out.flush();
+					msg = buff.readLine().trim();
+					String gID=msg;
+					
+					out.println(AcaciaInstanceProtocol.SEND_PARTITION_ID);
+					out.flush();
+					msg = buff.readLine().trim();
+					String pID=msg;
+					
+					ExecuteQuery execute_query=new ExecuteQuery();  
+					ArrayList<String> result=execute_query.executeQuery(query,gID,pID);
+					
+					if(!result.isEmpty()){
+						out.println("Not empty");
+						out.flush();
+						
+						for(int i=0;i<result.size();i++){
+							
+							msg = buff.readLine().trim();
+							if(msg.equals("Send")){
+							
+						out.println(result.get(i));
+						out.flush();
+							}
+						}
+						out.println("Finish");
+						out.flush();
+					}
+					else{
+						out.println("Empty");
+						out.flush();
+					}
 				}
 			}
 		}catch(IOException e){

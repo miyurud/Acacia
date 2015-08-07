@@ -458,7 +458,7 @@ public class AcaciaFrontEndServiceSession {
        
         			var filePath:String=buff.readLine();
         
-                    var results:ArrayList[String]= runSPARQL(graphID, fileName);                
+                    var results:ArrayList[String]= runSPARQL(graphID, query);                
         
        				//write the result file
         
@@ -466,7 +466,7 @@ public class AcaciaFrontEndServiceSession {
         		}
         		else if(isFile.equals("n")){
        
-        			var queryExecutor:AcaciaSPARQLQueryExecutor = new AcaciaSPARQLQueryExecutor();
+        			
         			var results:ArrayList[String]= runSPARQL(graphID, query);
         
         			if(results.isEmpty()){
@@ -498,7 +498,7 @@ public class AcaciaFrontEndServiceSession {
         	Console.OUT.println("Error : "+e.getMessage());
         }
        			
-     }
+        }
         	
         }
 
@@ -513,9 +513,10 @@ public class AcaciaFrontEndServiceSession {
         var result:ArrayList[String] = new ArrayList[String]();
         val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
         val hostListLen:Int = Place.places().size as Int;
-        val intermRes:Rail[String] = new Rail[String](hostListLen);
+        val intermRes:Rail[Rail[String]] = new Rail[Rail[String]](hostListLen);
         var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
         var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
+        
         
         for(var i:long=0; i<l.size; i++){
             val items:Rail[String] = l(i).split(",");
@@ -533,22 +534,30 @@ public class AcaciaFrontEndServiceSession {
         }
         
         var cntr:Int = 0n;
+        Console.OUT.println(Place.places().size);
         finish for (val p in Place.places()){
+        
+        
             val k:Int = cntr;
             val host = PlaceToNodeMapper.getHost(p.id);
             val port = PlaceToNodeMapper.getInstancePort(p.id);
             var partitionID:String = null;
-        
+            
             var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-        
+            if(partitions==null){
+            	
+            }
+            
             if(partitions.size() > 0){
                partitionID = partitions.removeFirst();
+               Console.OUT.println(partitionID);
             }
-        
+       
             val ptID:String = partitionID;
-        
+            
             async{
-                intermRes(k) = call_runSPARQL(host, port, graphID, ptID);
+            
+                intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query);
             }
         
             cntr++;
@@ -558,7 +567,7 @@ public class AcaciaFrontEndServiceSession {
 	        val intermResult = intermRes(i);
 	        
 	        if(intermResult != null){
-	            result += intermResult;
+	            result.addAll(intermResult);//result += intermResult;
 	        }
         
             Console.OUT.println("Result at (" + i + ") : " + intermResult);
@@ -1077,8 +1086,8 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
 	static native def call_runSelect(String):Rail[String];
 
-    @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4)")
-    static native def call_runSPARQL(String, Int, String, String):Rail[String];
+    @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5)")
+    static native def call_runSPARQL(String, Int, String, String, String):Rail[String];
 	
 	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
 	// static native def call_countVertices(String, String):Long;

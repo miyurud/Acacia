@@ -73,4 +73,8 @@ public class AcaciaInstanceProtocol{
 	public static final String FILE_ACK = "file-ok";
 	public static final String STATUS = "status";//This is sent to the client to check its status.
 	public static final String BATCH_UPLOAD_RDF = "btch-rdf";
+	public static final String EXECUTE_QUERY= "execute-query"; // This executes the sparql query
+	public static final String SEND_QUERY= "send-query";
+	public static final String SEND_GID= "send-graphID";
+	
 }

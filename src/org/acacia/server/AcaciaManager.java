@@ -37,8 +37,10 @@ import java.util.TreeSet;
 import org.apache.commons.io.FileUtils;
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.log.java.Logger_Java;
+import org.acacia.rdf.sparql.ExecuteQuery;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
+import org.acacia.rdf.sparql.ExecuteQuery;
 
 import java.io.IOException;
 
@@ -1197,13 +1199,81 @@ public class AcaciaManager{
 	 * @param graphID
 	 * @param partitionID
 	 * @return
+	 * @throws IOException 
+	 * @throws UnknownHostException 
 	 */
-	public static String[] runSPARQL(String host, int port, String graphID, String partitionID){
-		String[] result = null;
+	public static x10.core.Rail<java.lang.String> runSPARQL(String host, int port, String graphID, String partitionID, String query) throws UnknownHostException, IOException{
+		x10.util.ArrayList<java.lang.String> result = new x10.util.ArrayList<java.lang.String>((java.lang.System[]) null, x10.rtt.Types.STRING).x10$util$ArrayList$$init$S();
 		
 		
+		Socket socket = new Socket(host, port);
+		PrintWriter out = new PrintWriter(socket.getOutputStream());
+		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		String response = "";		
+		int i=0;
 		
-		return result;
+		out.println(AcaciaInstanceProtocol.HANDSHAKE);
+		out.flush();
+		response = reader.readLine();
+		
+		if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+		
+		out.println(AcaciaInstanceProtocol.EXECUTE_QUERY);
+		out.flush();
+		response = reader.readLine();
+		
+			if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_QUERY))){
+				
+				out.println(query);
+				out.flush();
+				response = reader.readLine();
+				
+				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
+					
+					out.println(graphID);
+					out.flush();
+					response = reader.readLine();
+					
+						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){
+							
+							out.println(partitionID);
+							out.flush();
+							response = reader.readLine();
+							
+							if(response.equals("Not empty")){
+								
+								out.println("Send");
+								out.flush();
+								
+								response = reader.readLine();
+								
+								while(!response.equals("Finish")){
+									result.add__0x10$util$ArrayList$$T$O(((java.lang.String)response));
+									out.println("Send");
+									out.flush();
+									i+=1;
+									response = reader.readLine();
+								
+								}
+								
+								
+							}
+							
+							else if(response.equals("Empty")){
+								
+								result=null;
+							}
+							
+							
+						}
+				}
+				
+			}
+		}
+		
+		reader.close();	
+		x10.core.Rail<java.lang.String> arr =  ((x10.util.ArrayList<java.lang.String>)result).toRail();
+		return arr;
 	}
 	
 	/**

@@ -25,18 +25,18 @@ public class ExecuteQuery {
 			try {
 				parser.query();
 			
-			// extract triples from the query
-			String[] triples = extractTriples(query);
-			// get the data set
-			ArrayList<String> graphData = new ArrayList<String>();
-			graphData = loadData(graphID, partitionID);
-
-			index = query.indexOf("SELECT");
-
-			if (index >= 0) {
-				// get the results of select query
-				result = selectQuery(graphData, triples);
-			}
+				// extract triples from the query
+				String[] triples = extractTriples(query);
+				// get the data set
+				ArrayList<String> graphData = new ArrayList<String>();
+				graphData = loadData(graphID, partitionID);
+	/*
+				index = query.indexOf("SELECT");
+	
+				if (index >= 0) {
+					// get the results of select query
+					result = selectQuery(graphData, triples);
+				}*/
 			}catch (org.antlr.runtime.RecognitionException e) {
 				e.printStackTrace();
 			}

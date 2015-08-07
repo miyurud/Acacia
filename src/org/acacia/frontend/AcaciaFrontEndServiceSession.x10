@@ -445,8 +445,9 @@ public class AcaciaFrontEndServiceSession {
         		out.println("Do you want to write results to a file?[y/n]");
         		out.flush();
         		try{
-        			var isFile:String=buff.readLine();
+        			var isFile:String=buff.readLine().trim();
         		
+                   Console.OUT.println("|" + isFile + "|");
         
         		if(isFile.equals("y")){
         
@@ -464,20 +465,15 @@ public class AcaciaFrontEndServiceSession {
         
         
         		}
-        		else if(isFile.equals("n")){
-       
-        			
+        		else if(isFile.equals("n")){        			
         			var results:ArrayList[String]= runSPARQL(graphID, query);
-        
-        			if(results.isEmpty()){
+        			if((results == null) || (results.isEmpty())){
         				out.println("No matching found.");
-        			}
-        			else if(results.size()<=100){
-        
+                        out.flush();
+        			}else if(results.size()<=100){
 	        			for(var i:Int=0n; i < results.size(); i++){  	
-	        			out.println(results.get(i));//print the result     
+	        				out.println(results.get(i));//print the result     
 	        			}
-	        
 	        			out.flush();
         			}
         			else{
@@ -517,8 +513,9 @@ public class AcaciaFrontEndServiceSession {
         var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
         var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
         
-        
         for(var i:long=0; i<l.size; i++){
+            Console.OUT.println(l(i));
+        
             val items:Rail[String] = l(i).split(",");
             val pts = mp.get(items(0));
             var partitions:ArrayList[String] = null;
@@ -534,7 +531,7 @@ public class AcaciaFrontEndServiceSession {
         }
         
         var cntr:Int = 0n;
-        Console.OUT.println(Place.places().size);
+
         finish for (val p in Place.places()){
         
         
@@ -550,29 +547,30 @@ public class AcaciaFrontEndServiceSession {
             
             if(partitions.size() > 0){
                partitionID = partitions.removeFirst();
-               Console.OUT.println(partitionID);
             }
        
             val ptID:String = partitionID;
             
             async{
-            
+                Console.OUT.println("vv:" + ptID);
                 intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query);
+                Console.OUT.println("cccc");
             }
         
             cntr++;
         }
-        
+        Console.OUT.println("KKK2222");
         for(var i:Int=0n; i < hostListLen; i++){
+        	Console.OUT.println("KKK1");
 	        val intermResult = intermRes(i);
-	        
+	        Console.OUT.println("KKK2:" + intermResult);
 	        if(intermResult != null){
 	            result.addAll(intermResult);//result += intermResult;
 	        }
         
             Console.OUT.println("Result at (" + i + ") : " + intermResult);
         }
-        
+        Console.OUT.println("KKK1c");
         return result;
     }
 

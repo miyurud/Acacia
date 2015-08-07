@@ -731,7 +731,7 @@ public class AcaciaRDFPartitioner {
     
     			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
     			val hostDI:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + hostName + "'")(0);
-    			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(HOST_IDHOST, CPARTITION_IDPARTITION, PARTITION_GRAPH_IDGRAPH) VALUES(" + hostDI + "," + actualPartID + "," + graphID + ")");
+    			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(HOST_IDHOST, PARTITION_IDPARTITION, PARTITION_GRAPH_IDGRAPH) VALUES(" + hostDI + "," + actualPartID + "," + graphID + ")");
     		}
     	}catch(val e:Exception){
     		Console.OUT.println("Error : "+e.getMessage());

@@ -340,6 +340,10 @@ return result;
 		return temp;
 	}
 
+//@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
+//static native def call_runSelect(String):Rail[String];
 
+//@Native("java", "org.acacia.rdf.sparql.ConnectWorkers.connect(#1,#2)")
+//static native def call_connect(String,Int):void;
 
 }

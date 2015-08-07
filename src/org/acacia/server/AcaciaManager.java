@@ -1205,7 +1205,6 @@ public class AcaciaManager{
 	public static x10.core.Rail<java.lang.String> runSPARQL(String host, int port, String graphID, String partitionID, String query) throws UnknownHostException, IOException{
 		x10.util.ArrayList<java.lang.String> result = new x10.util.ArrayList<java.lang.String>((java.lang.System[]) null, x10.rtt.Types.STRING).x10$util$ArrayList$$init$S();
 		
-		
 		Socket socket = new Socket(host, port);
 		PrintWriter out = new PrintWriter(socket.getOutputStream());
 		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -1216,30 +1215,36 @@ public class AcaciaManager{
 		out.flush();
 		response = reader.readLine();
 		
-		if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+		System.out.println("resp1:" + response);
 		
+		if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+			System.out.println("ccc");
+			out.println(java.net.InetAddress.getLocalHost().getHostName());
+			out.flush();
+			
 		out.println(AcaciaInstanceProtocol.EXECUTE_QUERY);
 		out.flush();
 		response = reader.readLine();
-		
+		System.out.println("ccc:"+response);
 			if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_QUERY))){
-				
+				System.out.println("|" + query + "|");
 				out.println(query);
 				out.flush();
 				response = reader.readLine();
+				System.out.println("dddd:"+response);
 				
 				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
-					
+					System.out.println("dend-gid:"+graphID);
 					out.println(graphID);
 					out.flush();
 					response = reader.readLine();
-					
+					System.out.println("eee:"+response);
 						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){
-							
+							System.out.println("partID:"+partitionID);
 							out.println(partitionID);
 							out.flush();
 							response = reader.readLine();
-							
+							System.out.println("bbbbb:"+response);
 							if(response.equals("Not empty")){
 								
 								out.println("Send");
@@ -1255,24 +1260,19 @@ public class AcaciaManager{
 									response = reader.readLine();
 								
 								}
-								
-								
-							}
-							
-							else if(response.equals("Empty")){
-								
+							}else if(response.equals("Empty")){
 								result=null;
 							}
-							
-							
 						}
 				}
 				
 			}
 		}
-		
 		reader.close();	
-		x10.core.Rail<java.lang.String> arr =  ((x10.util.ArrayList<java.lang.String>)result).toRail();
+		x10.core.Rail<java.lang.String> arr = null;
+		if(result != null){
+			arr = ((x10.util.ArrayList<java.lang.String>)result).toRail();
+		}
 		return arr;
 	}
 	

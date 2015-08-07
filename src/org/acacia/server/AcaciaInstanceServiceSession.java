@@ -570,9 +570,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					msg = buff.readLine().trim();
 					System.out.println("RDF msg recieved"+msg);
 					String graphID = msg;
-				}
-				else if(msg.equals(AcaciaInstanceProtocol.EXECUTE_QUERY)){
-					
+				}else if(msg.equals(AcaciaInstanceProtocol.EXECUTE_QUERY)){
 					out.println(AcaciaInstanceProtocol.SEND_QUERY);
 					out.flush();
 					msg = buff.readLine().trim();
@@ -591,7 +589,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					ExecuteQuery execute_query=new ExecuteQuery();  
 					ArrayList<String> result=execute_query.executeQuery(query,gID,pID);
 					
-					if(!result.isEmpty()){
+					if((result != null) && (!result.isEmpty())){
 						out.println("Not empty");
 						out.flush();
 						
@@ -611,6 +609,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 						out.println("Empty");
 						out.flush();
 					}
+				}else{
+					System.out.println("************************|" + msg + "|");
 				}
 			}
 		}catch(IOException e){

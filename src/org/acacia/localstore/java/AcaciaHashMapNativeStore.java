@@ -42,6 +42,7 @@ public class AcaciaHashMapNativeStore {
 	private final String EDGE_STORE_NAME = "acacia.edgestore.db";
 	private final String RELATIONSHIP_STORE_NAME = "acacia.relationshipstore-";//Each of these files will have its own property extension ID
 	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";
+	private final String METADATA_STORE_NAME = "acacia.nativemeta.db";
 	
 	private String instanceDataFolderLocation = null;
 	//private HashMap<Long, NodeRecord> nodeRecordMap = null;
@@ -73,14 +74,17 @@ public class AcaciaHashMapNativeStore {
 	
 	private HashMap<Integer, String> predicateStore; //This is exactly same as the predicate map.
 	
+	private HashMap<String, String> metaInfo;
+	
 	private Kryo kryo = null;
 	
 	private long vertexCount = 0;
 	private long edgeCount = 0;
 	private int predicateCount = 0;
+	private final String PREDICATE_COUNT = "predcnt";
 	private String dataFolder;
 	private int graphID;
-	
+	   
 	public AcaciaHashMapNativeStore(int graphID, int partitionID, String baseDir, boolean isCentralStore){
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
@@ -103,9 +107,41 @@ public class AcaciaHashMapNativeStore {
 	public boolean loadGraph(){
 		boolean result = false;
 		
+        System.out.println("Loading meta data of native store.");
+
+        String metaInoMapPath = instanceDataFolderLocation + File.separator + METADATA_STORE_NAME;
+        File f = new File(metaInoMapPath);
+		
+		if(!f.exists()) {
+			metaInfo = new HashMap<String, String>();
+			return result;
+		}
+		
+        try {
+            FileInputStream stream = new FileInputStream(metaInoMapPath);
+            Input input = new Input(stream);
+            metaInfo = (HashMap<String, String>)this.kryo.readObject(input, HashMap.class);
+            input.close();//This will close the FileInputStream as well.
+            
+            if(metaInfo != null){
+            	result = true;
+            }else{
+            	metaInfo = new HashMap<String, String>();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();            
+        }
+
+        System.out.println("Loaded meta data of native store.");
+		
+        //Need to initialize the variables with the loaded info.
+        System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+        predicateCount = Integer.parseInt(metaInfo.get(PREDICATE_COUNT));
+        initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
+        
 		System.out.println("Loading subGraphs");
 		String edgeStorePath = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
-		File f = new File(edgeStorePath);
+		f = new File(edgeStorePath);
 		
 		if(!f.exists()) {
 			localSubGraphMap = new HashMap<Long, HashSet<Long>>();
@@ -157,14 +193,14 @@ public class AcaciaHashMapNativeStore {
         }
         System.out.println("Loaded vertexPropertyMap");
         
-        System.out.println("Loading relationshipMapWithProperties");
+        System.out.println("Loading relationshipMapWithProperties predicateCount:" + predicateCount);
         for(int i=0; i < predicateCount; i++){
         	String relationshipMapWithPropertiesPath = instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db";
         	f = new File(relationshipMapWithPropertiesPath);
     		
     		if(!f.exists()) {
     			relationshipMapWithProperties[i] = new HashMap<Long, HashSet<Long>>();
-    			return result;
+                continue;
     		}
     		
             try {
@@ -176,6 +212,7 @@ public class AcaciaHashMapNativeStore {
                 if(relationshipMapWithProperties[i] != null){
                 	result = true;
                 }else{
+                	//In this case the deserialization did not work as expected.
                 	relationshipMapWithProperties[i] = new HashMap<Long, HashSet<Long>>();
                 }
                 
@@ -271,6 +308,22 @@ public class AcaciaHashMapNativeStore {
 	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME);
 	            Output output = new Output(stream);
 	            this.kryo.writeObject(output, attributeMap);
+	            stream.flush();
+	            output.close();
+	        } catch (Exception e) {
+	        	result = false;
+	        	 e.printStackTrace();
+	        }
+        }
+        
+        //We need to store the meta info to the meta info map first.
+        metaInfo.put(PREDICATE_COUNT, ""+predicateCount);
+        
+        if(metaInfo != null){
+	        try {
+	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + METADATA_STORE_NAME);
+	            Output output = new Output(stream);
+	            this.kryo.writeObject(output, metaInfo);
 	            stream.flush();
 	            output.close();
 	        } catch (Exception e) {
@@ -412,6 +465,7 @@ public class AcaciaHashMapNativeStore {
 		vertexPropertyMap = new HashMap<Long, HashSet<String>>();
 		attributeMap = new HashMap<Long, HashMap<Integer, HashSet<String>>>();
 		predicateStore = new HashMap<Integer, String>();
+		metaInfo = new HashMap<String, String>();
 
 		//If the directory does not exist we need to create it first.
 		if(!file.isDirectory()){
@@ -431,4 +485,24 @@ public class AcaciaHashMapNativeStore {
 		
 		//hmp = new HashMap[predicateSize];
 	}
+	
+	public HashMap<Long, HashSet<Long>> getlocalSubGraphMap(){
+		return localSubGraphMap;
+	}
+	
+	public HashMap<Long, HashSet<String>> getvertexPropertyMap(){
+		return vertexPropertyMap;
+	}
+	
+    public HashMap[] getrelationshipMapWithProperties(){
+    	return relationshipMapWithProperties;
+    }
+	
+    public HashMap<Long, HashMap<Integer, HashSet<String>>> getattributeMap(){
+    	return attributeMap;
+    }
+
+    public HashMap<Integer, String> getpredicateStore(){
+    	return predicateStore;
+    }
 }

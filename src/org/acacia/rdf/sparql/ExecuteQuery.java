@@ -3,6 +3,8 @@ package org.acacia.rdf.sparql;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Iterator;
 
 import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.util.java.Utils_Java;
@@ -30,13 +32,14 @@ public class ExecuteQuery {
 				// get the data set
 				ArrayList<String> graphData = new ArrayList<String>();
 				graphData = loadData(graphID, partitionID);
-	/*
+	
+				
 				index = query.indexOf("SELECT");
 	
 				if (index >= 0) {
 					// get the results of select query
 					result = selectQuery(graphData, triples);
-				}*/
+				}
 			}catch (org.antlr.runtime.RecognitionException e) {
 				e.printStackTrace();
 			}
@@ -85,25 +88,60 @@ public class ExecuteQuery {
 		nativeStore.loadGraph();
 
 		HashMap<Long, HashSet<Long>> localSubGraphMap = nativeStore.getlocalSubGraphMap();
-		HashMap<Long, HashSet<String>> vertexPropertyMap= nativeStore.getvertexPropertyMap();
+		HashMap<Long, HashSet<String>> vertexPropertyMap = nativeStore.getvertexPropertyMap();
 		HashMap[] relationshipMapWithProperties=nativeStore.getrelationshipMapWithProperties();
 		HashMap<Long, HashMap<Integer, HashSet<String>>> attributeMap=nativeStore.getattributeMap();
 		HashMap<Integer, String> predicateStore=nativeStore.getpredicateStore();
 		
-		
 		//graph data should be aggregated and added to 'data'
+		int predicateCount = nativeStore.getPredicateCount();
+		
+		for(int i=0; i < predicateCount; i++){
+			HashMap<Long, HashSet<Long>> hMap = relationshipMapWithProperties[i];
+			String predicate = null;
+			
+			if(hMap != null){
+				predicate = predicateStore.get(i);
+				
+				if(predicate == null){
+					continue;
+				}
+			}else{
+				continue;
+			}
+			
+			Iterator<Map.Entry<Long, HashSet<Long>>> itr = hMap.entrySet().iterator();
+
+			while(itr.hasNext()){
+				Map.Entry<Long, HashSet<Long>> item = itr.next();
+				Long startVertexID = item.getKey();
+				HashSet<Long> endVertices = item.getValue();
+				
+				HashSet<String> firstHs = vertexPropertyMap.get(startVertexID);
+				if(firstHs != null){
+					String startVertexPropertyValue = (String)firstHs.toArray()[0];
+					
+					for(Long endVertexID: endVertices){
+						HashSet<String> secondHs = vertexPropertyMap.get(endVertexID);
+						if(secondHs != null){
+							String endVertexPropertyValue = (String) secondHs.toArray()[0];
+							data.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
+							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
+							System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
+							//System.out.println(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
+						}
+					}
+				}
+			}
+		}		
 
 		return data;
-
 	}
 	
 	// this is a test class for executing query
 		public ArrayList<String> selectQuery(ArrayList<String> graphData, String[] triples){
-
-			
 	 		 ArrayList<ArrayList<String>> intermediateResults=new ArrayList<ArrayList<String>>(); 
 	         ArrayList<String> Results= new ArrayList<String>();  			
-	 		 //ArrayList<String> variables = new ArrayList<String>(); 
 	 		 int n=0;
 	 				
 			intermediateResults= execute(triples, graphData);
@@ -129,8 +167,7 @@ public class ExecuteQuery {
 	              }								
 			}
 	 		
-		return Results;
-		
+			return Results;
 		}
 
 

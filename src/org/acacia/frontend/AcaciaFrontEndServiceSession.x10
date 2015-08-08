@@ -552,25 +552,19 @@ public class AcaciaFrontEndServiceSession {
             val ptID:String = partitionID;
             
             async{
-                Console.OUT.println("vv:" + ptID);
                 intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query);
-                Console.OUT.println("cccc");
             }
         
             cntr++;
         }
-        Console.OUT.println("KKK2222");
         for(var i:Int=0n; i < hostListLen; i++){
-        	Console.OUT.println("KKK1");
 	        val intermResult = intermRes(i);
-	        Console.OUT.println("KKK2:" + intermResult);
 	        if(intermResult != null){
 	            result.addAll(intermResult);//result += intermResult;
 	        }
         
             Console.OUT.println("Result at (" + i + ") : " + intermResult);
         }
-        Console.OUT.println("KKK1c");
         return result;
     }
 

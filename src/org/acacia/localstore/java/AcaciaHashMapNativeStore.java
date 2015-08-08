@@ -42,6 +42,7 @@ public class AcaciaHashMapNativeStore {
 	private final String EDGE_STORE_NAME = "acacia.edgestore.db";
 	private final String RELATIONSHIP_STORE_NAME = "acacia.relationshipstore-";//Each of these files will have its own property extension ID
 	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";
+	private final String PREDICATE_STORE_NAME = "acacia.predicate.db";
 	private final String METADATA_STORE_NAME = "acacia.nativemeta.db";
 	
 	private String instanceDataFolderLocation = null;
@@ -81,6 +82,11 @@ public class AcaciaHashMapNativeStore {
 	private long vertexCount = 0;
 	private long edgeCount = 0;
 	private int predicateCount = 0;
+	
+	public int getPredicateCount() {
+		return predicateCount;
+	}
+
 	private final String PREDICATE_COUNT = "predcnt";
 	private String dataFolder;
 	private int graphID;
@@ -249,6 +255,33 @@ public class AcaciaHashMapNativeStore {
             e.printStackTrace();            
         }
         System.out.println("Loaded attributeMap");
+        
+        System.out.println("Loading predicate store");
+        String predicateMapPath = instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME;
+		f = new File(predicateMapPath);
+		
+		if(!f.exists()) {
+			predicateStore = new HashMap<Integer, String>();
+			return result;
+		}
+		
+        try {
+            FileInputStream stream = new FileInputStream(predicateMapPath);
+            Input input = new Input(stream);
+            predicateStore = (HashMap<Integer, String>)this.kryo.readObject(input, HashMap.class);
+            input.close();//This will close the FileInputStream as well.
+            
+            if(predicateStore != null){
+            	result = true;
+            }else{
+            	predicateStore = new HashMap<Integer, String>();
+            }
+            
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();            
+        }
+        System.out.println("Loaded predicate store.");
 		
 		return result;
 	}
@@ -316,6 +349,19 @@ public class AcaciaHashMapNativeStore {
 	        }
         }
         
+        if(predicateStore != null){
+	        try {
+	            FileOutputStream stream = new FileOutputStream(instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME);
+	            Output output = new Output(stream);
+	            this.kryo.writeObject(output, predicateStore);
+	            stream.flush();
+	            output.close();
+	        } catch (Exception e) {
+	        	result = false;
+	        	 e.printStackTrace();
+	        }
+        }
+        
         //We need to store the meta info to the meta info map first.
         metaInfo.put(PREDICATE_COUNT, ""+predicateCount);
         
@@ -348,6 +394,7 @@ public class AcaciaHashMapNativeStore {
 		
 		if(vertexSet == null){
 			vertexSet = new HashSet<String>();
+			vertexPropertyMap.put(vertexID, vertexSet);
 		}
 		
 		vertexSet.add(vertexProperty);

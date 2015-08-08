@@ -10,6 +10,9 @@ import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.util.java.Utils_Java;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
+//import org.antlr.runtime.RecognitionException;
+
+//import org.antlr.runtime.RecognitionException;
 
 public class ExecuteQuery {
 	
@@ -17,6 +20,7 @@ public class ExecuteQuery {
 
 	public ArrayList<String> executeQuery(String query, String graphID, String partitionID) {
 
+		
 		ANTLRStringStream stream = new ANTLRStringStream(query);
 		SparqlLexer lexer = new SparqlLexer(stream);
 		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
@@ -25,6 +29,7 @@ public class ExecuteQuery {
 		ArrayList<String> result = null;
 				
 			try {
+				
 				parser.query();
 			
 				// extract triples from the query
@@ -73,7 +78,9 @@ public class ExecuteQuery {
 		 
 		
 		 // ; also should be considered 
-		 triples=query.substring(index+1,index2).trim().split(" .");  		 
+		 
+		 triples=query.substring(index+1,index2).trim().split(" .  ");  
+		 
 		 return triples;
 	 }
 
@@ -127,7 +134,7 @@ public class ExecuteQuery {
 							String endVertexPropertyValue = (String) secondHs.toArray()[0];
 							data.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
 							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
-							System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
+							//System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
 							//System.out.println(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
 						}
 					}
@@ -174,32 +181,35 @@ public class ExecuteQuery {
 	public ArrayList<ArrayList<String>>  execute(String[] triples, ArrayList<String> graphData) {
 
 		ArrayList<ArrayList<String>> intermediateResults = new ArrayList<ArrayList<String>>();
-
+		
+		
 		for (int i = 0; i < triples.length; i++) {
-
+		
 			// get the tokens of the triples
 			String[] tokens = triples[i].trim().split(" ");
 
 			// predicate
-
+			
 			tokens[1] = Prefix.get(tokens[1].substring(0,
 					tokens[1].indexOf(":")).trim())
 					+ tokens[1].substring(tokens[1].indexOf(":") + 1).trim();
-
+			
+			
 			if (tokens[0].indexOf("?") >= 0) {
 				if (tokens[2].indexOf("?") >= 0) {
 					 intermediateResults.add(triplePattern1(tokens,graphData));
 				} else {
-
+					
 					if (!tokens[2].startsWith("<http")) {
 						tokens[2] = Prefix.get(tokens[2].substring(0,
 								tokens[2].indexOf(":")).trim())
 								+ tokens[2].substring(
 										tokens[2].indexOf(":") + 1).trim();
+						
 					} else {
-						tokens[2] = tokens[2].substring(1, tokens[2].length());
+						tokens[2] = tokens[2].substring(1, tokens[2].length()-1);
 					}
-
+					
 					 intermediateResults.add(triplePattern2(tokens,graphData));
 				}
 			} else {
@@ -254,12 +264,12 @@ public class ExecuteQuery {
 
 		// predicate and object should be considered
 
+		
 		for (int i = 0; i < graphData.size(); i++) {
-
-			if (graphData.get(i).indexOf(tokens[1].substring(3)) >= 0
-					&& graphData.get(i).indexOf(
-							tokens[2].substring(1, tokens[2].length() - 1)) >= 0) {
-
+			
+			
+			if (graphData.get(i).contains(tokens[1]) && graphData.get(i).contains(tokens[2])) {
+					System.out.print("srkhfnuiangiu");
 				temp.set(k, graphData.get(i));
 				k = k + 1;
 			}

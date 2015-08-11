@@ -9,13 +9,7 @@ Miyuru Dayarathna and Toyotaro Suzumura. 2014. "[Towards scalable distributed gr
 
 Acacia is a distributed graph database server for managing and mining large graphs in a scalable manner. It is mainly written in X10 (in Managed X10). It can be run in a distributed cluster as well as on a single computer such as a Laptop.
 
-##2. What is Provided
-
-
-
-###3.1 Installation
-
-##4. Contact Information
+##2. Contact Information
 
 Please contact [Miyuru Dayarathna](miyurud at yahoo dot co dot uk) for further information. Please let us know about bug reports or any further improvements you wish to have in Acacia.
 

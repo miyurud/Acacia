@@ -545,7 +545,7 @@ public class AcaciaInstanceToManagerAPI{
 				//Need to read the response at least once.
 				response = reader.readLine();
 				while((response != null)&&(!response.equals(AcaciaBackEndProtocol.DONE))){
-					
+					System.out.println("|" + response + "|");
 					sb.append(response);
 					//Note that at the moment we are sending the sourve vertex id multiple times which is redundant task. Better to send the
 					//source vertex once along with a sequence of destination vertices.

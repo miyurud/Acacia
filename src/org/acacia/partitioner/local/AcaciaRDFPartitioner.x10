@@ -625,12 +625,13 @@ public class AcaciaRDFPartitioner {
         	//org.acacia.util.java.Utils_Java.writeToFile("centralStore-part-" + i + ".txt", sbCentral[i]);
         	val central:AcaciaHashMapNativeStore = centralStoresMap.get(i) as AcaciaHashMapNativeStore;	
         	
-        	MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.CPARTITION(IDCPARTITION, IDGRAPH, VERTEXCOUNT, EDGECOUNT) VALUES(" + i + "," + graphID + ",0,0)");
+        	MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.CPARTITION(IDCPARTITION, IDGRAPH, VERTEXCOUNT, EDGECOUNT) VALUES(" + i + "," + graphID + "," + central.getVertexCount() + "," + central.getEdgeCount() + ")");
         	central.storeGraph();
         }
         
         for(var i:Int = 0n; i < nParts; i++){
             val localStore:AcaciaHashMapNativeStore = partitionFilesMap.get(i) as AcaciaHashMapNativeStore;
+            val result:Boolean = call_runUpdate("UPDATE ACACIA_META.PARTITION SET VERTEXCOUNT=" + localStore.getVertexCount() + ", EDGECOUNT=" + localStore.getEdgeCount() + " WHERE GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + localStore.getPartitionID());
             localStore.storeGraph();
         }
         
@@ -748,4 +749,7 @@ public class AcaciaRDFPartitioner {
     
     @Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
     static native def call_runSelect(String):Rail[String];
+    
+    @Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runUpdate(#1)")
+    static native def call_runUpdate(String):Boolean;
 }

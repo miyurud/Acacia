@@ -82,16 +82,21 @@ public class AcaciaHashMapNativeStore {
 	private long vertexCount = 0;
 	private long edgeCount = 0;
 	private int predicateCount = 0;
+	private int partitionID = 0;
+	private boolean updatedFlagVertex = false;
+	private boolean updatedFlagEdge = false;
 	
 	public int getPredicateCount() {
 		return predicateCount;
 	}
 
 	private final String PREDICATE_COUNT = "predcnt";
+	private final String PARTITION_ID = "partid";
 	private String dataFolder;
 	private int graphID;
 	   
 	public AcaciaHashMapNativeStore(int graphID, int partitionID, String baseDir, boolean isCentralStore){
+		this.partitionID = partitionID;
 		kryo = new Kryo();
 		kryo.register(HashMap.class, new MapSerializer());
 		dataFolder = baseDir;
@@ -141,8 +146,9 @@ public class AcaciaHashMapNativeStore {
         System.out.println("Loaded meta data of native store.");
 		
         //Need to initialize the variables with the loaded info.
-        System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+        //System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
         predicateCount = Integer.parseInt(metaInfo.get(PREDICATE_COUNT));
+        partitionID = Integer.parseInt(metaInfo.get(PARTITION_ID));
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
         
 		System.out.println("Loading subGraphs");
@@ -364,6 +370,7 @@ public class AcaciaHashMapNativeStore {
         
         //We need to store the meta info to the meta info map first.
         metaInfo.put(PREDICATE_COUNT, ""+predicateCount);
+        metaInfo.put(PARTITION_ID, ""+partitionID);
         
         if(metaInfo != null){
 	        try {
@@ -398,6 +405,7 @@ public class AcaciaHashMapNativeStore {
 		}
 		
 		vertexSet.add(vertexProperty);
+		updatedFlagVertex = true;
 	}
 	
 	/**
@@ -418,7 +426,7 @@ public class AcaciaHashMapNativeStore {
 		if(neighboursList == null){
 			neighboursList = new HashSet<Long>();
 			neighboursList.add(toVertex);
-			localSubGraphMap.put(toVertex, neighboursList);
+			localSubGraphMap.put(fromVertex, neighboursList);
 		}else{
 			neighboursList.add(toVertex);
 		}
@@ -460,6 +468,8 @@ public class AcaciaHashMapNativeStore {
 			//System.out.println("---C8-----");
 		}
 		//System.out.println("---C4-----");
+		updatedFlagVertex = true;
+		updatedFlagEdge = true;
 	}
 	
 	/**
@@ -491,6 +501,8 @@ public class AcaciaHashMapNativeStore {
 			vertexAttributeList.put(relationshipType, hs);
 			attributeMap.put(new Long(vertexID), vertexAttributeList);
 		}
+		
+		updatedFlagVertex = true;
 	}
 	
 	public boolean containsVertex(long vertexID){
@@ -522,6 +534,8 @@ public class AcaciaHashMapNativeStore {
 			}
 			file.mkdir();
 		}
+		
+		updatedFlagVertex = true;
 	}
 	
 	public void initializeRelationshipMapWithProperties(Integer predicateSize){
@@ -552,4 +566,36 @@ public class AcaciaHashMapNativeStore {
     public HashMap<Integer, String> getpredicateStore(){
     	return predicateStore;
     }
+    
+    public long getVertexCount(){
+    	if(updatedFlagVertex){
+    		vertexCount = vertexPropertyMap.keySet().size();
+    		updatedFlagVertex = false;
+    	}
+    	
+    	return vertexCount;
+    }
+    
+    public long getEdgeCount(){
+    	if(updatedFlagEdge){
+    		edgeCount = 0;
+    		Iterator<Map.Entry<Long, HashSet<Long>>> itr = localSubGraphMap.entrySet().iterator();
+    		while(itr.hasNext()){
+    			Map.Entry<Long, HashSet<Long>> entry = itr.next();
+    			edgeCount += entry.getValue().size();
+    		}
+    		
+    		updatedFlagEdge = false;
+    	}
+    	
+    	return edgeCount;
+    }
+    
+    public int getPartitionID(){
+    	return partitionID;
+    }
+
+	public HashMap<Long, HashSet<Long>> getUnderlyingHashMap() {
+		return localSubGraphMap;
+	}
 }

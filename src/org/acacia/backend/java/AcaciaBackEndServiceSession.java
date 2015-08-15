@@ -33,11 +33,13 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaBackEndProtocol;
 import org.acacia.server.AcaciaInstanceProtocol;
 import org.acacia.server.AcaciaManager;
 import org.acacia.util.java.Conts_Java;
+import org.acacia.util.java.Utils_Java;
 
 public class AcaciaBackEndServiceSession extends Thread {
 //public class AcaciaFrontEndServiceSession extends java.lang.Thread{
@@ -340,10 +342,13 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    	//local copy of the file. This seems to be the only solution we could find at the moment. A much more intelligent technique
             		    	//will not need to bring down the entire central store partition back to the local disk. Even bringing down the central store
             		    	//partitions can be done in an intelligent manner such that we do not exceed the disk quota available on the local disk.
-            		    	AcaciaManager.downloadCentralStore(Integer.parseInt(graphID), i);
+            		    	//AcaciaManager.downloadCentralStore(Integer.parseInt(graphID), i);
             		    	
-            		    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
-            		    	store.loadGraph();
+//            		    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
+//            		    	store.loadGraph();
+            		    	String centralStoreBaseDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
+            		    	AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
+            		    	
             		    	HashMap<Long, HashSet<Long>> edgeList = (HashMap<Long, HashSet<Long>>)store.getUnderlyingHashMap();
             		    	Iterator<Map.Entry<Long, HashSet<Long>>> itr = edgeList.entrySet().iterator();
             		    	long firstVertex = 0l;
@@ -380,7 +385,7 @@ public class AcaciaBackEndServiceSession extends Thread {
                 			HashSet<Long> lst2 = pairs.getValue();
                 			
                 			/*
-                			 The following method seems much more efficient. But itdoes not deliver all the edges. This is strange. we get lesser triangle count.
+                			 The following method seems much more efficient. But it does not deliver all the edges. This is strange. we get lesser triangle count.
                 			 
                 			//First we send the key
             				out.println("k-" + pairs.getKey());
@@ -986,14 +991,16 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    HashMap<Long, Long> edgeList = new HashMap<Long, Long>();
 	    long globalSize = 0;
 	    
-	    for(int i = 0; i < centralPartionCount; i++){	    	
-	    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
+	    for(int i = 0; i < centralPartionCount; i++){	 
+	    	String centralStoreBaseDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
+	    	AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
+	    	//AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
 	    	store.loadGraph();
 	    	globalSize += store.getEdgeCount();
 	    }
-	    
+
 	    long localSize = Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select EDGECOUNT from ACACIA_META.PARTITION where GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID).value)[(int)0L]);
-	    
+
 	    if(localSize > globalSize){
 	    	result = -1;
 	    }

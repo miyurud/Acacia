@@ -64,7 +64,7 @@ return result;
         //val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + "/" + graphID + "_" + partitionID;
 
 		try {
-	        parser.query(); 
+	        parser.query();
 	        //extract triples from the query
 	        var triples:Rail[String]=extractTripples(query);	
 	        //get the data set

@@ -669,7 +669,7 @@ public class AcaciaRDFPartitioner {
     			val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+j;
     			Console.OUT.println("zip -rj "+filePath+"_trf.zip "+filePath);
     			val process:java.lang.Process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
-    			
+    			process.waitFor();
     			val port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
     			val withinPlaceIndex:Int = ((j - hostID) as Int)/hostCount;
     			val instancePort:Int = port + withinPlaceIndex;
@@ -681,10 +681,13 @@ public class AcaciaRDFPartitioner {
     		}
     	}catch(val e:Exception){
     		Console.OUT.println("Error : "+e.getMessage());
-            e.printStackTrace();
+            	e.printStackTrace();
     	}catch(val e1:java.io.IOException){
-            Console.OUT.println("Error : "+e1.getMessage());
-            e1.printStackTrace();
+            	Console.OUT.println("Error : "+e1.getMessage());
+            	e1.printStackTrace();
+        }catch(val e2:java.lang.InterruptedException){
+        	Console.OUT.println("Error : "+e2.getMessage());
+        	e2.printStackTrace();
         }
     }
     
@@ -721,7 +724,7 @@ public class AcaciaRDFPartitioner {
     			val filePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_" + actualPartID;
     			Console.OUT.println("zip -rj "+filePath+".zip "+filePath);
     			val process:java.lang.Process = r.exec("zip -rj "+filePath+".zip "+filePath);
-    
+    			process.waitFor();
     			val port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
     			val withinPlaceIndex:Int = ((j - hostID) as Int)/hostCount;
     			val instancePort:Int = port + withinPlaceIndex;
@@ -738,6 +741,9 @@ public class AcaciaRDFPartitioner {
     	}catch(val e1:java.io.IOException){
     		Console.OUT.println("Error : "+e1.getMessage());
     		e1.printStackTrace();
+    	}catch(val e2:java.lang.InterruptedException){
+    		Console.OUT.println("Error : "+e2.getMessage());
+    		e2.printStackTrace();
     	}
     }
     

@@ -60,8 +60,9 @@ public class AcaciaRDFPartitioner {
     /**
      * Default constructor 
      */
-	private var nodes:HashMap[Long,String] = new HashMap[Long,String]();
-	private var predicates:HashMap[Long,String] = new HashMap[Long,String]();
+	private var nodes:HashMap[String,Long] = new HashMap[String,Long]();
+ 	private var nodesTemp:HashMap[Long,String] = new HashMap[Long,String]();
+	private var predicates:HashMap[String,Long] = new HashMap[String,Long]();
 	private var relationsMap:HashMap[Long,HashMap[Long,ArrayList[String]]] = new HashMap[Long,HashMap[Long,ArrayList[String]]]();
  	private var attributeMap:HashMap[Long,HashMap[Long,ArrayList[String]]] = new HashMap[Long,HashMap[Long,ArrayList[String]]]();
 
@@ -153,7 +154,7 @@ public class AcaciaRDFPartitioner {
     		readFile(inputDirectory + java.io.File.separator + files(i));
     	}
     	//flush the printer
-    	printer.flush();
+    	//printer.flush();
     	
     	writeStore(nodes,"nodeStore");
     	writeStore(predicates,"predicateStore");
@@ -267,24 +268,21 @@ public class AcaciaRDFPartitioner {
 	 	//flush the printer
 	 	printer.flush();
 	 
-	 	writeStore(nodes,"nodeStore");
-	 	writeStore(predicates,"predicateStore");
-	 	writeMap(attributeMap,"attributeMap");
-	 	writeMap(relationsMap,"relationMap");
+	 	//writeStore(nodes,"nodeStore");
+	 	//writeStore(predicates,"predicateStore");
+	 	//writeMap(attributeMap,"attributeMap");
+	 	//writeMap(relationsMap,"relationMap");
     }
     
-    private def addToStore(val map:HashMap[Long,String],val URI:String):Long{
-    	var itr:Iterator[x10.util.Map.Entry[Long,String]] = map.entries().iterator();
-    
-    	while(itr.hasNext()){
-    		val propItem:x10.util.Map.Entry[Long,String] = itr.next();
-    		if(propItem.getValue().equals(URI)){
-    			return propItem.getKey();
-    		}
+    private def addToStore(val map:HashMap[String,Long],val URI:String):Long{   
+    	if(map.containsKey(URI)){
+    		return map.get(URI);
     	}
     	val id = map.size();
-    	map.put(id,URI);
-    
+    	map.put(URI,id);
+    	if(map == nodes){
+    		nodesTemp.put(id,URI);
+    	}
     	return id;
     }
     
@@ -311,15 +309,15 @@ public class AcaciaRDFPartitioner {
     	}
     }
     
-    public def writeStore(val map:HashMap[Long,String],val fileName:String):void{
+    public def writeStore(val map:HashMap[String,Long],val fileName:String):void{
     	Console.OUT.println("*****"+fileName+"*****");
     	val O = new File(location+fileName);
     	val P = O.printer();
-     	var itr:Iterator[x10.util.Map.Entry[Long,String]] = map.entries().iterator();
+     	var itr:Iterator[x10.util.Map.Entry[String,Long]] = map.entries().iterator();
     	while(itr.hasNext()){
-    		val attributeItem:x10.util.Map.Entry[Long,String] = itr.next();
+    		val attributeItem:x10.util.Map.Entry[String,Long] = itr.next();
     	    	//Console.OUT.println(attributeItem.getKey()+" "+attributeItem.getValue());
-    	    	P.println(attributeItem.getKey()+" "+attributeItem.getValue());
+    	    	P.println(attributeItem.getValue()+" "+attributeItem.getKey());
     	}
    	    P.flush();
     }
@@ -395,17 +393,17 @@ public class AcaciaRDFPartitioner {
     
     			if(refToHashMapNativeStore == null){
     				val actualPartitionID:String = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
-                    //Console.OUT.println("actualPartitionID:" + actualPartitionID);
-    				refToHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parse(actualPartitionID) as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), false);
+                    		refToHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parse(actualPartitionID) as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), false);
                     refToHashMapNativeStore.initializeRelationshipMapWithProperties(x10.interop.Java.convert(predicates.keySet().size() as Int));
                     //It will be inefficient for storing the same set of predicates in each and every native store created.
                     //However, for the moment we do it because the number of predicates available is less.
-                    val itr:x10.lang.Iterator[x10.util.Map.Entry[Long, String]] = predicates.entries().iterator() as x10.lang.Iterator[x10.util.Map.Entry[Long, String]];
+                    val itr:x10.lang.Iterator[x10.util.Map.Entry[String, Long]] = predicates.entries().iterator() as x10.lang.Iterator[x10.util.Map.Entry[String, Long]];
                     
                     while(itr.hasNext()){
-                        val entry:x10.util.Map.Entry[Long, String] = itr.next();
-    					refToHashMapNativeStore.addPredicate(x10.interop.Java.convert(entry.getKey() as Int), entry.getValue() as x10.lang.String);
+                        val entry:x10.util.Map.Entry[String, Long] = itr.next();
+    					refToHashMapNativeStore.addPredicate(x10.interop.Java.convert(entry.getValue() as Int), entry.getKey() as x10.lang.String);
                     }
+                    
     				partitionFilesMap.put(partitionID, refToHashMapNativeStore);
     				//partitionIDsList.add(actualPartitionID);
                     partitionIDsMap.put(partitionID, actualPartitionID);
@@ -524,7 +522,7 @@ public class AcaciaRDFPartitioner {
         
                     //We add the starting vertex of the relationship to native store
                     if(!nativeStore.containsVertex(fromVertex)){
-                        var propertyValue:String = nodes.get(fromVertex);
+                        var propertyValue:String = nodesTemp.get(fromVertex);
                         nativeStore.addVertexWithProperty(fromVertex as Long, propertyValue);
                     }else{
                         //We need not to worry about adding new properties to an existing vertex in the native store.
@@ -535,7 +533,7 @@ public class AcaciaRDFPartitioner {
                     
                     //The ending vertex
                     if(!nativeStore.containsVertex(toVertex)){
-                    	var propertyValue:String = nodes.get(toVertex);
+                    	var propertyValue:String = nodesTemp.get(toVertex);
                     	nativeStore.addVertexWithProperty(toVertex as Long, propertyValue);
                     }else{
                     	//We need not to worry about adding new properties to an existing vertex in the native store.

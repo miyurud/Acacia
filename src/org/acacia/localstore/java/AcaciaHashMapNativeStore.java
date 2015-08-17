@@ -37,7 +37,7 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 
 import org.acacia.log.java.Logger_Java;
 
-public class AcaciaHashMapNativeStore {
+public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
 	private final String VERTEX_STORE_NAME = "acacia.nodestore.db";
 	private final String EDGE_STORE_NAME = "acacia.edgestore.db";
 	private final String RELATIONSHIP_STORE_NAME = "acacia.relationshipstore-";//Each of these files will have its own property extension ID
@@ -118,8 +118,6 @@ public class AcaciaHashMapNativeStore {
 	public boolean loadGraph(){
 		boolean result = false;
 		
-        System.out.println("Loading meta data of native store.");
-
         String metaInoMapPath = instanceDataFolderLocation + File.separator + METADATA_STORE_NAME;
         File f = new File(metaInoMapPath);
 		
@@ -143,15 +141,12 @@ public class AcaciaHashMapNativeStore {
             e.printStackTrace();            
         }
 
-        System.out.println("Loaded meta data of native store.");
-		
         //Need to initialize the variables with the loaded info.
         //System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
         predicateCount = Integer.parseInt(metaInfo.get(PREDICATE_COUNT));
         partitionID = Integer.parseInt(metaInfo.get(PARTITION_ID));
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
         
-		System.out.println("Loading subGraphs");
 		String edgeStorePath = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
 		f = new File(edgeStorePath);
 		
@@ -176,9 +171,7 @@ public class AcaciaHashMapNativeStore {
         } catch (Exception e) {
             e.printStackTrace();            
         }
-        System.out.println("Loaded subGraphs");
         
-        System.out.println("Loading vertexPropertyMap");
         String vertexPropertyMapPath = instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME;
 		f = new File(vertexPropertyMapPath);
 		
@@ -203,9 +196,7 @@ public class AcaciaHashMapNativeStore {
         } catch (Exception e) {
             e.printStackTrace();            
         }
-        System.out.println("Loaded vertexPropertyMap");
         
-        System.out.println("Loading relationshipMapWithProperties predicateCount:" + predicateCount);
         for(int i=0; i < predicateCount; i++){
         	String relationshipMapWithPropertiesPath = instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db";
         	f = new File(relationshipMapWithPropertiesPath);
@@ -233,9 +224,7 @@ public class AcaciaHashMapNativeStore {
                 e.printStackTrace();            
             }
         }
-        System.out.println("Loaded relationshipMapWithProperties");
         
-        System.out.println("Loading attributeMap");
         String attributeMapPath = instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME;
 		f = new File(attributeMapPath);
 		
@@ -260,9 +249,7 @@ public class AcaciaHashMapNativeStore {
         } catch (Exception e) {
             e.printStackTrace();            
         }
-        System.out.println("Loaded attributeMap");
         
-        System.out.println("Loading predicate store");
         String predicateMapPath = instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME;
 		f = new File(predicateMapPath);
 		
@@ -287,7 +274,6 @@ public class AcaciaHashMapNativeStore {
         } catch (Exception e) {
             e.printStackTrace();            
         }
-        System.out.println("Loaded predicate store.");
 		
 		return result;
 	}
@@ -304,7 +290,7 @@ public class AcaciaHashMapNativeStore {
 	            output.close();
 	        } catch (Exception e) {
 	        	result = false;
-	        	 e.printStackTrace();
+	        	e.printStackTrace();
 	        }
 		}else{
 			System.out.println("localSubGraphMap is null.");
@@ -551,6 +537,18 @@ public class AcaciaHashMapNativeStore {
 		return localSubGraphMap;
 	}
 	
+	public HashMap<Long, Long> getOutDegreeDistributionHashMap(){
+		HashMap<Long, Long> result = new HashMap<Long, Long>();
+		
+		Iterator<Long> itr = localSubGraphMap.keySet().iterator();
+		while(itr.hasNext()){
+			Long vertexID = itr.next();
+			result.put(vertexID, new Long(localSubGraphMap.get(vertexID).size()));
+		}
+		
+		return result;
+	}
+	
 	public HashMap<Long, HashSet<String>> getvertexPropertyMap(){
 		return vertexPropertyMap;
 	}
@@ -597,5 +595,17 @@ public class AcaciaHashMapNativeStore {
 
 	public HashMap<Long, HashSet<Long>> getUnderlyingHashMap() {
 		return localSubGraphMap;
+	}
+
+	@Override
+	public void addVertex(Object[] attributes) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addEdge(Long startVid, Long endVid) {
+		// TODO Auto-generated method stub
+		
 	}
 }

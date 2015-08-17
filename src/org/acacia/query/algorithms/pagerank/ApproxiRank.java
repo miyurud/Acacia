@@ -39,9 +39,8 @@ import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaInstanceProtocol;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
-
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
-
+import org.acacia.localstore.java.AcaciaLocalStore;
 import org.acacia.server.AcaciaInstanceToManagerAPI;
 
 public class ApproxiRank {
@@ -51,9 +50,12 @@ public class ApproxiRank {
 	 * @param localGraphSize
 	 * @return Returning a String from this method is a stupid idea. But for the moment have to do this.
 	 */
-	public static String run(String graphID, String partitionID, AcaciaHashMapLocalStore graphDB, String peerHost, String serverHostName, int k) {
+	public static String run(String graphID, String partitionID, AcaciaLocalStore graphDBtmp, String peerHost, String serverHostName, int k) {
 		int localGraphSize = 0; //This needs to be calculated
 		int entireGraphSize = 0;
+		
+		//Just for the moment we cast the localStore to Hashmap local store
+		AcaciaHashMapLocalStore graphDB = (AcaciaHashMapLocalStore)graphDBtmp;
 		
 //		//With the received graph database instance first we discover the out degree distribution for the graph
 //		ExecutionEngine engine = new ExecutionEngine(graphDB);	

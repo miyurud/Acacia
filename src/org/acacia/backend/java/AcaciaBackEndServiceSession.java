@@ -323,9 +323,9 @@ public class AcaciaBackEndServiceSession extends Thread {
             		out.flush();
             
             		String partitionID = buff.readLine();
-            		//System.out.println("AAAAAAAAAAAAAAAAAAAAA234999");
+
             		long partRes = getIntersectingTraingles(graphID, partitionID);
-            		//System.out.println("AAAAAAAAAAAAAAAAAAAAA234");
+            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234:" + partRes);
             		if(partRes == -1){
 //            			System.out.println("Have to send the global list to the worker");
             			out.println("-1");
@@ -335,7 +335,7 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    long fromID = -1;
             		    long toID = -1;
             		    HashMap<Long, HashSet<Long>> hmp = new HashMap<Long, HashSet<Long>>();
-            		    
+            		    int WINDOW_SIZE = 1000; //This measure is taken to avoid the memory error thrown by Java sockets.
             		    
             		    for(int i = 0; i < centralPartionCount; i++){
             		    	//Here we should first bring the central store to the working directory and then construct the central store object with the
@@ -346,101 +346,98 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    	
 //            		    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
 //            		    	store.loadGraph();
+            		    	
+            		    	//The code for brining down the central store to worker's runtime data folder location should be coded here...
+            		    	
+            		    	
+            		    	//Once we have the central store on our local directory, then we load it to the memory and extract its edge list.
+            		    	//We have to do this for all the central store partitions because we need to have access to all of them's edge lists.
+            		    	
             		    	String centralStoreBaseDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
             		    	AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
             		    	
             		    	HashMap<Long, HashSet<Long>> edgeList = (HashMap<Long, HashSet<Long>>)store.getUnderlyingHashMap();
-            		    	Iterator<Map.Entry<Long, HashSet<Long>>> itr = edgeList.entrySet().iterator();
-            		    	long firstVertex = 0l;
+//            		    	Iterator<Map.Entry<Long, HashSet<Long>>> itr = edgeList.entrySet().iterator();
+//            		    	long firstVertex = 0l;
+//            		    	
+//            		    	while(itr.hasNext()){
+//            		    		Map.Entry<Long, HashSet<Long>> entr = itr.next();
+//            		    		firstVertex = entr.getKey();
+//            		    		HashSet<Long> hs = (HashSet<Long>)hmp.get(firstVertex);
+//            		    		
+//            		    		if(hs == null){
+//            		    			hs = new HashSet<Long>();
+//            		    		}
+//            		    		
+//            		    		HashSet<Long> hs2 = entr.getValue();
+//            		    		
+//            		    		for(long secondVertex: hs2){
+//            		    			hs.add(secondVertex);
+//            		    		}
+//            		    		
+//            		    		hmp.put(firstVertex, hs);
+//            		    	}
             		    	
-            		    	while(itr.hasNext()){
-            		    		Map.Entry<Long, HashSet<Long>> entr = itr.next();
-            		    		firstVertex = entr.getKey();
-            		    		HashSet<Long> hs = (HashSet<Long>)hmp.get(firstVertex);
-            		    		
-            		    		if(hs == null){
-            		    			hs = new HashSet<Long>();
-            		    		}
-            		    		
-            		    		HashSet<Long> hs2 = entr.getValue();
-            		    		
-            		    		for(long secondVertex: hs2){
-            		    			hs.add(secondVertex);
-            		    		}
-            		    		
-            		    		hmp.put(firstVertex, hs);
-            		    	}
-            		    }
-            		    
-            		    //Where we need to have some batched technique to send the edgelist. Because the edgelist size is going to be very large.
-                   		
-                		Iterator itr = hmp.entrySet().iterator();
-                		
-                		int ctr = 0;
-                		int WINDOW_SIZE = 1000; //This measure is taken to avoid the memory error thrown by Java sockets.
-                		long key = 0;
-                		while(itr.hasNext()){
-                			Map.Entry<Long, HashSet<Long>> pairs = (Map.Entry)itr.next();
-                			key = pairs.getKey();
-                			HashSet<Long> lst2 = pairs.getValue();
-                			
-                			/*
-                			 The following method seems much more efficient. But it does not deliver all the edges. This is strange. we get lesser triangle count.
-                			 
-                			//First we send the key
-            				out.println("k-" + pairs.getKey());
-            				out.flush();
-            				
-            				//Next, we send all the neighbours of the key
-            				StringBuilder sb = new StringBuilder();
-            				//sb.append("v-");
-                			for(Long im: lst2){
-                				sb.append(im + ",");
-	                			if(ctr > WINDOW_SIZE){
-	                				//System.out.println("Sending : " + sb.toString());
-	                				out.println(sb.toString());
-	                				out.flush();
-	                				sb = new StringBuilder();
-	                				ctr = 0;
-	                			}
-	                			ctr++;
-                			}
-                			*/
-                		
-            				//Next, we send all the neighbours of the key
-            				StringBuilder sb = new StringBuilder();
-            				//sb.append("v-");
-                			for(Long im: lst2){
-                				sb.append(key + "," + im + ";");
-	                			if(ctr > WINDOW_SIZE){
-	                				//System.out.println("Sending : " + sb.toString());
-	                				out.println(sb.toString());
-	                				out.flush();
-	                				sb = new StringBuilder();
-	                				ctr = 0;
-	                			}
-	                			ctr++;
-                			}
-                			
-                    		//We need to send the remaining set of values through the socket
-                    		if(ctr > 0){
-    	        				out.println(sb.toString());
-    	        				out.flush();
-    	        				ctr = 0;
+                		    //Where we need to have some batched technique to send the edgelist. Because the edgelist size is going to be very large.
+                       		
+                    		Iterator itr = edgeList.entrySet().iterator();
+                    		int ctr = 0;
+                    		long key = 0;
+                    		while(itr.hasNext()){
+                    			Map.Entry<Long, HashSet<Long>> pairs = (Map.Entry)itr.next();
+                    			key = pairs.getKey();
+                    			HashSet<Long> lst2 = pairs.getValue();
+                    			
+                    			/*
+                    			 The following method seems much more efficient. But it does not deliver all the edges. This is strange. we get lesser triangle count.
+                    			 
+                    			//First we send the key
+                				out.println("k-" + pairs.getKey());
+                				out.flush();
+                				
+                				//Next, we send all the neighbours of the key
+                				StringBuilder sb = new StringBuilder();
+                				//sb.append("v-");
+                    			for(Long im: lst2){
+                    				sb.append(im + ",");
+    	                			if(ctr > WINDOW_SIZE){
+    	                				//System.out.println("Sending : " + sb.toString());
+    	                				out.println(sb.toString());
+    	                				out.flush();
+    	                				sb = new StringBuilder();
+    	                				ctr = 0;
+    	                			}
+    	                			ctr++;
+                    			}
+                    			*/
+                    		
+                				//Next, we send all the neighbours of the key
+                				StringBuilder sb = new StringBuilder();
+                				//sb.append("v-");
+                    			for(Long im: lst2){
+                    				sb.append(key + "," + im + ";");
+    	                			if(ctr > WINDOW_SIZE){
+    	                				System.out.println("Sending : |" + sb.toString()+"|");
+    	                				out.println(sb.toString());
+    	                				out.flush();
+    	                				sb = new StringBuilder();
+    	                				ctr = 0;
+    	                			}
+    	                			ctr++;
+                    			}
+                    			
+                        		//We need to send the remaining set of values through the socket
+                        		if(ctr > 0){
+                        			System.out.println("Sending : |" + sb.toString() + "| ctr:" + ctr);
+        	        				out.println(sb.toString());
+        	        				out.flush();
+        	        				ctr = 0;
+                        		}
                     		}
-                			
-                    		//The semicolon at the end marks sending all the edges starting with k.
-//            				out.println(";");
-//            				out.flush();
-                		}
-                		
-        				//System.out.println("Sending : " + sb.toString());
-//        				out.println(sb.toString());
-//        				out.flush();
+            		    }
         				
         				out.println(AcaciaBackEndProtocol.DONE);
         				out.flush();
-//        				System.out.println("AAAAAAAAAAAAAAAAAAAAA256");
             		}else{
             			//This part of the code still need to be implemented. But we just send -2.
         				out.println("-2");

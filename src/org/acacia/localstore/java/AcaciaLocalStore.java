@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import org.acacia.util.java.Utils_Java;
 
@@ -29,13 +31,14 @@ import org.acacia.util.java.Utils_Java;
 
 public abstract class AcaciaLocalStore {
 	
-	public AcaciaLocalStore(int graphID, int partitionID){
-
-	}
+	public abstract boolean loadGraph();
 	
-	/**
-	 * This method creates a local Acacia data store.
-	 */
+	public abstract boolean storeGraph();
+	
+	public abstract HashMap<Long, HashSet<Long>> getUnderlyingHashMap();
+	
+	public abstract HashMap<Long, Long> getOutDegreeDistributionHashMap();
+	
     public abstract void initialize();
 	
 	public abstract void addVertex(Object[] attributes);

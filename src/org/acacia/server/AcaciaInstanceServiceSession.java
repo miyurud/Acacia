@@ -39,6 +39,9 @@ import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStoreFactory;
+import org.acacia.localstore.java.AcaciaLocalStoreTypes;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
@@ -70,9 +73,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 	//private HashMap<Integer, GraphDatabaseService> graphDBMap = null;
 	//Note : Feb 4 2015 - Since we need to deal with the <praphID>_<partitionID> scenario,
 	//the key of the graph db map was changed to String
-	private HashMap<String, AcaciaHashMapLocalStore> graphDBMap = null;
+	private HashMap<String, AcaciaLocalStore> graphDBMap = null;
 	private ArrayList<String> loadedGraphs;
-	private AcaciaHashMapLocalStore defaultGraph = null;
+	private AcaciaLocalStore defaultGraph = null;
 	private String defaultGraphID=null;
 	private String dataFolder;
 	private String serverHostName;
@@ -85,7 +88,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * The constructor
 	 * @param socket
 	 */
-	public AcaciaInstanceServiceSession(Socket socket, HashMap<String, AcaciaHashMapLocalStore> db, ArrayList<String> grp){
+	public AcaciaInstanceServiceSession(Socket socket, HashMap<String, AcaciaLocalStore> db, ArrayList<String> grp){
 		sessionSkt = socket;
 		graphDBMap = db;
 		loadedGraphs = grp;
@@ -93,7 +96,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		//System.out.println("MMMMMMMMMMMMM");
 	}
 	
-	public void setGraphDBMap(HashMap<String, AcaciaHashMapLocalStore> db, ArrayList<String> grp){
+	public void setGraphDBMap(HashMap<String, AcaciaLocalStore> db, ArrayList<String> grp){
 		graphDBMap = db;
 		loadedGraphs = grp;
 		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
@@ -622,7 +625,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		String result = null;
 		String gid = g + "_" + p;
 		//First we need to load the graph database server instance.
-		AcaciaHashMapLocalStore graphDB = null;
+		AcaciaLocalStore graphDB = null;
 		if (defaultGraph == null){	
 			graphDB = graphDBMap.get(gid);
 			if(graphDB == null){
@@ -650,7 +653,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 
 	private String pageRankTopKLocal(String graphID, String partitionID, String hostList, int k) {
 		String result = null;
-		AcaciaHashMapLocalStore graphDB = null;
+		AcaciaLocalStore graphDB = null;
 		String gid = graphID + "_" + partitionID;
 		Logger_Java.info("PPPPP1");
 		if (defaultGraph == null){	
@@ -768,8 +771,10 @@ public class AcaciaInstanceServiceSession extends Thread{
 	}
 	
 	public void unzipAndBatchUpload(final String graphID, final String partitionID) {
-		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		//AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		AcaciaHashMapLocalStore localStore = (AcaciaHashMapLocalStore)AcaciaLocalStoreFactory.create(Integer.parseInt(graphID), Integer.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false, AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
 		localStore.loadGraph();
+		
 				try{
 					//Unzipping starts here
 					Runtime r = Runtime.getRuntime();
@@ -985,14 +990,14 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 */
 	public void unloadLocalStore(String graphID, String partitionID){
 		Iterator it = graphDBMap.entrySet().iterator();
-		HashMap<String, AcaciaHashMapLocalStore> graphDBMap2 = new HashMap<String, AcaciaHashMapLocalStore>();
+		HashMap<String, AcaciaLocalStore> graphDBMap2 = new HashMap<String, AcaciaLocalStore>();
 		ArrayList<String> loadedGraphs2 = new ArrayList<String>();
 		String gid = graphID + "_" + partitionID;
 		
 		while(it.hasNext()){
-			Map.Entry<String, AcaciaHashMapLocalStore> pairs = (Map.Entry<String, AcaciaHashMapLocalStore>)it.next();
+			Map.Entry<String, AcaciaLocalStore> pairs = (Map.Entry<String, AcaciaLocalStore>)it.next();
 			if (pairs.getKey().equals(gid)){
-				((AcaciaHashMapLocalStore)pairs.getValue()).shutdown();
+				((AcaciaLocalStore)pairs.getValue()).storeGraph();
 				try{
 					Logger_Java.info("Unloaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
 				}catch(UnknownHostException ex){
@@ -1022,7 +1027,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @param endVertexID
 	 */
 	public void insertEdge(long graphID, long startVertexID, long endVertexID){		
-		AcaciaHashMapLocalStore graphDB = null;
+		AcaciaLocalStore graphDB = null;
 		
 		if (defaultGraph == null){	
 			graphDB = graphDBMap.get(graphID);
@@ -1175,7 +1180,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	public String outDegreeDistribution(String graphID, String partitionID){
 		org.acacia.log.java.Logger_Java.info("Out degree distribution calculation started at : " + org.acacia.util.java.Utils_Java.getHostName());
 		StringBuilder resultSB = new StringBuilder();		
-		AcaciaHashMapLocalStore graphDB = null;
+		AcaciaLocalStore graphDB = null;
 		String gid = graphID + "_" + partitionID;
 		
 		if (defaultGraph == null){
@@ -1236,7 +1241,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 //        String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 //        String line = null;
 		
-		resMap = graphDB.getOutDegreeDistributionHashMap();
+		resMap = ((AcaciaHashMapLocalStore)graphDB).getOutDegreeDistributionHashMap();
 		
         int partitionId = -1;
 //        try{
@@ -1294,7 +1299,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 	
 	public String pageRankLocal(String graphID, String partitionID, String hostList){
 		String result = null;
-		AcaciaHashMapLocalStore graphDB = null;
+		AcaciaLocalStore graphDB = null;
 		System.out.println("PPPPP1");
 		String gid = graphID + "_" + partitionID;
 		

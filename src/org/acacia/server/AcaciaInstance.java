@@ -35,13 +35,14 @@ import org.acacia.events.java.DBTruncateEventListener;
 import org.acacia.events.java.ShutdownEvent;
 import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 
 public class AcaciaInstance{
 	//private GraphDatabaseService graphDB;
-	private HashMap<String, AcaciaHashMapLocalStore> graphDBMap = new HashMap<String, AcaciaHashMapLocalStore>();//This HashMap holds the AcaciaInstance objects. 
+	private HashMap<String, AcaciaLocalStore> graphDBMap = new HashMap<String, AcaciaLocalStore>();//This HashMap holds the AcaciaInstance objects. 
 	private ServerSocket srv;
 	private ArrayList<AcaciaInstanceServiceSession> sessions;
 	private boolean runFlag = true;
@@ -138,10 +139,10 @@ public class AcaciaInstance{
 		while(itr2.hasNext()){
 			String itm = itr2.next();
 			//These types of places (such as "" + itm) need to be reviewed and decide whether  
-			AcaciaHashMapLocalStore db = graphDBMap.get(itm);
+			AcaciaLocalStore db = graphDBMap.get(itm);
 			//We need to shutdown the online graph db instance
 			System.out.println("Shutting down graph id : " + itm);
-			db.shutdown();
+			db.storeGraph();
 		}
 		
 		System.out.println("Done shutting down the hot Neo4j instances...");
@@ -151,7 +152,7 @@ public class AcaciaInstance{
 			FileUtils.deleteDirectory(new File(acaciaDataFolder));
 			Logger_Java.info("Done deleting : " + acaciaDataFolder);
 				
-			graphDBMap = new HashMap<String, AcaciaHashMapLocalStore>();
+			graphDBMap = new HashMap<String, AcaciaLocalStore>();
 			loadedGraphs = new ArrayList<String>(); 
 			
 			//Next we need to distribute the new graphDB object reference to all the xisting sessions. Because they are still using the old shutdowned session.
@@ -174,10 +175,10 @@ public class AcaciaInstance{
 		
 		while(itr2.hasNext()){
 			String itm = itr2.next();
-			AcaciaHashMapLocalStore db = graphDBMap.get(itm);
+			AcaciaLocalStore db = graphDBMap.get(itm);
 			//We need to shutdown the online graph db instance
 			System.out.println("Shutting down graph id : " + itm);
-			db.shutdown();
+			db.storeGraph();
 		}
 		
 		runFlag = false;

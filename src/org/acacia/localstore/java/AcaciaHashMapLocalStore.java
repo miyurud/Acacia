@@ -59,7 +59,7 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 	private long edgeCount = 0;
 	
 	public AcaciaHashMapLocalStore(int graphID, int partitionID){
-		super(graphID, partitionID);
+		//super(graphID, partitionID);
 		this.graphID = graphID;
 		this.partitionID = partitionID;
 		
@@ -73,7 +73,7 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 	}
 	
 	public AcaciaHashMapLocalStore(String instanceDataFolderLocation){
-		super(-1, -1);
+		//super(-1, -1);
 		this.instanceDataFolderLocation = instanceDataFolderLocation;
 		this.graphID = -1;
 		this.partitionID = -1;

@@ -33,6 +33,7 @@ import java.util.TreeSet;
 
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
+import org.acacia.util.java.Utils_Java;
 
 /**
  * This is the communication interface from AcaciaInstance (worker) with the Manager.
@@ -523,13 +524,17 @@ public class AcaciaInstanceToManagerAPI{
 			}
 			
 			response = reader.readLine();
+			//We need to makesure that it is not null.
+			if(response == null){
+				return result;
+			}
 			
 			//Here if it says -1, it means the master will count the intersecting triangles, because the size of the intesecting
 			//traingles will be very large to be transmitted to worker. In this case worker need to send its local edge list
-			//to the master. This might be the case when we partition the graph into fine grained pices.
+			//to the master. This might be the case when we partition the graph into fine grained pieces.
 			
 			//If the master sends some other value other than "-1", this means master intends the worker to conduct the
-			//calculation of the intersecting traingles. In this case workser should start accumulating the data sent by the
+			//calculation of the intersecting traingles. In this case worker should start accumulating the data sent by the
 			//master. It is because the data will be the list of intersecting edges.
 			
 			StringBuilder sb = new StringBuilder();
@@ -541,11 +546,10 @@ public class AcaciaInstanceToManagerAPI{
 			}else{	
 				long fromID = 0;
 				long toID = 0;
-
 				//Need to read the response at least once.
 				response = reader.readLine();
 				while((response != null)&&(!response.equals(AcaciaBackEndProtocol.DONE))){
-					System.out.println("|" + response + "|");
+					//Utils_Java.writeToFile("/home/miyurud/tmp/111/111.txt", sb);
 					sb.append(response);
 					//Note that at the moment we are sending the sourve vertex id multiple times which is redundant task. Better to send the
 					//source vertex once along with a sequence of destination vertices.
@@ -557,7 +561,7 @@ public class AcaciaInstanceToManagerAPI{
 				fromID = 0;
 				toID = 0;
 				
-				if(sb != null){
+				if(sb.length() > 0){
 					String[] intrm = sb.toString().split(";");
 					sb = null;//We release the memeory allocated for this StringBuilder object.
 					

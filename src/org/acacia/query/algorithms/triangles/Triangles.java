@@ -46,10 +46,10 @@ public class Triangles {
 	public static String run(AcaciaLocalStore graphDB, String graphID, String partitionID, String serverHostName) {
 		//AcaciaHashMapLocalStore hMapLocalStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
 		//hMapLocalStore.loadGraph();
-		HashMap<Long, HashSet<Long>> localSubGraphMap = ((AcaciaHashMapLocalStore)graphDB).getUnderlyingHashMap();		
+		HashMap<Long, HashSet<Long>> localSubGraphMap = graphDB.getUnderlyingHashMap();		
 		long nEdges = graphDB.getEdgeCount();		
-		//Logger_Java.info("nedges : " + nEdges);		
-		HashMap<Long, Long> degreeDist = ((AcaciaHashMapLocalStore)graphDB).getOutDegreeDistributionHashMap();
+		//Logger_Java.info("====================>nedges : " + nEdges);		
+		HashMap<Long, Long> degreeDist = graphDB.getOutDegreeDistributionHashMap();
 		TreeMap<Long, TreeSet<Long>> degreeMap = new TreeMap<Long, TreeSet<Long>>(); //<degree><list of vertices>
 		HashMap<Long, Long> degreeReverseLookupMap = new HashMap<Long, Long>();
 		TreeSet<Long> degreeSet = null;

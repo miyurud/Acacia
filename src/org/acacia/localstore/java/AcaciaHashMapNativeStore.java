@@ -83,6 +83,7 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
 	private long edgeCount = 0;
 	private int predicateCount = 0;
 	private int partitionID = 0;
+	private int placeID = 0;
 	private boolean updatedFlagVertex = false;
 	private boolean updatedFlagEdge = false;
 	
@@ -106,6 +107,25 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
 		if(!isCentralStore){
 			instanceDataFolderLocation= dataFolder + "/" + gid;
 		}else{
+			instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
+		}
+		System.out.println("instanceDataFolderLocation:" + instanceDataFolderLocation);
+		
+		//Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
+		initialize();
+	}
+
+	public AcaciaHashMapNativeStore(int graphID, int partitionID, String baseDir, boolean isCentralStore, int placeID){
+		this.partitionID = partitionID;
+		this.placeID = placeID;
+		kryo = new Kryo();
+		kryo.register(HashMap.class, new MapSerializer());
+		dataFolder = baseDir;
+		String gid = graphID + "_" + placeID;
+		this.graphID = graphID;
+		
+		if(isCentralStore){
+			
 			instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
 		}
 		System.out.println("instanceDataFolderLocation:" + instanceDataFolderLocation);

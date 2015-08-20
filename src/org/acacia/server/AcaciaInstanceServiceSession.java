@@ -588,9 +588,25 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.flush();
 					msg = buff.readLine().trim();
 					String pID=msg;
+
+					out.println(AcaciaInstanceProtocol.SEND_PLACEID);
+					out.flush();
+					msg = buff.readLine().trim();
+					String placeID=msg;
 					
+					out.println(AcaciaInstanceProtocol.SEND_PLACEDETAILS);
+					out.flush();
+					msg = buff.readLine().trim();
+					String placeDetails=msg;
+					
+					
+					//locally get the answers
 					ExecuteQuery execute_query=new ExecuteQuery();  
-					ArrayList<String> result=execute_query.executeQuery(query,gID,pID);
+					ArrayList<String> result=execute_query.executeQuery(query,gID,pID,placeID);
+					
+					//globally get the answers
+					System.out.println(placeDetails);
+					loadDistributedCentralStoreData(gID,pID,placeID,placeDetails);
 					
 					if((result != null) && (!result.isEmpty())){
 						out.println("Not empty");
@@ -620,6 +636,48 @@ public class AcaciaInstanceServiceSession extends Thread{
 			Logger_Java.error("Error : " + e.getMessage());
 		}
 	}
+
+	private void loadDistributedCentralStoreData(String gID,String pID, String placeId, String placeDetails) throws NumberFormatException, UnknownHostException, IOException{
+		
+		String baseDir = "/var/tmp/acad-localstore";//Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
+		String[] places=placeDetails.split(",");
+		
+		for(int i=0;i<places.length;i++){
+			
+			//placeid +host+prot
+			String[] details=places[i].split("/");
+			
+			if(details[0]==placeId){
+				
+				continue;
+			}
+		
+			else{
+				
+		Socket socket = new Socket(details[1], Integer.parseInt(details[2]));
+		PrintWriter out = new PrintWriter(socket.getOutputStream());
+		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		String response = "";		
+		
+		out.println(AcaciaInstanceProtocol.HANDSHAKE);
+		out.flush();
+		response = reader.readLine();
+		
+		System.out.println("resp1:" + response);
+		
+		if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+			System.out.println("ccc");
+			out.println(java.net.InetAddress.getLocalHost().getHostName());
+			out.flush();
+		
+		//AcaciaHashMapNativeStore centralStore = new AcaciaHashMapNativeStore(Integer.parseInt(gID), Integer.parseInt(pID),baseDir,true,Integer.parseInt(placeId));
+		//centralStore.loadGraph();
+		
+		}
+			}
+	}
+	}
+
 
 	private String countTrainglesLocal(String g, String p) {
 		String result = null;

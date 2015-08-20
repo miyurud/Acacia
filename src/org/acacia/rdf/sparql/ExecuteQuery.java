@@ -12,13 +12,17 @@ import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 //import org.antlr.runtime.RecognitionException;
 
+
+import scala.Console;
+
 //import org.antlr.runtime.RecognitionException;
 
 public class ExecuteQuery {
 	
-	HashMap<String, String> Prefix= new HashMap<String, String>();		
+	HashMap<String, String> Prefix= new HashMap<String, String>();	
+	ArrayList<String> graphData = new ArrayList<String>();
 
-	public ArrayList<String> executeQuery(String query, String graphID, String partitionID) {
+	public ArrayList<String> executeQuery(String query, String graphID, String partitionID, String placeID) {
 
 		
 		ANTLRStringStream stream = new ANTLRStringStream(query);
@@ -35,8 +39,8 @@ public class ExecuteQuery {
 				// extract triples from the query
 				String[] triples = extractTriples(query);
 				// get the data set
-				ArrayList<String> graphData = new ArrayList<String>();
-				graphData = loadData(graphID, partitionID);
+				
+				loadData(graphID, partitionID, placeID);
 	
 				
 				index = query.indexOf("SELECT");
@@ -85,30 +89,49 @@ public class ExecuteQuery {
 	 }
 
 	// load data
-	public ArrayList<String> loadData(String graphID, String partitionID) {
+	public void loadData(String graphID, String partitionID ,String placeID) {
 
-		ArrayList<String> data = new ArrayList<String>();
+		
 		String baseDir = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 
 		// /var/tmp/acad-localstore
+		//native store
 		AcaciaHashMapNativeStore nativeStore = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), Integer.parseInt(partitionID),baseDir,false);
-		nativeStore.loadGraph();
+		getData(nativeStore, 0);
+		
+		//central store
+		AcaciaHashMapNativeStore centralStore = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), Integer.parseInt(placeID),baseDir,true, Integer.parseInt(placeID));
+		getData(centralStore, 1);		
+		
 
-		HashMap<Long, HashSet<Long>> localSubGraphMap = nativeStore.getlocalSubGraphMap();
-		HashMap<Long, HashSet<String>> vertexPropertyMap = nativeStore.getvertexPropertyMap();
-		HashMap[] relationshipMapWithProperties=nativeStore.getrelationshipMapWithProperties();
-		HashMap<Long, HashMap<Integer, HashSet<String>>> attributeMap=nativeStore.getattributeMap();
-		HashMap<Integer, String> predicateStore=nativeStore.getpredicateStore();
+	}
+	
+	public void getData(AcaciaHashMapNativeStore store, int no){
+		
+		store.loadGraph();
+		
+		HashMap<Long, HashSet<Long>> localSubGraphMap 					= store.getlocalSubGraphMap();
+		HashMap<Long, HashSet<String>> vertexPropertyMap 				= store.getvertexPropertyMap();
+		HashMap[] relationshipMapWithProperties 						= store.getrelationshipMapWithProperties();
+		HashMap<Long, HashMap<Integer, HashSet<String>>> attributeMap 	= store.getattributeMap();
+		HashMap<Integer, String> predicateStore 						= store.getpredicateStore();
 		
 		//graph data should be aggregated and added to 'data'
-		int predicateCount = nativeStore.getPredicateCount();
+		int predicateCount = store.getPredicateCount();
+		
+		if(no==1){
+			System.out.println("predicateStore.size(): "+predicateStore.size());
+			
+			}
 		
 		for(int i=0; i < predicateCount; i++){
 			HashMap<Long, HashSet<Long>> hMap = relationshipMapWithProperties[i];
 			String predicate = null;
 			
 			if(hMap != null){
+				
 				predicate = predicateStore.get(i);
+				
 				
 				if(predicate == null){
 					continue;
@@ -117,6 +140,11 @@ public class ExecuteQuery {
 				continue;
 			}
 			
+			
+			if(no==1){
+				System.out.println(predicate);
+				}
+						
 			Iterator<Map.Entry<Long, HashSet<Long>>> itr = hMap.entrySet().iterator();
 
 			while(itr.hasNext()){
@@ -132,18 +160,21 @@ public class ExecuteQuery {
 						HashSet<String> secondHs = vertexPropertyMap.get(endVertexID);
 						if(secondHs != null){
 							String endVertexPropertyValue = (String) secondHs.toArray()[0];
-							data.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
+							graphData.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
 							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
-							//System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
+							if(no==1){
+							System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
+							}
 							//System.out.println(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
 						}
 					}
 				}
 			}
-		}		
-
-		return data;
-	}
+		}	
+		
+		
+		
+		}
 	
 	// this is a test class for executing query
 		public ArrayList<String> selectQuery(ArrayList<String> graphData, String[] triples){
@@ -156,11 +187,13 @@ public class ExecuteQuery {
 			//AND results
 			//considering only one variable  (?x - -)
 
+			
 			for(int i=0; i < intermediateResults.get(n).size(); i++){
 
 				String[] arr1=intermediateResults.get(n).get(i).trim().split(",");
+				
 
-				for(int j=0; j < intermediateResults.get(n+1).size(); j++){
+				/*for(int j=0; j < intermediateResults.get(n+1).size(); j++){
 					
 					String[] arr2=intermediateResults.get(n+1).get(j).trim().split(",");
 
@@ -171,7 +204,10 @@ public class ExecuteQuery {
 	               			
 						}
 					}
-	              }								
+	              }	*/	
+				if(!Results.contains(arr1[0])){
+                    Results.add(arr1[0]);
+				}
 			}
 	 		
 			return Results;
@@ -193,7 +229,7 @@ public class ExecuteQuery {
 			tokens[1] = Prefix.get(tokens[1].substring(0,
 					tokens[1].indexOf(":")).trim())
 					+ tokens[1].substring(tokens[1].indexOf(":") + 1).trim();
-			
+						
 			
 			if (tokens[0].indexOf("?") >= 0) {
 				if (tokens[2].indexOf("?") >= 0) {
@@ -239,16 +275,16 @@ public class ExecuteQuery {
 			ArrayList<String> graphData) {
 
 		ArrayList<String> temp = new ArrayList<String>();
-		int k = 0;
+		
 
 		// only predicate should be considered
 
 		for (int i = 0; i < graphData.size(); i++) {
 
-			if (graphData.get(i).indexOf(tokens[1].substring(3)) >= 0) {
+			if (graphData.get(i).contains(tokens[1])) {
 
-				temp.set(k, graphData.get(i));
-				k = k + 1;
+				temp.add( graphData.get(i));
+				
 			}
 		}
 		return temp;
@@ -260,18 +296,20 @@ public class ExecuteQuery {
 			ArrayList<String> graphData) {
 
 		ArrayList<String> temp = new ArrayList<String>();
-		int k = 0;
+		
 
 		// predicate and object should be considered
 
 		
-		for (int i = 0; i < graphData.size(); i++) {
+		for (int i = 0; i < graphData.size(); i++) {			
 			
-			
-			if (graphData.get(i).contains(tokens[1]) && graphData.get(i).contains(tokens[2])) {
-					System.out.print("srkhfnuiangiu");
-				temp.set(k, graphData.get(i));
-				k = k + 1;
+			if (graphData.get(i).contains(tokens[1]) ){
+				
+					if(graphData.get(i).contains(tokens[2])) {
+					
+				temp.add(graphData.get(i));
+				
+			}
 			}
 
 		}
@@ -284,17 +322,17 @@ public class ExecuteQuery {
 			ArrayList<String> graphData) {
 
 		ArrayList<String> temp = new ArrayList<String>();
-		int k = 0;
+		
 
 		// subject and predicate should be considered
 
 		for (int i = 0; i < graphData.size(); i++) {
 
-			if (graphData.get(i).indexOf(tokens[0]) >= 0
-					&& graphData.get(i).indexOf(tokens[1].substring(3)) >= 0) {
+			if (graphData.get(i).contains(tokens[0]) 
+					&& graphData.get(i).contains(tokens[1]) ) {
 
-				temp.set(k, graphData.get(i));
-				k = k + 1;
+				temp.add(graphData.get(i));
+				
 			}
 
 		}
@@ -306,19 +344,19 @@ public class ExecuteQuery {
 			ArrayList<String> graphData) {
 
 		ArrayList<String> temp = new ArrayList<String>();
-		int k = 0;
+		
 
 		// subject, predicate and object should be considered
 
 		for (int i = 0; i < graphData.size(); i++) {
 
-			if (graphData.get(i).indexOf(tokens[0]) >= 0
-					&& graphData.get(i).indexOf(tokens[1].substring(3)) >= 0
-					&& graphData.get(i).indexOf(
-							tokens[2].substring(1, tokens[2].length() - 1)) >= 0) {
+			if (graphData.get(i).contains(tokens[0]) 
+					&& graphData.get(i).contains(tokens[1])
+					&& graphData.get(i).contains(
+							tokens[2])) {
 
-				temp.set(k, graphData.get(i));
-				k = k + 1;
+				temp.add(graphData.get(i));
+				
 			}
 
 		}

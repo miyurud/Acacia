@@ -1202,7 +1202,7 @@ public class AcaciaManager{
 	 * @throws IOException 
 	 * @throws UnknownHostException 
 	 */
-	public static x10.core.Rail<java.lang.String> runSPARQL(String host, int port, String graphID, String partitionID, String query) throws UnknownHostException, IOException{
+	public static x10.core.Rail<java.lang.String> runSPARQL(String host, int port, String graphID, String partitionID, String query, long placeID, String placesDetails) throws UnknownHostException, IOException{
 		x10.util.ArrayList<java.lang.String> result = new x10.util.ArrayList<java.lang.String>((java.lang.System[]) null, x10.rtt.Types.STRING).x10$util$ArrayList$$init$S();
 		
 		Socket socket = new Socket(host, port);
@@ -1239,12 +1239,23 @@ public class AcaciaManager{
 					out.flush();
 					response = reader.readLine();
 					System.out.println("eee:"+response);
-						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){
+						if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
 							System.out.println("partID:"+partitionID);
 							out.println(partitionID);
 							out.flush();
 							response = reader.readLine();
-							System.out.println("bbbbb:"+response);
+							
+							if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
+								out.println(placeID);
+								out.flush();
+								response = reader.readLine();
+								System.out.println("bbbbb:"+response);
+								
+								if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
+									out.println(placesDetails);
+									out.flush();
+									response = reader.readLine();
+									System.out.println("bbbbb:"+response);
 							if(response.equals("Not empty")){
 								
 								out.println("Send");
@@ -1262,6 +1273,8 @@ public class AcaciaManager{
 								}
 							}else if(response.equals("Empty")){
 								result=null;
+							}
+							}
 							}
 						}
 				}

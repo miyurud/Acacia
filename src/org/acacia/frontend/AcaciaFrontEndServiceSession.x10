@@ -50,6 +50,7 @@ public class AcaciaFrontEndServiceSession {
     //private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
     private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
     
+    
 	public def this(val socket:Socket){
 		sessionSkt = socket;
 	}
@@ -531,6 +532,14 @@ public class AcaciaFrontEndServiceSession {
         }
         
         var cntr:Int = 0n;
+        var placeDetails:String="";
+        
+        finish for (val p in Place.places()){
+        
+	        placeDetails= placeDetails+p.id+"/"+PlaceToNodeMapper.getHost(p.id)+"/"+ PlaceToNodeMapper.getInstancePort(p.id)+",";             
+        
+        }
+        
 
         finish for (val p in Place.places()){
         
@@ -552,7 +561,7 @@ public class AcaciaFrontEndServiceSession {
             val ptID:String = partitionID;
             
             async{
-                intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query);
+                intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query,p.id,placeDetails);
             }
         
             cntr++;
@@ -565,8 +574,12 @@ public class AcaciaFrontEndServiceSession {
         
             Console.OUT.println("Result at (" + i + ") : " + intermResult);
         }
+        
         return result;
     }
+    
+    
+    
 
 	private def countTraingles(val graphID:String): Long {
 	    var result:Long = 0;	    
@@ -1078,8 +1091,8 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
 	static native def call_runSelect(String):Rail[String];
 
-    @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5)")
-    static native def call_runSPARQL(String, Int, String, String, String):Rail[String];
+    @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5, #6, #7)")
+    static native def call_runSPARQL(String, Int, String, String, String, Long, String):Rail[String];
 	
 	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
 	// static native def call_countVertices(String, String):Long;

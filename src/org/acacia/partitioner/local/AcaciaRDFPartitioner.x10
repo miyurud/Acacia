@@ -472,6 +472,14 @@ public class AcaciaRDFPartitioner {
         for(var i:Int = 0n; i < numberOfCentralPartitions; i++){
             val central:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), i as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), true);
             central.initializeRelationshipMapWithProperties(x10.interop.Java.convert(predicates.keySet().size() as Int));
+            
+            val itr2:x10.lang.Iterator[x10.util.Map.Entry[String, Long]] = predicates.entries().iterator() as x10.lang.Iterator[x10.util.Map.Entry[String, Long]];
+            
+            while(itr2.hasNext()){
+            	val entry:x10.util.Map.Entry[String, Long] = itr2.next();
+            	central.addPredicate(x10.interop.Java.convert(entry.getValue() as Int), entry.getKey() as x10.lang.String);
+            }
+            
         	centralStoresMap.put(i, central);
         }
         

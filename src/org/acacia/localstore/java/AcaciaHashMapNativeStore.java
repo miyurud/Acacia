@@ -125,7 +125,6 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
 		this.graphID = graphID;
 		
 		if(isCentralStore){
-			
 			instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
 		}
 		System.out.println("instanceDataFolderLocation:" + instanceDataFolderLocation);
@@ -271,6 +270,7 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
         }
         
         String predicateMapPath = instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME;
+        System.out.println("predicateMapPath:"+predicateMapPath);
 		f = new File(predicateMapPath);
 		
 		if(!f.exists()) {
@@ -285,12 +285,11 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
             input.close();//This will close the FileInputStream as well.
             
             if(predicateStore != null){
+            	System.out.println("keys size:"+predicateStore.keySet().size());
             	result = true;
             }else{
             	predicateStore = new HashMap<Integer, String>();
             }
-            
-            result = true;
         } catch (Exception e) {
             e.printStackTrace();            
         }

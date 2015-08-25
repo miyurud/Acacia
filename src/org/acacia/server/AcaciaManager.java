@@ -1249,13 +1249,13 @@ public class AcaciaManager{
 								out.println(placeID);
 								out.flush();
 								response = reader.readLine();
-								System.out.println("bbbbb:"+response);
+								System.out.println("bbbbb1:"+response);
 								
 								if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
 									out.println(placesDetails);
 									out.flush();
 									response = reader.readLine();
-									System.out.println("bbbbb:"+response);
+									System.out.println("bbbbb2:"+response);
 							if(response.equals("Not empty")){
 								
 								out.println("Send");

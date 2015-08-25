@@ -121,7 +121,7 @@ public class ExecuteQuery {
 		
 		if(no==1){
 			System.out.println("predicateStore.size(): "+predicateStore.size());
-			
+			System.out.println("predicateCount:"+predicateCount);
 			}
 		
 		for(int i=0; i < predicateCount; i++){

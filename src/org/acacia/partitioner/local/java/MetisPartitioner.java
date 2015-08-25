@@ -163,7 +163,7 @@ public class MetisPartitioner{
 		
 		for(int i = 0; i < nThreads; i++){
 			
-			tArray[i] = new CustomThread(i){
+			tArray[i] = new CustomThread(i, numberOfPartitions){
 				public void run(){
 					int i = getI();
 					Iterator<Map.Entry<Integer, HashSet<Integer>>> itr = graphStorage[i].entrySet().iterator();
@@ -174,7 +174,7 @@ public class MetisPartitioner{
 						Map.Entry<Integer, HashSet<Integer>> entry = itr.next();
 						int fromVertex = entry.getKey();
 						int fromVertexPartition = partitionIndex[(int) fromVertex];
-						HashSet hs = entry.getValue();
+						HashSet<Integer> hs = entry.getValue();
 						if(hs != null){
 							Iterator<Integer> itr2 = hs.iterator();
 							while(itr2.hasNext()){
@@ -185,7 +185,7 @@ public class MetisPartitioner{
 									this.different++;
 								}else{
 									this.same++;
-									numVerts[fromVertexPartition]++;
+									this.numVertesPrivate[fromVertexPartition]++;
 								}
 							}
 						}else{
@@ -219,6 +219,10 @@ public class MetisPartitioner{
 		for(int i = 0; i < nThreads; i++){
 			different += tArray[i].different;
 			same += tArray[i].same;
+			
+			for(int j = 0; j < numberOfPartitions; j++){
+				numVerts[j] += tArray[i].numVertesPrivate[j];
+			}			
 		}
 		
 		System.out.println("---------partitioning strategy---------");
@@ -226,7 +230,7 @@ public class MetisPartitioner{
 		System.out.println("number of edges for local stores:"+same);
 
 		for(int i = 0; i < numberOfPartitions; i++){
-			System.out.println("partition("+i+"):"+numVerts[i]);
+			System.out.println("partition("+i+") edges:"+numVerts[i]);
 		}
 		System.out.println("selected central partitioning strategy : " + (isDistributedCentralPartitions ? "distributed":"single"));
 		System.out.println("---------------------------------------");
@@ -248,9 +252,8 @@ public class MetisPartitioner{
 		HashMap<Short, StringBuilder> hmapCentral = new HashMap<Short, StringBuilder>();
 		StringBuilder[] sbCentral = new StringBuilder[nThreads];
 		
-		for(int u = 0; u < nThreads; u++){
-			sbCentral[u] = new StringBuilder();
-	
+		
+		for(int u = 0; u < nThreads; u++){	
 			Iterator<Integer> itrN = graphStorage[u].keySet().iterator();
 			
 			for(int i = 0; i < numberOfCentralPartitions; i++){								
@@ -273,17 +276,71 @@ public class MetisPartitioner{
 							pw.writeEdge(fromVertex, toVertex);
 						}
 					}
-					/*
-					j++;
-					if(j > edgesPerCentralStore){
-						j=0;
-						break;
-					}
-					*/
 				}
 			}
 		}
-
+		
+		
+		/*
+		tArray = new CustomThread[nThreads];
+		
+		for(int i = 0; i < nThreads; i++){
+			
+			tArray[i] = new CustomThread(i, numberOfPartitions){
+				public void run(){
+					int i = getI();
+					Iterator<Map.Entry<Integer, HashSet<Integer>>> itr = graphStorage[i].entrySet().iterator();
+					int toVertexPartition = 0;
+					int toVertex = 0;
+					
+					while(itr.hasNext()){
+						Map.Entry<Integer, HashSet<Integer>> entry = itr.next();
+						int fromVertex = entry.getKey();
+						int fromVertexPartition = partitionIndex[(int) fromVertex];
+						HashSet<Integer> hs = entry.getValue();
+						if(hs != null){
+							Iterator<Integer> itr2 = hs.iterator();
+							while(itr2.hasNext()){
+								toVertex = itr2.next();
+								toVertexPartition = partitionIndex[(int) toVertex];
+								
+								if(fromVertexPartition != toVertexPartition){
+									//Here the assumption is that we will create same number of central store partitions as the number of local store partitions.
+									AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) fromVertexPartition));								
+									central.addEdge((long)fromVertex, (long)toVertex);
+								}else{
+									PartitionWriter pw = partitionFilesMap.get(new Short((short) fromVertexPartition));
+									pw.writeEdge(fromVertex, toVertex);
+								}
+							}
+						}else{
+							continue;
+						}
+					}
+					setDone();
+				}
+			};
+			tArray[i].start();
+		}
+		while(true){
+			boolean flag = true;
+			for(int x = 0; x < nThreads; x++){
+				if(!tArray[x].isDone()){
+					flag = false;
+				}
+			}
+			
+			if(flag){
+				break;
+			}
+			
+			try {
+				Thread.currentThread().sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}		
+*/
 		for(int i = 0; i < numberOfCentralPartitions; i++){
 	      //org.acacia.util.java.Utils_Java.writeToFile("centralStore-part-" + i + ".txt", sbCentral[i]);
 			AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) i));
@@ -308,7 +365,7 @@ public class MetisPartitioner{
 			pw.close();
 		}
 		
-		distributeCentralStore(numberOfCentralPartitions,graphID);
+			distributeCentralStore(numberOfCentralPartitions,graphID);
 		//MetisPartitioner distributes only central store partitions.
 		//The distribution of the local store partitions happen at the AcaciaSever. See the uploadGraphLocally() method
 		//which calls this method for details.
@@ -716,9 +773,15 @@ public class MetisPartitioner{
 		private int i = 0;
 		public int different = 0;
 		public int same = 0;
+		public int[] numVertesPrivate;
 		
 		public CustomThread(int i2){
 			i = i2;
+		}
+		
+		public CustomThread(int i2, int nParts){
+			i = i2;
+			numVertesPrivate = new int[nParts];
 		}
 		
 		public int getI(){

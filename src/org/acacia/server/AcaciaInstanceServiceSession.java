@@ -605,7 +605,6 @@ public class AcaciaInstanceServiceSession extends Thread{
 					ArrayList<String> result=execute_query.executeQuery(query,gID,pID,placeID);
 					
 					//globally get the answers
-					System.out.println(placeDetails);
 					loadDistributedCentralStoreData(gID,pID,placeID,placeDetails);
 					
 					if((result != null) && (!result.isEmpty())){
@@ -647,7 +646,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 			//placeid +host+prot
 			String[] details=places[i].split("/");
 			
-			if(details[0]==placeId){
+			if(details[0].equals(placeId)){
 				
 				continue;
 			}

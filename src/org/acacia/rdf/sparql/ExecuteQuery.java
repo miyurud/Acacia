@@ -119,10 +119,7 @@ public class ExecuteQuery {
 		//graph data should be aggregated and added to 'data'
 		int predicateCount = store.getPredicateCount();
 		
-		if(no==1){
-			System.out.println("predicateStore.size(): "+predicateStore.size());
-			System.out.println("predicateCount:"+predicateCount);
-			}
+		
 		
 		for(int i=0; i < predicateCount; i++){
 			HashMap<Long, HashSet<Long>> hMap = relationshipMapWithProperties[i];
@@ -141,9 +138,6 @@ public class ExecuteQuery {
 			}
 			
 			
-			if(no==1){
-				System.out.println(predicate);
-				}
 						
 			Iterator<Map.Entry<Long, HashSet<Long>>> itr = hMap.entrySet().iterator();
 
@@ -161,10 +155,8 @@ public class ExecuteQuery {
 						if(secondHs != null){
 							String endVertexPropertyValue = (String) secondHs.toArray()[0];
 							graphData.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
-							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
-							if(no==1){
-							System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
-							}
+							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);							
+							//System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);							
 							//System.out.println(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
 						}
 					}
@@ -187,13 +179,25 @@ public class ExecuteQuery {
 			//AND results
 			//considering only one variable  (?x - -)
 
+			if(intermediateResults.size()==1){
+				
+				for(int i=0; i < intermediateResults.get(0).size(); i++){
+
+					String[] arr1=intermediateResults.get(n).get(i).trim().split(",");					
+				
+				if(!Results.contains(arr1[0])){
+                    Results.add(arr1[0]);
+				}
+				}
+			}
+			else{
 			
 			for(int i=0; i < intermediateResults.get(n).size(); i++){
 
 				String[] arr1=intermediateResults.get(n).get(i).trim().split(",");
 				
 
-				/*for(int j=0; j < intermediateResults.get(n+1).size(); j++){
+				for(int j=0; j < intermediateResults.get(n+1).size(); j++){
 					
 					String[] arr2=intermediateResults.get(n+1).get(j).trim().split(",");
 
@@ -204,10 +208,9 @@ public class ExecuteQuery {
 	               			
 						}
 					}
-	              }	*/	
-				if(!Results.contains(arr1[0])){
-                    Results.add(arr1[0]);
-				}
+	              }	
+			}
+				
 			}
 	 		
 			return Results;

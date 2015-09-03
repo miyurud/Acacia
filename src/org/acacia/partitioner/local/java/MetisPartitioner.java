@@ -130,7 +130,8 @@ public class MetisPartitioner{
 		    	
 		    	if(refToWriter == null){
 		    		String actualPartitionID = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
-		    		refToWriter = new PartitionWriter(outputFilePath+"/"+graphID+"_"+actualPartitionID);
+		    		//refToWriter = new PartitionWriter(outputFilePath+"/"+graphID+"_"+actualPartitionID);
+		    		refToWriter = new PartitionWriter(Integer.parseInt(graphID), Integer.parseInt(actualPartitionID), outputFilePath+"/"+graphID+"_"+actualPartitionID);
 		    		partitionFilesMap.put(partitionID, refToWriter);
 		    		
 		    		partitionIDsList.add(actualPartitionID);

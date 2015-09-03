@@ -21,6 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.File;
 
+import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.util.java.Utils_Java;
 
 public class AcaciaLocalStoreFactory{
@@ -38,11 +39,18 @@ public class AcaciaLocalStoreFactory{
 		AcaciaLocalStore result = null;
 		//We need to read the catalog and determine the type
 		int storeType = Integer.parseInt(AcaciaLocalStoreCatalogManager.readCatalogRecord(baseDir + File.separator + graphID + "_" + partitionID, "head"));
-		
+
 		if(storeType == AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE){
-			result = new AcaciaHashMapLocalStore(graphID, partitionID);
+			if(!isCentralStore){
+				result = new AcaciaHashMapLocalStore(graphID, partitionID);
+				result.loadGraph();
+			}else{
+				result = new AcaciaHashMapCentralStore(graphID, partitionID);
+				result.loadGraph();
+			}
 		}else if(storeType == AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE){
 			result = new AcaciaHashMapNativeStore(graphID, partitionID, baseDir, isCentralStore);
+			result.loadGraph();
 		}
 		
 		return result;

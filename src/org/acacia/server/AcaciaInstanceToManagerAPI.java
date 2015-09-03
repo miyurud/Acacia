@@ -560,7 +560,7 @@ public class AcaciaInstanceToManagerAPI{
 				
 				fromID = 0;
 				toID = 0;
-				
+				//System.out.println("------->sb.length() : " + sb.length());
 				if(sb.length() > 0){
 					String[] intrm = sb.toString().split(";");
 					sb = null;//We release the memeory allocated for this StringBuilder object.
@@ -632,7 +632,7 @@ public class AcaciaInstanceToManagerAPI{
 				//local graph. Note that, at this point of time we are not interested of counting traingles from the vertices located
 				//only within the intersecting global graph. This task will be done separately at the master itself.
 				
-				/*-------- The follwoing code is searching the triangles only */
+				/*-------- The following code is searching the triangles only */
 				for(Map.Entry<Long, TreeSet<Long>> item: degreeMap.entrySet()){				
 					TreeSet<Long> vVertices = item.getValue();
 					

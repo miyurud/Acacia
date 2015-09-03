@@ -23,11 +23,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.acacia.localstore.java.AcaciaHashMapLocalStore;
+
 public class PartitionWriter{
 	private File file;
 	private BufferedWriter bw;
 	private FileWriter fw;
 	private String partitionFilePath;
+	private AcaciaHashMapLocalStore store;
 	
 	public PartitionWriter(String fileFullPath){
 		this.partitionFilePath = fileFullPath;
@@ -49,12 +52,18 @@ public class PartitionWriter{
 			e.printStackTrace();
 		}
 	}
+
+	public PartitionWriter(int graphID, int partitionID, String fileFullPath){
+		this.partitionFilePath = fileFullPath;
+		store = new AcaciaHashMapLocalStore(fileFullPath);
+	}
 	
 	public void compress(){    
+		store.storeGraph();
 		Runtime r = Runtime.getRuntime();
 		Process p;
 		try {
-			p = r.exec("zip -rj "+ partitionFilePath);
+			p = r.exec("zip -rj "+ partitionFilePath + ".zip " + partitionFilePath);
 			p.waitFor();
 			
 			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -71,12 +80,13 @@ public class PartitionWriter{
 	}
 	
 	public void writeEdge(long firstVertex, long secondVertex){
-		try {
-			bw.write(""+firstVertex+" "+secondVertex+"\r\n");
-			bw.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			bw.write(""+firstVertex+" "+secondVertex+"\r\n");
+//			bw.flush();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+		store.addEdge(firstVertex, secondVertex);		
 	}
 	
 	public String getOutputFilePath(){
@@ -84,11 +94,11 @@ public class PartitionWriter{
 	}
 	
 	public void close(){
-		try {
-			bw.close();
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			bw.close();
+//			fw.close();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 }

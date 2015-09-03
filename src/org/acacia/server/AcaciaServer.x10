@@ -508,6 +508,7 @@ public class AcaciaServer {
              
              //0 : <host> : /home/miyurud/tmp/61_254.gz
              val filePath:String = batchUploadFileList(i);
+             Console.OUT.println("---->>>filePath : " + filePath);
              val partitionID:String = filePath.substring(filePath.indexOf("_")+1n, filePath.indexOf("."));
              call_batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
              Console.OUT.println("========================>Super2");

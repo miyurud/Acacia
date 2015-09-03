@@ -490,6 +490,10 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.println(msg);
 					out.flush();
 					
+					/*---- must implement the world only triangle counting ---*/
+					
+					/*--------------------------------------------------------*/
+					
 				}else if(msg.equals(AcaciaInstanceProtocol.STATUS)){
 					out.println(getInstanceStatus());
 					out.flush();
@@ -605,6 +609,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					ArrayList<String> result=execute_query.executeQuery(query,gID,pID,placeID);
 					
 					//globally get the answers
+					System.out.println(placeDetails);
 					loadDistributedCentralStoreData(gID,pID,placeID,placeDetails);
 					
 					if((result != null) && (!result.isEmpty())){
@@ -695,7 +700,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 				graphDB = graphDBMap.get(gid);
 				if(graphDB == null){		
 					result = "-1";
-					//System.out.println("==++-->The graph db is null");
+					System.out.println("==++-->The graph db is null");
 					return result;
 				}
 			}
@@ -829,8 +834,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 	
 	public void unzipAndBatchUpload(final String graphID, final String partitionID) {
 		//AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
-		AcaciaHashMapLocalStore localStore = (AcaciaHashMapLocalStore)AcaciaLocalStoreFactory.create(Integer.parseInt(graphID), Integer.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false, AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
-		localStore.loadGraph();
+//		AcaciaHashMapLocalStore localStore = (AcaciaHashMapLocalStore)AcaciaLocalStoreFactory.create(Integer.parseInt(graphID), Integer.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false, AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
+//		localStore.loadGraph();
 		
 				try{
 					//Unzipping starts here
@@ -1024,9 +1029,11 @@ public class AcaciaInstanceServiceSession extends Thread{
 	
 	public void loadLocalStore(String graphID, String partitionID){
 		String gid = graphID + "_" + partitionID;
+		System.out.println("gid:"+gid);
 		//int graphID, int partitionID
-		AcaciaHashMapLocalStore graphDB = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
-		graphDB.loadGraph();//We need to load the graph explicitly
+		//AcaciaHashMapLocalStore graphDB = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+		AcaciaLocalStore graphDB = AcaciaLocalStoreFactory.load(Integer.parseInt(graphID), Integer.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false);
+		//graphDB.loadGraph();
 		graphDBMap.put(gid, graphDB);
 		loadedGraphs.add(gid);
 		

@@ -408,10 +408,13 @@ public class AcaciaFrontEndServiceSession {
 		        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
 		        out.flush();				
 	        }else{
-		        Console.OUT.println("Triangle counting start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+		        //Console.OUT.println("Triangle counting start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+	            val startTime:Long = java.lang.System.currentTimeMillis();
 		        val nTraingles:Long = countTraingles(str);	
 		        Console.OUT.println("nTraingles : " + nTraingles);
-		        Console.OUT.println("Triangle counting end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+		        //Console.OUT.println("Triangle counting end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+		        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+		        Console.OUT.println("Triangle counting duration(ms) : " + duration);
 		        		        
 		        out.println(nTraingles);//Write the result to the client.
 		        out.flush();
@@ -447,9 +450,9 @@ public class AcaciaFrontEndServiceSession {
         		out.flush();
         		try{
         			var isFile:String=buff.readLine().trim();
-        		
-                   Console.OUT.println("|" + isFile + "|");
-        
+
+        			//Console.OUT.println("SPARQL start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+                    val startTime:Long = java.lang.System.currentTimeMillis();
         		if(isFile.equals("y")){
         
         			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
@@ -490,6 +493,9 @@ public class AcaciaFrontEndServiceSession {
         		out.println("Error");
         		out.flush();
         	}
+        		//Console.OUT.println("SPARQL end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+            val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+            Console.OUT.println("SPARQL query duration(ms) : " + duration);
         }
         catch(val e:IOException){
         	Console.OUT.println("Error : "+e.getMessage());

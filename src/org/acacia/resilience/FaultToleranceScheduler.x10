@@ -44,7 +44,7 @@ public class FaultToleranceScheduler {
 	 */
 	public static def mapReplicationstoPlaces(): HashMap[Int, String]{
 		//val converter:MetisPartitioner = new MetisPartitioner();	
-		var resilienceLevel:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.resilienceLevel"));
+		var resilienceLevel:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.FaultToleranceScheduler.resilienceLevel"));
 
 		if(resilienceLevel != 0n) {
 			val nPlaces:Int = Place.places().size() as Int;

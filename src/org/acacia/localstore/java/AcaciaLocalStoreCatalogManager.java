@@ -27,7 +27,7 @@ public class AcaciaLocalStoreCatalogManager{
 	
 	private static File loadCatalog(String baseDir){
 		File file = new File(baseDir + File.separator + "catalog");
-		
+		//System.out.println("===+++>>" + baseDir + File.separator + "catalog");
 		try{
 			if(!file.exists()){
 				file.createNewFile();
@@ -43,7 +43,7 @@ public class AcaciaLocalStoreCatalogManager{
 	 public static boolean writeCatalogRecord(String catalogFilePath, String key, String value){
 		String result = null;
 		StringBuilder sb = new StringBuilder();
-		
+
         try{
 	        BufferedReader reader = new BufferedReader(new FileReader(loadCatalog(catalogFilePath)));
 	        String line = null;
@@ -57,6 +57,14 @@ public class AcaciaLocalStoreCatalogManager{
 	        }
 	        
 	        reader.close();
+        }catch(java.io.FileNotFoundException ef){
+        	System.out.println("File not found : " + ef.getMessage());
+//            File f = new File(catalogFilePath);
+//            try {
+//				f.createNewFile();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
         }catch(IOException ec){
         	ec.printStackTrace();
         	return false;
@@ -70,7 +78,7 @@ public class AcaciaLocalStoreCatalogManager{
         
 		FileWriter fw;
 		try {
-			fw = new FileWriter(catalogFilePath);
+			fw = new FileWriter(loadCatalog(catalogFilePath));
 			BufferedWriter bw = new BufferedWriter(fw);
 			bw.write(sb.toString());
 			bw.close();

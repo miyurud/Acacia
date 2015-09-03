@@ -171,9 +171,9 @@ public class AcaciaRDFPartitioner {
     	}
     
     	// create an empty model
-    	Console.OUT.println("creating model");
+    	//Console.OUT.println("creating model");
     	var model:Model = ModelFactory.createDefaultModel();
-    	Console.OUT.println("model created");
+    	//Console.OUT.println("model created");
         var fis:java.io.FileInputStream = null;
         try{
         	fis = new java.io.FileInputStream(new java.io.File(inputFile));
@@ -182,9 +182,9 @@ public class AcaciaRDFPartitioner {
         }
     	// read the RDF/XML file
 		model.read(fis, null, "RDF/XML");
- 		Console.OUT.println("model created2");
+ 		//Console.OUT.println("model created2");
 		iter:StmtIterator = model.listStatements();
- 		Console.OUT.println("model created3");
+ 		//Console.OUT.println("model created3");
  
 	 	while (iter.hasNext()) {
 	 	    stmt:Statement		= iter.nextStatement();  // get next statement

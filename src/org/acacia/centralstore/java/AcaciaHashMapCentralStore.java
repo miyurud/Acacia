@@ -26,6 +26,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.acacia.localstore.java.AcaciaLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStoreCatalogManager;
+import org.acacia.localstore.java.AcaciaLocalStoreTypes;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Utils_Java;
 
@@ -34,7 +37,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
 
-public class AcaciaHashMapCentralStore {
+public class AcaciaHashMapCentralStore  extends AcaciaLocalStore {
 	private final String VERTEX_STORE_NAME = "acacia.nodestore.db";
 	private final String CENTRAL_STORE_NAME = "acacia.centralstore.db";
 	private final String ATTRIBUTE_STORE_NAME = "acacia.attributestore.db";//There can be vertices who are stored only in the central store.
@@ -134,6 +137,12 @@ public class AcaciaHashMapCentralStore {
 		
 		//We need to create an empty data structure at the begining.
 		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
+		
+		String record = AcaciaLocalStoreCatalogManager.readCatalogRecord(instanceDataFolderLocation, "head");
+		
+		if(record == null){
+			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
+		}
 	}
 	
 	public HashMap<Long, HashSet<Long>> getUnderlyingHashMap(){
@@ -167,5 +176,24 @@ public class AcaciaHashMapCentralStore {
 		//System.out.println("<<< Edge count : " + edgeCount);
 		
 		return edgeCount;
+	}
+
+	@Override
+	public HashMap<Long, Long> getOutDegreeDistributionHashMap() {
+		HashMap<Long, Long> result = new HashMap<Long, Long>();
+		
+		Iterator<Long> itr = localSubGraphMap.keySet().iterator();
+		while(itr.hasNext()){
+			//result[counter] = localSubGraphMap.get(itr.next()).size();
+			Long vertexID = itr.next();
+			result.put(vertexID, new Long(localSubGraphMap.get(vertexID).size()));
+		}
+		
+		return result;
+	}
+
+	@Override
+	public void addVertex(Object[] attributes) {
+		
 	}
 }

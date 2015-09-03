@@ -34,6 +34,8 @@ import java.io.IOException;
 
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.localstore.java.AcaciaHashMapNativeStore;
+import org.acacia.localstore.java.AcaciaLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStoreFactory;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaBackEndProtocol;
 import org.acacia.server.AcaciaInstanceProtocol;
@@ -325,7 +327,7 @@ public class AcaciaBackEndServiceSession extends Thread {
             		String partitionID = buff.readLine();
 
             		long partRes = getIntersectingTraingles(graphID, partitionID);
-            		System.out.println("AAAAAAAAAAAAAAAAAAAAA234:" + partRes);
+            		//System.out.println("AAAAAAAAAAAAAAAAAAAAA234:" + partRes);
             		if(partRes == -1){
 //            			System.out.println("Have to send the global list to the worker");
             			out.println("-1");
@@ -354,7 +356,9 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    	//We have to do this for all the central store partitions because we need to have access to all of them's edge lists.
             		    	
             		    	String centralStoreBaseDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
-            		    	AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
+            		    	//AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
+            		    	AcaciaLocalStore store = AcaciaLocalStoreFactory.load(Integer.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore", true);
+            		    	store.loadGraph();
             		    	
             		    	HashMap<Long, HashSet<Long>> edgeList = (HashMap<Long, HashSet<Long>>)store.getUnderlyingHashMap();
 //            		    	Iterator<Map.Entry<Long, HashSet<Long>>> itr = edgeList.entrySet().iterator();
@@ -417,7 +421,7 @@ public class AcaciaBackEndServiceSession extends Thread {
                     			for(Long im: lst2){
                     				sb.append(key + "," + im + ";");
     	                			if(ctr > WINDOW_SIZE){
-    	                				System.out.println("Sending : |" + sb.toString()+"|");
+    	                				//System.out.println("Sending : |" + sb.toString()+"|");
     	                				out.println(sb.toString());
     	                				out.flush();
     	                				sb = new StringBuilder();
@@ -428,7 +432,7 @@ public class AcaciaBackEndServiceSession extends Thread {
                     			
                         		//We need to send the remaining set of values through the socket
                         		if(ctr > 0){
-                        			System.out.println("Sending : |" + sb.toString() + "| ctr:" + ctr);
+                        			//System.out.println("Sending : |" + sb.toString() + "| ctr:" + ctr);
         	        				out.println(sb.toString());
         	        				out.flush();
         	        				ctr = 0;
@@ -990,9 +994,13 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    
 	    for(int i = 0; i < centralPartionCount; i++){	 
 	    	String centralStoreBaseDir = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
-	    	AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
+	    	//AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
 	    	//AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
+	    	//store.loadGraph();
+	    	
+	    	AcaciaLocalStore store = AcaciaLocalStoreFactory.load(Integer.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore", true);
 	    	store.loadGraph();
+	    	
 	    	globalSize += store.getEdgeCount();
 	    }
 

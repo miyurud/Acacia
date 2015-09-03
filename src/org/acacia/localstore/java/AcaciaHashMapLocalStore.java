@@ -261,5 +261,11 @@ public class AcaciaHashMapLocalStore extends AcaciaLocalStore{
 		
 		//We need to create an empty data structure at the begining.
 		localSubGraphMap = new HashMap<Long, HashSet<Long>>();
+		
+		String record = AcaciaLocalStoreCatalogManager.readCatalogRecord(instanceDataFolderLocation, "head");
+		
+		if(record == null){
+			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
+		}
 	}
 }

@@ -161,7 +161,7 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
         }
 
         //Need to initialize the variables with the loaded info.
-        //System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+        System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
         predicateCount = Integer.parseInt(metaInfo.get(PREDICATE_COUNT));
         partitionID = Integer.parseInt(metaInfo.get(PARTITION_ID));
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
@@ -190,6 +190,8 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
         } catch (Exception e) {
             e.printStackTrace();            
         }
+        
+        System.out.println("rough edge count:"+localSubGraphMap.keySet().size());
         
         String vertexPropertyMapPath = instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME;
 		f = new File(vertexPropertyMapPath);
@@ -294,6 +296,9 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
             e.printStackTrace();            
         }
 		
+		updatedFlagVertex = true;
+		updatedFlagEdge = true;
+        
 		return result;
 	}
 	
@@ -541,6 +546,12 @@ public class AcaciaHashMapNativeStore  extends AcaciaLocalStore{
 		}
 		
 		updatedFlagVertex = true;
+		
+		String record = AcaciaLocalStoreCatalogManager.readCatalogRecord(instanceDataFolderLocation, "head");
+		
+		if(record == null){
+			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE);
+		}
 	}
 	
 	public void initializeRelationshipMapWithProperties(Integer predicateSize){

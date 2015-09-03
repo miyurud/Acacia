@@ -36,6 +36,8 @@ import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.localstore.java.AcaciaLocalStore;
+import org.acacia.localstore.java.AcaciaLocalStoreFactory;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.rdf.sparql.ExecuteQuery;
 import org.acacia.util.java.Conts_Java;
@@ -931,7 +933,10 @@ public class AcaciaManager{
 	    for(int i = 0; i < centralPartionCount; i++){
 	    	System.out.println("Partition id : " + i);
 	    	
-	    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
+//	    	AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
+//	    	store.loadGraph();
+	    	
+	    	AcaciaLocalStore store = AcaciaLocalStoreFactory.load(Integer.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore", true);
 	    	store.loadGraph();
 	    	
 	    	HashMap<Long, HashSet<Long>> edgeList2 = (HashMap<Long, HashSet<Long>>)store.getUnderlyingHashMap();

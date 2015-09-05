@@ -687,6 +687,10 @@ public class AcaciaRDFPartitioner {
     			val hostDI:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + hostName + "'")(0);
     			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_CPARTITION(HOST_IDHOST, CPARTITION_IDCPARTITION, CPARTITION_GRAPH_IDCGRAPH) VALUES(" + hostDI + "," + j + "," + graphID + ")");
     		}
+
+		    //delete central store files in tmp directory
+		    val centralStorePath:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/";
+		    val p:java.lang.Process = r.exec("rm -r "+centralStorePath);
     	}catch(val e:Exception){
     		Console.OUT.println("Error : "+e.getMessage());
             	e.printStackTrace();
@@ -742,6 +746,10 @@ public class AcaciaRDFPartitioner {
     			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
     			val hostDI:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + hostName + "'")(0);
     			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(HOST_IDHOST, PARTITION_IDPARTITION, PARTITION_GRAPH_IDGRAPH) VALUES(" + hostDI + "," + actualPartID + "," + graphID + ")");
+    
+			    //delete local store files in tmp directory
+			    val p1:java.lang.Process = r.exec("rm -r "+filePath);
+			    val p2:java.lang.Process = r.exec("rm "+filePath+".zip");
     		}
     	}catch(val e:Exception){
     		Console.OUT.println("Error : "+e.getMessage());

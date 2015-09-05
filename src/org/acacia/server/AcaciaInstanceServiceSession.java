@@ -984,6 +984,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 		try{
 			Logger_Java.info("Deleting the folder: " + dataFolder + "/" + graphID + "_" + partitionID);
 			FileUtils.deleteDirectory(new File(dataFolder + "/" + graphID + "_" + partitionID));
+			Logger_Java.info("Deleting the folder: " + dataFolder + "/" + graphID + "_centralstore");
+			FileUtils.deleteDirectory(new File(dataFolder + "/" + graphID + "_centralstore"));
 			Logger_Java.info("Done deleting.");
 		}catch(IOException ec){
 			Logger_Java.error("Error in deleting the file : " + ec.getMessage());

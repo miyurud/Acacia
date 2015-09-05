@@ -802,7 +802,8 @@ public class AcaciaFrontEndServiceSession {
         for(var i:long=0; i<hostPartitionResults.size; i++){
         //Console.OUT.println("pl(i) : " + l(i));
         	val items:Rail[String] = hostPartitionResults(i).split(",");
-            mp.put(items(0), items(1));
+        Console.OUT.println(items(0)+" : "+items(1));
+            mp.put(items(0)+i, items(1));
         }
         
         finish for(var i:Int=0n; i < numPlaces; i++){
@@ -810,7 +811,7 @@ public class AcaciaFrontEndServiceSession {
 	        async{
 	        	//intermRes(k) = call_removeVertices(PlaceToNodeMapper.getHost(k), PlaceToNodeMapper.getInstancePort(k), graphID, ""+k);
 	            val hst:String = PlaceToNodeMapper.getHost(k);
-	            intermRes(k) = call_removeVertices(hst, PlaceToNodeMapper.getInstancePort(k), graphID, mp.get(hst));
+	            intermRes(k) = call_removeVertices(hst, PlaceToNodeMapper.getInstancePort(k), graphID, mp.get(hst+k));
 	        }
         }
         

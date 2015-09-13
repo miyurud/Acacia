@@ -42,6 +42,14 @@ import x10.regionarray.Array;
 import x10.util.HashMap;
 import x10.util.ArrayList;
 
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
+import org.antlr.runtime.NoViableAltException;
+import org.antlr.runtime.MismatchedTokenException;
+import org.acacia.rdf.sparql.SparqlLexer;
+import org.acacia.rdf.sparql.SparqlParser;
+
 /**
  * Class AcaciaFrontEndServiceSession
  */
@@ -424,69 +432,93 @@ public class AcaciaFrontEndServiceSession {
         	out.flush();
         	try{
         		query = buff.readLine();
-        	}catch(val e:IOException){
-        		Logger_Java.error("Error : " + e.getMessage());
+        
+		        var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
+		        var lexer: SparqlLexer  =new SparqlLexer(stream);
+		        var tokenStream: CommonTokenStream =new CommonTokenStream(lexer);
+		        var parser: SparqlParser =new SparqlParser(tokenStream); 
+		        parser.query();
+		        
+		        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+		        out.flush();
+		        var graphID:String = "";
+		        
+		        graphID = buff.readLine();
+		        
+		        if(!graphExistsByID(graphID)){
+			        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+			        out.flush();				
+		        }
+		        
+		        else{ 
+		        
+			        out.println("Do you want to write results to a file?[y/n]");
+			        out.flush();
+			        
+			        var isFile:String=buff.readLine().trim();
+			        
+			        Console.OUT.println("|" + isFile + "|");
+			        
+			        if(isFile.equals("y")){
+			        
+			        out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
+			        out.flush();
+			        var fileName:String=buff.readLine();
+			        out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
+			        out.flush();
+			        
+			        var filePath:String=buff.readLine();
+			        
+			        var results:ArrayList[String]= runSPARQL(graphID, query);                
+			        
+		        //write the result file
+		        
+		        
+		        }
+		        else if(isFile.equals("n")){        			
+			        var results:ArrayList[String]= runSPARQL(graphID, query);
+			        
+			        if((results == null) || (results.isEmpty())){
+				        out.println("No matching found.");
+				        out.flush();
+			        }else if(results.size()<=100){
+				        for(var i:Int=0n; i < results.size(); i++){  	
+				        out.println(results.get(i));//print the result     
+			        }
+			        out.flush();
+			        }
+			        else{
+			        
+				        for(var i:Int=0n; i < 100; i++){  	//100 limited results
+				        out.println(results.get(i));//print the result     
+			        }
+			        out.println("...");
+			        out.flush();
+			        }
+			        }
+			        else{
+				        out.println("Error");
+				        out.flush();
+			        }		        
+		        }
+		        
+	        	}catch(val e:IOException){
+	        		Logger_Java.error("Error : " + e.getMessage());
+	        
+	        	}
+	        	catch (val e:NoViableAltException) {  
+	        		out.println("Error in query");
+	        	}
+        
+	        catch (val e:RecognitionException) { 
+			        out.println("Error in query");
+	        }
+	        
+	        catch (val e:MismatchedTokenException) { 
+	        out.println("Error in query");
+	        }
+	        
         	}
-        	
-        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-        	out.flush();
-        	var graphID:String = "";
-
-        	
-        	try{
-        		graphID = buff.readLine();
-        	}catch(val e:IOException){
-        		Logger_Java.error("Error : " + e.getMessage());
-        	}
-        	
-        	if(!graphExistsByID(graphID)){
-        		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-        		out.flush();				
-        	}else{ 
-        
-        		out.println("Do you want to write results to a file?[y/n]");
-        		out.flush();
-        		try{
-        			var isFile:String=buff.readLine().trim();
-
-        			//Console.OUT.println("SPARQL start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-                    val startTime:Long = java.lang.System.currentTimeMillis();
-        		if(isFile.equals("y")){
-        
-        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
-        			out.flush();
-        			var fileName:String=buff.readLine();
-        			out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
-        			out.flush();
-       
-        			var filePath:String=buff.readLine();
-        
-                    var results:ArrayList[String]= runSPARQL(graphID, query);                
-        
-       				//write the result file
-        
-        
-        		}
-        		else if(isFile.equals("n")){        			
-        			var results:ArrayList[String]= runSPARQL(graphID, query);
-        			if((results == null) || (results.isEmpty())){
-        				out.println("No matching found.");
-                        out.flush();
-        			}else if(results.size()<=100){
-	        			for(var i:Int=0n; i < results.size(); i++){  	
-	        				out.println(results.get(i));//print the result     
-	        			}
-	        			out.flush();
-        			}
-        			else{
-        
-	        			for(var i:Int=0n; i < 100; i++){  	//100 limited results
-	        			out.println(results.get(i));//print the result     
-	        			}
-	        			out.println("...");
-	        			out.flush();
-        			}
-        		}
         	else{
         		out.println("Error");
         		out.flush();

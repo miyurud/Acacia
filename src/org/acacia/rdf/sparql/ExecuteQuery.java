@@ -21,7 +21,12 @@ import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.util.java.Utils_Java;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
+//import org.antlr.runtime.RecognitionException;
 
+
+import scala.Console;
+
+//import org.antlr.runtime.RecognitionException;
 
 public class ExecuteQuery {
 	

@@ -432,6 +432,25 @@ public class AcaciaFrontEndServiceSession {
         	out.flush();
         	try{
         		query = buff.readLine();
+        	}catch(val e:IOException){
+        		Logger_Java.error("Error : " + e.getMessage());
+        	}
+        	
+        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+        	out.flush();
+        	var graphID:String = "";
+
+        	
+        	try{
+        		graphID = buff.readLine();
+        	}catch(val e:IOException){
+        		Logger_Java.error("Error : " + e.getMessage());
+        	}
+        	
+        	if(!graphExistsByID(graphID)){
+        		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+        		out.flush();				
+        	}else{ 
         
 		        var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
 		        var lexer: SparqlLexer  =new SparqlLexer(stream);

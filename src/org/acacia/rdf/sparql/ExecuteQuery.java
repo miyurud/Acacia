@@ -1,21 +1,27 @@
 package org.acacia.rdf.sparql;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Iterator;
 
+import java.io.File;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.util.java.Utils_Java;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
-//import org.antlr.runtime.RecognitionException;
 
-
-import scala.Console;
-
-//import org.antlr.runtime.RecognitionException;
 
 public class ExecuteQuery {
 	
@@ -50,7 +56,7 @@ public class ExecuteQuery {
 					result = selectQuery(graphData, triples);
 				}
 			}catch (org.antlr.runtime.RecognitionException e) {
-				e.printStackTrace();
+				//System.out.println("Error in query format"+e);
 			}
 		return result;
 
@@ -155,8 +161,8 @@ public class ExecuteQuery {
 						if(secondHs != null){
 							String endVertexPropertyValue = (String) secondHs.toArray()[0];
 							graphData.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
-							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);							
-							//System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);							
+							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);								
+							//System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);				
 							//System.out.println(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);
 						}
 					}
@@ -220,23 +226,50 @@ public class ExecuteQuery {
 	public ArrayList<ArrayList<String>>  execute(String[] triples, ArrayList<String> graphData) {
 
 		ArrayList<ArrayList<String>> intermediateResults = new ArrayList<ArrayList<String>>();
+		int flag=0;
+		String token;
+		ArrayList<String> newToken;
 		
 		
 		for (int i = 0; i < triples.length; i++) {
-		
+			
+			ArrayList<String> result;
+			flag=0;
 			// get the tokens of the triples
 			String[] tokens = triples[i].trim().split(" ");
 
 			// predicate
 			
+			if(tokens[1].contains("type")){
+					flag=1;				
+			}
+			
+			token=tokens[2];
 			tokens[1] = Prefix.get(tokens[1].substring(0,
 					tokens[1].indexOf(":")).trim())
-					+ tokens[1].substring(tokens[1].indexOf(":") + 1).trim();
-						
+					+ tokens[1].substring(tokens[1].indexOf(":") + 1).trim();	
+			
 			
 			if (tokens[0].indexOf("?") >= 0) {
 				if (tokens[2].indexOf("?") >= 0) {
+					
+					result=triplePattern1(tokens,graphData);
+					if(flag==1&&result.isEmpty()){
+						
+						// read rdf ontology file
+						newToken=readRDFOntologyFile(token.substring(tokens[1].indexOf(":") + 1));
+						
+						for(int j=0;j<newToken.size();j++){
+						
+						tokens[2]=tokens[2].substring(0, tokens[2].indexOf("#")+1)+newToken.get(j);
 					 intermediateResults.add(triplePattern1(tokens,graphData));
+						}
+						
+					}
+					else {
+						intermediateResults.add(result);
+					}
+					
 				} else {
 					
 					if (!tokens[2].startsWith("<http")) {
@@ -249,21 +282,75 @@ public class ExecuteQuery {
 						tokens[2] = tokens[2].substring(1, tokens[2].length()-1);
 					}
 					
+					result=triplePattern2(tokens,graphData);
+					
+					if(flag==1&&result.isEmpty()){
+						
+						// read rdf ontology file
+						newToken=readRDFOntologyFile(token.substring(token.indexOf(":")+1 ));
+						
+						for(int j=0;j<newToken.size();j++){
+						
+						tokens[2]=tokens[2].substring(0, tokens[2].indexOf("#")+1)+newToken.get(j);
+						System.out.println("new token2"+tokens[2]);
 					 intermediateResults.add(triplePattern2(tokens,graphData));
+						}
+						
+					}
+					else {
+						intermediateResults.add(result);
+					}
 				}
+				
 			} else {
 				tokens[0] = Prefix.get(tokens[0].substring(0,
 						tokens[0].indexOf(":")).trim())
 						+ tokens[0].substring(tokens[0].indexOf(":") + 1)
 								.trim();
 				if (tokens[2].indexOf("?") >= 0) {
+					 
+					result=triplePattern3(tokens,graphData);
+					if(flag==1&&result.isEmpty()){
+					 
+						// read rdf ontology file
+						newToken=readRDFOntologyFile(token.substring(tokens[1].indexOf(":") + 1));
+						
+						for(int j=0;j<newToken.size();j++){
+						
+						tokens[2]=tokens[2].substring(0, tokens[2].indexOf("#")+1)+newToken.get(j);
+						
 					 intermediateResults.add(triplePattern3(tokens,graphData));
+						}
+						
+					}
+					else {
+						intermediateResults.add(result);
+					}
+					
 				} else {
 					tokens[2] = Prefix.get(tokens[2].substring(0,
 							tokens[2].indexOf(":")).trim())
 							+ tokens[2].substring(tokens[2].indexOf(":") + 1)
 									.trim();
+					 
+					result=triplePattern4(tokens,graphData);
+					if(flag==1&&result.isEmpty()){
+					 
+						// read rdf ontology file
+						newToken=readRDFOntologyFile(token.substring(tokens[1].indexOf(":") + 1));
+						
+						for(int j=0;j<newToken.size();j++){
+						
+						tokens[2]=tokens[2].substring(0, tokens[2].indexOf("#")+1)+newToken.get(j);
+						
 					 intermediateResults.add(triplePattern4(tokens,graphData));
+						}
+						
+					}
+					else {
+						intermediateResults.add(result);
+					}
+					
 				}
 			}
 			
@@ -273,6 +360,59 @@ public class ExecuteQuery {
 
 	}
 
+	public ArrayList<String> readRDFOntologyFile(String token){
+		
+		String fileName = "/home/yasima/Acacia/x10dt/workspace/Acacia/univ-bench.owl";
+		String line,nextline;
+		ArrayList<String> newtokens =new ArrayList<String>();
+		String newToken;
+		
+		try {
+
+			/*File file = new File(filename);
+			DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			Document doc = dBuilder.parse(file);
+			System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+
+			if (doc.hasChildNodes()) {
+
+				//printNote(doc.getChildNodes());
+
+			}*/
+			
+			
+			FileReader fileReader = new FileReader(fileName);
+	            BufferedReader bufferedReader =  new BufferedReader(fileReader);
+	            
+	            while((line = bufferedReader.readLine()) != null) {
+	            	
+	            	if(line.contains(token)){
+	            		
+	            		while((nextline = bufferedReader.readLine())!= null){
+	            		
+	            		if(nextline.contains("rdfs:subClassOf rdf:resource=\"#")){
+	            			newToken=nextline.substring(line.indexOf("=")+2, line.indexOf(">")-1);
+	            			System.out.print(newToken);
+	            			newtokens.add(newToken);
+	            			break;
+	            		}
+	            		}
+	            		   break;		
+	            	}
+	                
+	            }    
+
+	           
+	            bufferedReader.close();  
+
+		    } catch (Exception e) {
+			System.out.println(e.getMessage());
+		    }
+
+		return newtokens;
+		
+	}
+	
 	// (?X , name, ?N)
 	public ArrayList<String> triplePattern1(String[] tokens,
 			ArrayList<String> graphData) {

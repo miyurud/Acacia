@@ -59,7 +59,6 @@ public class AcaciaFrontEndServiceSession {
 		try{
 			var buff:BufferedReader = new BufferedReader(new InputStreamReader(sessionSkt.getInputStream()));
 			var out:PrintWriter = new PrintWriter(sessionSkt.getOutputStream());
-	
 			var msg:String = null;
 	
 			while((msg = buff.readLine())!= null){
@@ -419,8 +418,7 @@ public class AcaciaFrontEndServiceSession {
 		        out.println(nTraingles);//Write the result to the client.
 		        out.flush();
 	        }
-        }
-        else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
+        } else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
         
         	out.println(AcaciaFrontEndProtocol.S_QUERY_SEND);
         	out.flush();
@@ -502,15 +500,50 @@ public class AcaciaFrontEndServiceSession {
         }
        			
         }
-        	
-        }
+        
+        }else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
+        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+        	out.flush();
+        
+        	try{
+        		str = buff.readLine();
+        	}catch(val e:IOException){
+        		Logger_Java.error("Error : " + e.getMessage());
+        	}
+        
+        	if(!graphExistsByID(str)){
+        		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+        		out.flush();				
+        	}else{
+        		//Console.OUT.println("Triangle counting start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+        		val startTime:Long = java.lang.System.currentTimeMillis();
+        		val result:ArrayList[String] = runKCore(str);	
 
-        else{
+        //Console.OUT.println("Triangle counting end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+        Console.OUT.println("K-Core duration(ms) : " + duration);
+        
+        //out.println(nTraingles);//Write the result to the client.
+        out.flush();
+        }
+        }else if(msg.equals(AcaciaFrontEndProtocol.K_NN)){
+            
+        } else {
 			//This is the default response
 			out.println(AcaciaFrontEndProtocol.SEND);
 			out.flush();
 		}
 	}
+
+    private def runKNN(val graphID:String):ArrayList[String]{
+        //To be implemented
+        return null;
+    }
+    
+    private def runKCore(val graphID:String):ArrayList[String]{
+        //To be implemented
+        return null;
+    }
 
     private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
         var result:ArrayList[String] = new ArrayList[String]();

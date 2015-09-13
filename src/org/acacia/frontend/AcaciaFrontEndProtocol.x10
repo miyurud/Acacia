@@ -54,6 +54,8 @@ public class AcaciaFrontEndProtocol {
     public static val FREE_DATA_DIR_SPACE = "dfdt"; //Get a list of free directory spaces on each worker node.
     public static val GRAPHID_SEND = "graphid-send";
     public static val TRIANGLES = "trian";       //This command counts the number of triangles in a graph.
+    public static val K_CORE = "kcore";			//This command initiates the K-Core calculation algorithm.
+    public static val K_NN = "knn";				//This command initiates the K-NN calculation algorithm.
     public static val SPARQL = "sparql";		//This command is to tell next commands are related with rdf graphs.
     public static val S_QUERY_SEND = "s_query-send"; 	//This requets SPARQL query to be executed
     public static val OUTPUT_FILE_NAME= "outputFile-name-send"; 	//This command requets the file name that results should be written

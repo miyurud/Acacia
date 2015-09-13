@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.query.algorithms.KNN;
+package org.acacia.query.algorithms.knn;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,20 +25,14 @@ import org.acacia.log.java.Logger_Java;
 import org.acacia.server.AcaciaInstanceToManagerAPI;
 import org.acacia.util.java.Utils_Java;
 
-public class knn 
-{
-	public static HashSet<Long> run(AcaciaLocalStore graphDB, String serverHostName, Long vertexID) {
-		Long kValue = Long.parseLong(Utils_Java.getAcaciaProperty("org.acacia.query.algorithms.knn.k_value"));
-		return run(graphDB, null, null, serverHostName,kValue,vertexID);
-	}	
-	
-	public static HashSet<Long> run(AcaciaLocalStore graphDB, String graphID, String partitionID, String serverHostName, Long vertexID) {
-		Long kValue = Long.parseLong(Utils_Java.getAcaciaProperty("org.acacia.query.algorithms.knn.k_value"));
-		return run(graphDB, graphID, partitionID, serverHostName,kValue,vertexID);
-	}
-	
-	public static HashSet<Long> run(AcaciaLocalStore graphDB, String graphID, String partitionID, String serverHostName, Long kValue, Long vertexID) {
-		HashMap<Long, HashSet<Long>> localSubGraphMap = graphDB.getUnderlyingHashMap();	
+public class KNN {
+
+    public static def run(val graphDB:AcaciaLocalStore, val serverHostName:String, val kValue:Int, val vertexID:Long) : HashSet {
+        return run(graphDB, null, null, serverHostName, kValue, vertexID);
+    }
+
+	public static def run(val graphDB:AcaciaLocalStore, val graphID:String, val partitionID:String, val serverHostName:String, val kValue:Int, val vertexID:Long) : HashSet {
+		val localSubGraphMap:HashMap = graphDB.getUnderlyingHashMap();	
 		
 		//How to get the list of all the vertices?
 		
@@ -66,48 +60,45 @@ public class knn
 //			}			
 //		}
 		
-		System.out.println("Started KNN algorithm at : " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+		//System.out.println("Started KNN algorithm at : " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
 		//Now we start creating K-nearest nabour graph. But this happens only in the local graph.
 		//Currently this returns only the k-nearest vertices.
 		//Can improve to return a graph that containd k-nearest vertices.
 		
-		HashSet<Long> neighboursPrev = localSubGraphMap.get(vertexID);
-		HashSet<Long> result = neighboursPrev;
+		var neighboursPrev:HashSet = localSubGraphMap.get(vertexID) as java.util.HashSet;
+		val result:HashSet = neighboursPrev;
 		
-		for(int i=1;i<kValue;i++)
-		{
-			HashSet<Long> neighboursCurrent = null;
-			if(neighboursPrev != null)
-			{
-				for(long v : neighboursPrev)
-				{
-					HashSet<Long> neighbourSet = localSubGraphMap.get(v);
-					if(neighbourSet != null)
-					{
-						if(neighboursCurrent == null)
-						{
+		for(var i:Int = 1n; i < kValue; i++){
+			var neighboursCurrent:HashSet = null;
+
+			if(neighboursPrev != null){
+                var itr:java.util.Iterator = neighboursPrev.iterator();
+                while(itr.hasNext()){
+                  	var v:Long = itr.next() as Long;
+					val neighbourSet:HashSet = localSubGraphMap.get(v) as java.util.HashSet;
+	
+					if(neighbourSet != null) {
+						if(neighboursCurrent == null) {
 							neighboursCurrent = neighbourSet;
-						}
-						else
-						{
+						} else {
 							neighboursCurrent.addAll(neighbourSet);
 						}
 					}
 				}
+
+				if(neighboursCurrent != null){
+					neighboursPrev = neighboursCurrent;
+					result.addAll(neighboursPrev);
+				}			
 			}
-			if(neighboursCurrent != null)
-			{
-				neighboursPrev = neighboursCurrent;
-				result.addAll(neighboursPrev);
-			}			
 		}
 		
 		//Next task is to run the algorithm on the global graph only.
 		
-		System.out.println("Done knn algorithm for local graph at : " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+		//System.out.println("Done knn algorithm for local graph at : " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
 		
 		//First we need to find out the id of the partition kept in this AcaciaInstance.
-        //This can be done by reading the AcaciaInstance's catalo
+        //This can be done by reading the AcaciaInstance's catalog
 		
         //The following method may return the count of traingles that intersect between the local graph and the world.
 //        if(serverHostName != null){

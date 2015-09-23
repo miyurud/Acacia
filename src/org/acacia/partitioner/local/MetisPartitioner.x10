@@ -494,12 +494,16 @@ public class MetisPartitioner {
   
   	private def adjustEdgeCount(vertexCount:int, newEdgeCount:int){
   		try{
-  			val outputFilePath = this.outputFilePath;
   			val r:Runtime = Runtime.getRuntime();
   			//Note on May 30 2015 : The following call to sed cannot be executed via Java. This is strange... Therefore, have to stick to
   			//file writing base technique.
-  			val cmd:Rail[String]{"/bin/sed", "-i",  "--expression='1s/.*/" + vertexCount + " " + newEdgeCount + "/'", outputFilePath+"/grf"};
-  			val p:Process = r.exec(cmd);
+  			val cmd:Rail[String] = new Rail[String](4n);
+			//{"/bin/sed", "-i",  "--expression='1s/.*/" + vertexCount + " " + newEdgeCount + "/'", outputFilePath+"/grf"};
+			cmd(0n) = "/bin/sed";
+			cmd(1n) = "-i";
+			cmd(2n) = "--expression='1s/.*/" + vertexCount + " " + newEdgeCount + "/'";
+			cmd(3n) = outputFilePath+"/grf";
+  			val p:Process = r.exec(x10.interop.Java.convert(cmd));
   			p.waitFor();
   
   			val b:BufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -523,7 +527,7 @@ public class MetisPartitioner {
   	}
   
   	public def getPartitionIDList():Rail[String]{
-  		val items:Rail[String] = new String(partitionIDsList.size());
+  		val items:Rail[String] = new Rail[String](partitionIDsList.size());
   		var cntr:int = 0n;
   		for(val i:String in partitionIDsList){
   			items(cntr) = i;
@@ -607,15 +611,15 @@ public class MetisPartitioner {
   	}
   
   	private def loadDataSet(filePath:String){
-  		val br:BufferedReader;
+  		var br:BufferedReader;
 
-  		val firstVertex:int = -1n;
-  		val secondVertex:int = -1n;
+  		var firstVertex:int = -1n;
+  		var secondVertex:int = -1n;
   
   		try{
   			br = new BufferedReader(new FileReader(filePath));
-  			val line:String = br.readLine();
-  			val splitter:Splitter = null;
+  			var line:String = br.readLine();
+  			var splitter:Splitter = null;
   
   			if(line != null){
   				if(line.indexOf(" ")>=0){
@@ -677,7 +681,7 @@ public class MetisPartitioner {
 		  		//boolean containsFlag = false;
 		  		//Treat the first vertex
 		  		val firstVertexIdx:int = firstVertex%nThreads;
-		  		val vertexSet:Set[Int] = graphStorage(firstVertexIdx).get(firstVertex) as Set[Int];
+		  		var vertexSet:Set[Int] = graphStorage(firstVertexIdx).get(firstVertex) as Set[Int];
 		  
 		  		if(vertexSet == null){
 		  			vertexSet = new HashSet[Int]();
@@ -734,29 +738,29 @@ public class MetisPartitioner {
   
   	public def printGraphContent(){
   		if(graphStorage != null){
-  			for(val i:int = 0n; i < nThreads; i++){
-  				val entrySet:Set[Entry[Int, Set[Int]]] = graphStorage(i).entrySet();
-  				val itr:Iterator = entrySet.iterator();
+  			for(var i:int = 0n; i < nThreads; i++){
+  				val entrySet:Set[Entry[Int, Set[Int]]] = graphStorage(i).entrySet() as Set[Entry[Int, Set[Int]]];
+  				val itr:Iterator[Entry[Int, Set[Int]]] = entrySet.iterator();
   
   				while(itr.hasNext()){
-  					val entry:Entry[Integer, HashSet[Integer]] =  itr.next();//(Entry<Integer, HashSet<Integer>>)
-  					System.out.print(entry.getKey());
-  					System.out.print("-->[");
+  					val entry:Entry[Int, Set[Int]] =  itr.next();//(Entry<Integer, HashSet<Integer>>)
+  					Console.OUT.print(entry.getKey());
+  					Console.OUT.print("-->[");
   
-  					val itr2:Iterator = entry.getValue().iterator();
+  					val itr2:Iterator[Int] = entry.getValue().iterator();
   
   					while(itr2.hasNext()){
-  						System.out.print(itr2.next());
+  						Console.OUT.print(itr2.next());
   						if(itr2.hasNext()){
-  							System.out.print(",");
+  							Console.OUT.print(",");
   						}
   					}
   
-  					System.out.println("]");
+  					Console.OUT.println("]");
   				}
   			}
   		}else{
-  			System.out.println("No data on graph structure...");
+  			Console.OUT.println("No data on graph structure...");
   		}
   	}
   

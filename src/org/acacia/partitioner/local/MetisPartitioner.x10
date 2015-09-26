@@ -16,29 +16,32 @@ limitations under the License.
 
 package org.acacia.partitioner.local;
 
-import java.util.TreeMap;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.HashSet;
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import x10.interop.Java;
-import java.io.FileReader;
-import java.io.FileWriter;
-import org.acacia.metadata.db.java.MetaDataDBInterface;
 import x10.core.Thread;
 import x10.util.Set;
 import x10.util.Map.Entry;
 import x10.util.StringBuilder;
+
+import java.util.TreeMap;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.lang.Runtime;
 import java.io.File;
-import org.acacia.server.AcaciaManager;
 import java.lang.Process;
-import org.acacia.util.Utils;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 import com.google.common.base.Splitter;
+
+import org.acacia.server.AcaciaManager;
+import org.acacia.metadata.db.java.MetaDataDBInterface;
+import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.util.Utils;
 
 public class MetisPartitioner {
  	//The following TreeMap loads the entire graph data file into memory. This is plausible because
@@ -273,67 +276,6 @@ public class MetisPartitioner {
    			}
    		}
    
-   
-  /*
-   * tArray = new CustomThread[nThreads];
-   * 
-   * for(int i = 0; i < nThreads; i++){
-   * 
-   * tArray[i] = new CustomThread(i, numberOfPartitions){
-   * public void run(){
-   * int i = getI();
-   * Iterator<Map.Entry<Integer, HashSet<Integer>>> itr = graphStorage[i].entrySet().iterator();
-   * int toVertexPartition = 0;
-   * int toVertex = 0;
-   * 
-   * while(itr.hasNext()){
-   * Map.Entry<Integer, HashSet<Integer>> entry = itr.next();
-   * int fromVertex = entry.getKey();
-   * int fromVertexPartition = partitionIndex[(int) fromVertex];
-   * HashSet<Integer> hs = entry.getValue();
-   * if(hs != null){
-   * Iterator<Integer> itr2 = hs.iterator();
-   * while(itr2.hasNext()){
-   * toVertex = itr2.next();
-   * toVertexPartition = partitionIndex[(int) toVertex];
-   * 
-   * if(fromVertexPartition != toVertexPartition){
-   * //Here the assumption is that we will create same number of central store partitions as the number of local store partitions.
-   * AcaciaHashMapCentralStore central = centralStoresMap.get(new Short((short) fromVertexPartition));								
-   * central.addEdge((long)fromVertex, (long)toVertex);
-   * }else{
-   * PartitionWriter pw = partitionFilesMap.get(new Short((short) fromVertexPartition));
-   * pw.writeEdge(fromVertex, toVertex);
-   * }
-   * }
-   * }else{
-   * continue;
-   * }
-   * }
-   * setDone();
-   * }
-   * };
-   * tArray[i].start();
-   * }
-   * while(true){
-   * boolean flag = true;
-   * for(int x = 0; x < nThreads; x++){
-   * if(!tArray[x].isDone()){
-   * flag = false;
-   * }
-   * }
-   * 
-   * if(flag){
-   * break;
-   * }
-   * 
-   * try {
-   * Thread.currentThread().sleep(100);
-   * } catch (InterruptedException e) {
-   * e.printStackTrace();
-   * }
-   * }		
-   */
 		  for(var i:int = 0n; i < numberOfCentralPartitions; i++){
 			  //org.acacia.util.java.Utils_Java.writeToFile("centralStore-part-" + i + ".txt", sbCentral[i]);
 			  val central:AcaciaHashMapCentralStore  = centralStoresMap.get(i as short);
@@ -441,6 +383,20 @@ public class MetisPartitioner {
   					e.printStackTrace();
   				}
   			}
+  
+            //ToDO : The functionality of the following code must be verified. It seems currently it does not work.
+            //next, we need to delete the local copies of the central store to avoid the working directory get filled with temp data.
+            for(var j:Long=0;j<n;j++){
+            	Console.OUT.println("---BBBB--------1");
+            	val filePath:String = Utils.call_getAcaciaProperty("org.acacia.server.runtime.location")+"/" + graphID + "_centralstore/"+graphID+"_"+j;
+            	Console.OUT.println("file:" + filePath);
+                val p1:java.lang.Process = r.exec("rm -r "+filePath);
+                Console.OUT.println("---BBBB--------2");
+                val p2:java.lang.Process = r.exec("rm "+filePath+"_trf.zip");
+                Console.OUT.println("---BBBB--------3");
+                Console.OUT.println("|rm -r "+filePath+"|");
+                Console.OUT.println("|rm "+filePath+"_trf.zip|");
+            }
   			Console.OUT.println("---BBBB--------");
   		}catch(e:java.io.IOException){
   			Console.OUT.println("Error : "+e.getMessage());

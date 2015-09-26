@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
+import org.acacia.log.Logger;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
 
@@ -57,7 +58,6 @@ public class AcaciaFrontEndServiceSession {
 	private var sessionSkt:Socket = null;
     //private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
     private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
-    
     
 	public def this(val socket:Socket){
 		sessionSkt = socket;
@@ -99,8 +99,8 @@ public class AcaciaFrontEndServiceSession {
 	/**
 	 * This method processes the query requests to AcaciaForntEnd. This is the main function that answers the queries.
 	 */
-	public def process(val msg:String, val buff:BufferedReader, out:PrintWriter):void{
-		var response:String="";
+	public def process(val msg:String, val buff:BufferedReader, out:PrintWriter):void {
+		var response:String = "";
 		var str:String = null;
         var query:String=null;
 		
@@ -165,6 +165,7 @@ public class AcaciaFrontEndServiceSession {
 				out.flush();				
 			}else{
 				var file:File = new File(path);
+
 				if(file.exists()){
                     if(IS_DISTRIBUTED){
 					    AcaciaServer.uploadGraphDistributed(name, path);
@@ -200,8 +201,7 @@ public class AcaciaFrontEndServiceSession {
 				str=""+removeGraph(graphID);
 				out.println(str);
 				out.flush();
-			}			
-			
+			}
 		}else if(msg.equals(AcaciaFrontEndProtocol.ADRDF)){ //Add graph from outside
 			//we get the name and the path to graph as a pair separated by |.
 			out.println(AcaciaFrontEndProtocol.SEND);
@@ -286,7 +286,6 @@ public class AcaciaFrontEndServiceSession {
             // gremlinInterpreter.run();
             out.println("Exitted here...");
             out.flush();
-            
 		}else if(msg.equals(AcaciaFrontEndProtocol.PAGERANK)){
             out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
             out.flush();
@@ -433,44 +432,33 @@ public class AcaciaFrontEndServiceSession {
         	try{
         		query = buff.readLine();
         	}catch(val e:IOException){
-        		Logger_Java.error("Error : " + e.getMessage());
+        		Logger.error("Error : " + e.getMessage());
         	}
         	
         	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
         	out.flush();
         	var graphID:String = "";
-
-        	
+	
         	try{
         		graphID = buff.readLine();
         	}catch(val e:IOException){
-        		Logger_Java.error("Error : " + e.getMessage());
+        		Logger.error("Error : " + e.getMessage());
         	}
         	
+            var startTime:Long = java.lang.System.currentTimeMillis();
+        
         	if(!graphExistsByID(graphID)){
         		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
         		out.flush();				
-        	}else{ 
-        
-		        var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
-		        var lexer: SparqlLexer  =new SparqlLexer(stream);
-		        var tokenStream: CommonTokenStream =new CommonTokenStream(lexer);
-		        var parser: SparqlParser =new SparqlParser(tokenStream); 
-		        parser.query();
+        	}else{
+        		// try{
+		        // var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
+		        // var lexer: SparqlLexer  =new SparqlLexer(stream);
+		        // var tokenStream: CommonTokenStream =new CommonTokenStream(lexer);
+		        // var parser: SparqlParser =new SparqlParser(tokenStream); 
+		        // parser.query();
 		        
-		        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-		        out.flush();
-		        var graphID:String = "";
-		        
-		        graphID = buff.readLine();
-		        
-		        if(!graphExistsByID(graphID)){
-			        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-			        out.flush();				
-		        }
-		        
-		        else{ 
-		        
+		        try{
 			        out.println("Do you want to write results to a file?[y/n]");
 			        out.flush();
 			        
@@ -488,13 +476,13 @@ public class AcaciaFrontEndServiceSession {
 			        
 			        var filePath:String=buff.readLine();
 			        
+			        startTime = java.lang.System.currentTimeMillis();
 			        var results:ArrayList[String]= runSPARQL(graphID, query);                
 			        
-		        //write the result file
-		        
-		        
+		        	//write the result file
 		        }
-		        else if(isFile.equals("n")){        			
+		        else if(isFile.equals("n")){    
+		            startTime = java.lang.System.currentTimeMillis();
 			        var results:ArrayList[String]= runSPARQL(graphID, query);
 			        
 			        if((results == null) || (results.isEmpty())){
@@ -518,39 +506,36 @@ public class AcaciaFrontEndServiceSession {
 			        else{
 				        out.println("Error");
 				        out.flush();
-			        }		        
+			        }		
+		        }catch(val e:IOException){
+		        	Logger.error("Error : " + e.getMessage());
 		        }
+			        
+		        //}
 		        
-	        	}catch(val e:IOException){
-	        		Logger_Java.error("Error : " + e.getMessage());
-	        
-	        	}
-	        	catch (val e:NoViableAltException) {  
-	        		out.println("Error in query");
-	        	}
-        
-	        catch (val e:RecognitionException) { 
-			        out.println("Error in query");
-	        }
-	        
-	        catch (val e:MismatchedTokenException) { 
-	        out.println("Error in query");
-	        }
-	        
+        		// }catch (val e:NoViableAltException) {  
+	        	// 	out.println("Error in query");
+	        	// }catch (val e:RecognitionException) { 
+			       //  out.println("Error in query");
+	        	// }catch (val e:MismatchedTokenException) { 
+	        	// 	out.println("Error in query");
+		        // }catch(val e:IOException){
+		        // 	Logger.error("Error : " + e.getMessage());
+		        // }
         	}
-        	else{
-        		out.println("Error");
-        		out.flush();
-        	}
+        	// }else{
+        	// 	out.println("Error");
+        	// 	out.flush();
+        	// }
         		//Console.OUT.println("SPARQL end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
             val duration:Long = java.lang.System.currentTimeMillis() - startTime;
             Console.OUT.println("SPARQL query duration(ms) : " + duration);
-        }
-        catch(val e:IOException){
-        	Console.OUT.println("Error : "+e.getMessage());
-        }
+        // }
+        // catch(val e:IOException){
+        // 	Console.OUT.println("Error : "+e.getMessage());
+        // }
        			
-        }
+        //}
         
         }else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
         	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);

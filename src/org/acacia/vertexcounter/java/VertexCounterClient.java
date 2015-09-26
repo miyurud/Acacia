@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.vertexcounter;
+package org.acacia.vertexcounter.java;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +24,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import org.acacia.log.java.Logger_Java;
-import org.acacia.server.AcaciaInstanceProtocol;
+import org.acacia.server.java.AcaciaInstanceProtocol;
 import org.acacia.util.java.Conts_Java;
 
 public class VertexCounterClient{

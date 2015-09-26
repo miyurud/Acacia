@@ -23,8 +23,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import org.acacia.log.java.Logger_Java;
-import org.acacia.vertexcounter.VertexCounterProtocol;
-import org.acacia.vertexcounter.VertexSingleton;
+import org.acacia.vertexcounter.java.VertexCounterProtocol;
+import org.acacia.vertexcounter.java.VertexSingleton;
 
 public class PartitionIndexServiceSession extends Thread{
 	private Socket sessionSkt = null;

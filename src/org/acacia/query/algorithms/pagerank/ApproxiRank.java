@@ -36,12 +36,12 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import org.acacia.log.java.Logger_Java;
-import org.acacia.server.AcaciaInstanceProtocol;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
 import org.acacia.localstore.java.AcaciaLocalStore;
-import org.acacia.server.AcaciaInstanceToManagerAPI;
+import org.acacia.server.java.AcaciaInstanceProtocol;
+import org.acacia.server.java.AcaciaInstanceToManagerAPI;
 
 public class ApproxiRank {
 	/**

@@ -37,9 +37,9 @@ import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.localstore.java.AcaciaLocalStore;
 import org.acacia.localstore.java.AcaciaLocalStoreFactory;
 import org.acacia.log.java.Logger_Java;
-import org.acacia.server.AcaciaBackEndProtocol;
-import org.acacia.server.AcaciaInstanceProtocol;
-import org.acacia.server.AcaciaManager;
+import org.acacia.server.java.AcaciaBackEndProtocol;
+import org.acacia.server.java.AcaciaInstanceProtocol;
+import org.acacia.server.java.AcaciaManager;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 

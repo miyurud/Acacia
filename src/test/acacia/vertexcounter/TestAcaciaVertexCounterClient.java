@@ -16,8 +16,8 @@ limitations under the License.
 
 package test.acacia.vertexcounter;
 
-import org.acacia.vertexcounter.VertexCounter;
-import org.acacia.vertexcounter.VertexCounterClient;
+import org.acacia.vertexcounter.java.VertexCounter;
+import org.acacia.vertexcounter.java.VertexCounterClient;
 
 /**
  * Class TestAcaciaVertexCounter

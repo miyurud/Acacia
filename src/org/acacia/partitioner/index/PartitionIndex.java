@@ -24,9 +24,9 @@ import java.util.ArrayList;
 
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
-import org.acacia.vertexcounter.VertexCounter;
-import org.acacia.vertexcounter.VertexCounterServiceSession;
-import org.acacia.vertexcounter.VertexSingleton;
+import org.acacia.vertexcounter.java.VertexCounter;
+import org.acacia.vertexcounter.java.VertexCounterServiceSession;
+import org.acacia.vertexcounter.java.VertexSingleton;
 
 /**
  * There should be one partition index service per host. However, have to be carefull because when the

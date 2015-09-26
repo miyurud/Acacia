@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.tinkerpop.blueprints.impl;
+package org.acacia.tinkerpop.blueprints.impl.java;
 
 /**
  * This is an implementation of the Vertex interface defined in the blueprints standard.

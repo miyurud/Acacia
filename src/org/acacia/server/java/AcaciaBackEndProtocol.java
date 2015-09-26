@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.server;
+package org.acacia.server.java;
 
 /**
  * Note that this is an exact duplicate of the corresponding X10 version of the class

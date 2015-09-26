@@ -16,7 +16,7 @@ limitations under the License.
 
 package test.acacia.server;
 
-import org.acacia.server.AcaciaInstanceServiceSession;
+import org.acacia.server.java.AcaciaInstanceServiceSession;
 
 public class TestAcaciaInstanceServiceSession{
 	public static void main(String[] args){

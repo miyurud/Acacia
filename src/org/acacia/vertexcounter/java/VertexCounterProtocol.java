@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.vertexcounter;
+package org.acacia.vertexcounter.java;
 
 public class VertexCounterProtocol{
 	public static String SEND = "send";		//Ask the client to send some data. This is used during a comminication session with the client.

@@ -42,7 +42,7 @@ import org.acacia.csr.java.CSRConverter.ParagraphRecordReader;
 import org.acacia.log.java.Logger_Java;
 //import org.acacia.partitioner.hbase.java.HBaseInterface_Java;
 import org.acacia.partitioner.index.PartitionIndexProtocol;
-import org.acacia.server.AcaciaInstanceProtocol;
+import org.acacia.server.java.AcaciaInstanceProtocol;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -68,7 +68,6 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.MultipleTextOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer.Context;
-
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;

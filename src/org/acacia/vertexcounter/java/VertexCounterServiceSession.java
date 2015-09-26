@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.vertexcounter;
+package org.acacia.vertexcounter.java;
 
 import java.net.Socket;
 import java.net.ServerSocket;

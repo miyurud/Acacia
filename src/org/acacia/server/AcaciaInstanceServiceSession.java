@@ -57,7 +57,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.acacia.query.algorithms.pagerank.ApproxiRank;
-import org.acacia.rdf.sparql.ExecuteQuery;
+import org.acacia.rdf.sparql.java.ExecuteQuery;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.

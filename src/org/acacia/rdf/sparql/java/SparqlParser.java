@@ -1,4 +1,4 @@
-package org.acacia.rdf.sparql;
+package org.acacia.rdf.sparql.java;
 
 // $ANTLR 3.5.2 /home/yasima/Acacia/x10dt/workspace/Acacia/src/org/acacia/rdf/sparql/Sparql.g 2015-07-03 14:44:11
 

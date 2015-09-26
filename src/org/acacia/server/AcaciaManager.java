@@ -39,10 +39,9 @@ import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.localstore.java.AcaciaLocalStore;
 import org.acacia.localstore.java.AcaciaLocalStoreFactory;
 import org.acacia.log.java.Logger_Java;
-import org.acacia.rdf.sparql.ExecuteQuery;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
-import org.acacia.rdf.sparql.ExecuteQuery;
+import org.acacia.rdf.sparql.java.ExecuteQuery;
 
 import java.io.IOException;
 

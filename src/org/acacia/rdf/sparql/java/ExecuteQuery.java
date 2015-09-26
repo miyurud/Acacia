@@ -1,4 +1,4 @@
-package org.acacia.rdf.sparql;
+package org.acacia.rdf.sparql.java;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

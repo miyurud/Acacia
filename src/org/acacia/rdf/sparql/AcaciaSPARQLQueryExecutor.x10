@@ -2,55 +2,28 @@ package org.acacia.rdf.sparql;
 
 import x10.io.File;
 import x10.compiler.Native;
+import x10.util.HashMap;
+import x10.util.ArrayList;
+
+import java.net.Socket;
+
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
+
+import org.acacia.server.AcaciaServer;
 import org.acacia.log.java.Logger_Java;
+import org.acacia.rdf.sparql.java.SparqlLexer;
+import org.acacia.rdf.sparql.java.SparqlParser;
+import org.acacia.rdf.sparql.java.ExecuteQuery;
 import org.acacia.util.Utils;
 import org.acacia.util.PlaceToNodeMapper;
-import x10.util.HashMap;
-import org.acacia.server.AcaciaServer;
-import java.net.Socket;
-//import java.io.PrintWriter;
-//import java.io.BufferedReader;
-
-import x10.util.ArrayList;
 
 public class AcaciaSPARQLQueryExecutor {
 
-		var Prefix:HashMap[String, String] = new HashMap[String, String]();
+	var Prefix:HashMap[String, String] = new HashMap[String, String]();
 
 	public def this(){}
-
-/*private static def getLiveHostIDList():HashMap[String, String]{
-
-		val hostNameArr:Rail[String] = call_runSelect("SELECT name,idhost FROM ACACIA_META.HOST");
-		val result:HashMap[String, String] = new HashMap[String, String]();
-		var hosrArrlist:ArrayList[String] = new ArrayList[String](); 
-		var nm:String = null;
-		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-		val hostListLen:Int = hosts.size as Int;
-		var intermRes:Rail[Long] = new Rail[Long](hostListLen);
-
-
-		for(var i:Int=0n; i < hostListLen; i++){
-		hosrArrlist.add(hosts(i));
-		}
-
-		val l:Long = hostNameArr.size;
-
-		for(var i:Long=0; i < l; i++){
-		val itm:Rail[String] =  hostNameArr(i).split(",");
-		
-			if(hosrArrlist.contains(itm(0))){
-			result.put(itm(0), itm(1));
-			
-			}
-
-}
-
-return result;
-}*/
 
 	public def executeQuery(val query:String, val graphID:String, val partitionID:String):ArrayList[String]{
 
@@ -100,7 +73,6 @@ return result;
 
 
 		}
-
 
 		/*data.add("(R1 , name, john)");
 		data.add("(R1 , email, J@ed.ex)");

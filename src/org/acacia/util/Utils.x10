@@ -25,6 +25,35 @@ import x10.compiler.Native;
 
 public class Utils {
 
+    public static def getAcaciaProperty(var key:String):String{
+        var result:String = null;
+        result = call_getAcaciaProperty(key);
+        
+        return result;
+    }
+
+    /**
+     * Runtime location is the place where Acacia keeps the files of operation during its run time.
+     * @return
+     */
+    public static def getServerHost():String{
+    	var prop:java.util.Properties = new java.util.Properties();
+    
+    	try {
+    		//BufferedReader br = new BufferedReader(new FileReader(Conts_JAVA.BATCH_UPLOAD_CONFIG_FILE));
+    		var fi:java.io.FileInputStream = new java.io.FileInputStream(Conts.ACACIA_SERVER_PROPS);
+    		prop.load(fi);
+    		fi.close(); 
+    	}catch (var e1:java.io.IOException) {
+    		//Logger.getLogger(Conts.UTILS_LOGGER_NAME).error("Error : " + e.getMessage() + "\r\nError Details : \r\n" + Utils.getStackTraceAsString(e));
+    		return null;
+    	}
+    
+    	val serverHost:String = prop.getProperty("org.acacia.server.host");
+
+    	return serverHost;
+    }
+    
     public static def getHostName():String{       
         val hostName = System.getenv("HOSTNAME");
         

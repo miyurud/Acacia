@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.server.java;
+package org.acacia.server;
+
+import x10.util.HashMap;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -29,20 +31,31 @@ import java.io.FileReader;
 import java.io.FileOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Iterator;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Map.Entry;
+import java.lang.Process;
+import java.lang.Runtime;
+
+import x10.util.Map;
+import x10.util.ArrayList;
+import x10.lang.Iterator;
+import x10.util.StringBuilder;
+
+import com.google.common.base.Splitter;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import org.apache.commons.io.FileUtils;
-import org.acacia.localstore.java.AcaciaHashMapLocalStore;
-import org.acacia.localstore.java.AcaciaLocalStore;
-import org.acacia.localstore.java.AcaciaLocalStoreFactory;
-import org.acacia.localstore.java.AcaciaLocalStoreTypes;
-import org.acacia.log.java.Logger_Java;
+
+import org.acacia.localstore.AcaciaHashMapLocalStore;
+import org.acacia.localstore.AcaciaLocalStore;
+import org.acacia.localstore.AcaciaLocalStoreFactory;
+import org.acacia.localstore.AcaciaLocalStoreTypes;
+import org.acacia.log.Logger;
+import org.acacia.util.Utils;
+
 import org.acacia.util.java.Utils_Java;
 import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
 import org.acacia.events.java.ShutdownEvent;
@@ -50,14 +63,8 @@ import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;
 import org.acacia.query.algorithms.triangles.Triangles;
-
-import com.google.common.base.Splitter;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import org.acacia.query.algorithms.pagerank.ApproxiRank;
-import org.acacia.rdf.sparql.java.ExecuteQuery;
+import org.acacia.rdf.sparql.ExecuteQuery;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.
@@ -65,22 +72,22 @@ import org.acacia.rdf.sparql.java.ExecuteQuery;
  * @author miyuru
  * 
  */
-public class AcaciaInstanceServiceSession extends Thread{	
-	private Socket sessionSkt;
+public class AcaciaInstanceServiceSession extends java.lang.Thread{	
+	private var sessionSkt:Socket;
 	//private GraphDatabaseService graphDB;//This is a reference to the original DB
-	private DBTruncateEventListener listener;
-	private ShutdownEventListener listenerShtdn;
+	private var listener:DBTruncateEventListener;
+	private var listenerShtdn:ShutdownEventListener;
 	//private HashMap<Integer, GraphDatabaseService> graphDBMap = null;
 	//Note : Feb 4 2015 - Since we need to deal with the <praphID>_<partitionID> scenario,
 	//the key of the graph db map was changed to String
-	private HashMap<String, AcaciaLocalStore> graphDBMap = null;
-	private ArrayList<String> loadedGraphs;
-	private AcaciaLocalStore defaultGraph = null;
-	private String defaultGraphID=null;
-	private String dataFolder;
-	private String serverHostName;
+	private var graphDBMap:HashMap[String, AcaciaLocalStore] = null;
+	private var loadedGraphs:ArrayList[String];
+	private var defaultGraph:AcaciaLocalStore = null;
+	private var defaultGraphID:String = null;
+	private var dataFolder:String;
+	private var serverHostName:String;
 	
-	public AcaciaInstanceServiceSession(){
+	public def this(){
 		
 	}
 	
@@ -88,44 +95,42 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * The constructor
 	 * @param socket
 	 */
-	public AcaciaInstanceServiceSession(Socket socket, HashMap<String, AcaciaLocalStore> db, ArrayList<String> grp){
+	public def this(val socket:Socket, val db:HashMap[String, AcaciaLocalStore], val grp:ArrayList[String]){
 		sessionSkt = socket;
 		graphDBMap = db;
 		loadedGraphs = grp;
-		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
-		//System.out.println("MMMMMMMMMMMMM");
+		dataFolder = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
+		//Console.OUT.println("MMMMMMMMMMMMM");
 	}
 	
-	public void setGraphDBMap(HashMap<String, AcaciaLocalStore> db, ArrayList<String> grp){
+	public def setGraphDBMap(val db:HashMap[String, AcaciaLocalStore], val grp:ArrayList[String]) : void{
 		graphDBMap = db;
 		loadedGraphs = grp;
-		dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
+		dataFolder = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
 	}
 	
-	public void run(){
-		//Logger_Java.info("Running a new AcaciaInstanceServiceSession.");
+	public def run() : void {
+		//Logger.info("Running a new AcaciaInstanceServiceSession.");
 		//First we need to check if the directory exist. If not we need to create it.
-		File dir = new File("/tmp/dgr");
+		val dir:File = new File("/tmp/dgr");
 		
 		if(!dir.exists()){
-			Logger_Java.info("Info : Creating /tmp/dgr directory");
-			boolean result = dir.mkdir();
+			Logger.info("Info : Creating /tmp/dgr directory");
+			val result:Boolean = dir.mkdir();
 			
 			if(result){
-				Logger_Java.info("Directory /tmp/dgr created.");
+				Logger.info("Directory /tmp/dgr created.");
 			}
 		}
 		
 		try{
-			InputStream inpStrm = sessionSkt.getInputStream();
-			BufferedReader buff = new BufferedReader(new InputStreamReader(inpStrm));
-			PrintWriter out = new PrintWriter(sessionSkt.getOutputStream());
-			String msg = "";
+			val inpStrm:InputStream = sessionSkt.getInputStream();
+			val buff:BufferedReader = new BufferedReader(new InputStreamReader(inpStrm));
+			val out:PrintWriter = new PrintWriter(sessionSkt.getOutputStream());
+			var msg:String = "";
 			
-			byte[] line = new byte[10];
-			//Logger_Java.info("reading line");
 			while((msg = buff.readLine())!= null){
-				Logger_Java.info("msg : " + msg);
+				Logger.info("msg : " + msg);
 				
 				//+Miyuru (May 2014) - This seems rather long if else structure. Better have some other mechanism to
 				//query parsing if possible.
@@ -135,7 +140,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we get the host name of the main server. We need this information for future
 					//operations.
 					serverHostName = buff.readLine();
-					//Logger_Java.info("serverHostName : " + serverHostName);
+					//Logger.info("serverHostName : " + serverHostName);
 					out.flush();
 				}else if(msg.equals(AcaciaInstanceProtocol.CLOSE)){
 					out.println(AcaciaInstanceProtocol.CLOSE_ACK);
@@ -163,7 +168,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 //					
 //					String graphID = msg;
 //					
-//					Logger_Java.info("graph id is : " + msg);
+//					Logger.info("graph id is : " + msg);
 //					
 //					out.println(AcaciaInstanceProtocol.OK);
 //					out.flush();
@@ -180,13 +185,13 @@ public class AcaciaInstanceServiceSession extends Thread{
 //					msg = buff.readLine();
 //					
 //					while(!msg.equals(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE)){
-//						Logger_Java.info("Adding Edge : " + msg);
+//						Logger.info("Adding Edge : " + msg);
 //						String[] vertsArr = msg.split(" ");//We expect the edge to be split by a space.
 //						try{
 //							insertEdgeUsingIndex(Long.parseLong(vertsArr[0]), Long.parseLong(vertsArr[1]));
 //						}catch(NumberFormatException ex){
 //							//Just ignore. Expect the messages only in the for <long> <long> <long>
-//							Logger_Java.error("Error : " + ex.getMessage());
+//							Logger.error("Error : " + ex.getMessage());
 //						}
 //						msg = buff.readLine();
 //					}
@@ -202,48 +207,48 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					String graphID = msg;
-					Logger_Java.info("graph id is : " + graphID);
-					Logger_Java.info("Counting vertices, graph id is : " + graphID);
+					val graphID:String = msg;
+					Logger.info("graph id is : " + graphID);
+					Logger.info("Counting vertices, graph id is : " + graphID);
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
 					msg = buff.readLine().trim();
 					
-					Logger_Java.info("partition id is : " + msg);
+					Logger.info("partition id is : " + msg);
 					
 					msg = countVertices(graphID, msg);
 					
 					out.println(msg);
 					out.flush();
-					Logger_Java.info("vcount is : " + msg);
+					Logger.info("vcount is : " + msg);
 				}else if(msg.equals(AcaciaInstanceProtocol.COUNT_EDGES)){
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					String graphID = msg;
-					Logger_Java.info("graph id is : " + graphID);
+					val graphID:String = msg;
+					Logger.info("graph id is : " + graphID);
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
 					msg = buff.readLine().trim();
 					
-					Logger_Java.info("partition id is : " + msg);
+					Logger.info("partition id is : " + msg);
 					
 					msg = countEdges(graphID, msg);
 					out.println(msg);
 					out.flush();
-					Logger_Java.info("ecount is : " + msg);
+					Logger.info("ecount is : " + msg);
 				}else if(msg.equals(AcaciaInstanceProtocol.DELETE)){
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
-					String graphID = buff.readLine().trim();
+					val graphID:String = buff.readLine().trim();
 					
-					Logger_Java.info("graph id is : " + graphID);
+					Logger.info("graph id is : " + graphID);
 					
 					//Now we want to get the exact partition id that we will be deleting.
 					//Because there will be other places running in this node that will handle other
@@ -254,7 +259,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					msg = buff.readLine().trim();
 					//msg = ""+deleteAllverticesandEdgesofGraph(msg);
 					
-					Logger_Java.info("partition id is : " + msg);
+					Logger.info("partition id is : " + msg);
 					
 					//we send the graphid and partitionid
 					msg = ""+deleteGraph(graphID, msg);
@@ -267,15 +272,15 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					msg = buff.readLine().trim();
 					
-					Logger_Java.info("graph id is : " + msg);
+					Logger.info("graph id is : " + msg);
 					//int gid = Integer.parseInt(msg);
-					String graphID = msg;
+					val graphID:String = msg;
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					String gid = graphID + "_" + msg;
+					val gid:String = graphID + "_" + msg;
 					
                     //Need to load the graph only when required
 					if (!graphDBMap.containsKey(gid)){
@@ -290,8 +295,8 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					String graphID = msg;
-					Logger_Java.info("graph id is : " + graphID);
+					val graphID:String = msg;
+					Logger.info("graph id is : " + graphID);
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
@@ -308,9 +313,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					String graphID = msg;
+					val graphID:String = msg;
 					
-					Logger_Java.info("graph id is : " + graphID);
+					Logger.info("graph id is : " + graphID);
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
@@ -328,19 +333,19 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					msg = buff.readLine().trim();
 					
-					String graphID = msg;
+					val graphID:String = msg;
 										
 					out.println(AcaciaInstanceProtocol.SEND_FILE_NAME);
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					String fileName = msg;
+					var fileName:String = msg;
 					
 					out.println(AcaciaInstanceProtocol.SEND_FILE_LEN);
 					out.flush();
 					
 					msg = buff.readLine().trim();
-					long fileLen = Long.parseLong(msg);
+					val fileLen:Long = Long.parseLong(msg);
 					
 					out.println(AcaciaInstanceProtocol.SEND_FILE_CONT);
 					out.flush();
@@ -348,13 +353,13 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we need to get the file size and then check if the file size has been achieved.
 					//Mere file exitance is not enough to continue, because we might have another thread writing data to the file. 
 					
-					String fullFilePath = "/tmp/dgr/" + fileName;
-					File f = new File(fullFilePath);
+					val fullFilePath:String = "/tmp/dgr/" + fileName;
+					val f:File = new File(fullFilePath);
 					
 					while((!f.exists()) && (f.length() < fileLen)){
 						msg = buff.readLine().trim();
 						
-						Logger_Java.info("curlen : " + f.length() + " fileLen : " + fileLen);
+						Logger.info("curlen : " + f.length() + " fileLen : " + fileLen);
 						
 						if(msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)){
 							out.println(AcaciaInstanceProtocol.FILE_RECV_WAIT);
@@ -369,10 +374,10 @@ public class AcaciaInstanceServiceSession extends Thread{
 						out.flush();
 					}
 					
-					Logger_Java.info("Got the file : " + fileName);
+					Logger.info("Got the file : " + fileName);
 					
-					fileName = fileName.substring(fileName.indexOf("_") + 1, fileName.indexOf("."));
-					Logger_Java.info("Partition ID : " + fileName);
+					fileName = fileName.substring(fileName.indexOf("_") + 1n, fileName.indexOf("."));
+					Logger.info("Partition ID : " + fileName);
 					//here is where local store is constructed
 					//the fileName contains the graph partitionID. So we do not have to specifiy that again here.
 					unzipAndBatchUpload(graphID, fileName);
@@ -395,7 +400,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we will receve the graph ID
 					msg = buff.readLine().trim();
 					
-					String graphID = msg;
+					val graphID:String = msg;
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
@@ -414,7 +419,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//msg = outDegreeDistribution(msg);
 					//out.println("result-from-" + msg);
 					
-					String graphID = msg;
+					val graphID:String = msg;
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
@@ -424,7 +429,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//msg = outDegreeDistribution(msg);
 					//out.println("result-from-" + msg);
 					
-					String partitionID = msg;
+					val partitionID:String = msg;
 					
 					//Next is the host list
 					out.println(AcaciaInstanceProtocol.OK);
@@ -444,7 +449,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//msg = outDegreeDistribution(msg);
 					//out.println("result-from-" + msg);
 					
-					String graphID = msg;
+					val graphID:String = msg;
 					
 					//Next, we get the partitionID on which we are operating
 					out.println(AcaciaInstanceProtocol.OK);
@@ -454,19 +459,19 @@ public class AcaciaInstanceServiceSession extends Thread{
 					msg = buff.readLine().trim();
 					
 					
-					String partitionID = msg;
+					val partitionID:String = msg;
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
-					String hostList = buff.readLine().trim(); //Here we get the list of hosts involved in the Top-K PageRank calculation
+					val hostList:String = buff.readLine().trim(); //Here we get the list of hosts involved in the Top-K PageRank calculation
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
 					msg = buff.readLine().trim(); //Here we get the K value of Top-K PageRank
 					
-					msg = pageRankTopKLocal(graphID, partitionID, hostList, Integer.parseInt(msg));
+					msg = pageRankTopKLocal(graphID, partitionID, hostList, Int.parseInt(msg));
 					out.println(msg);
 					out.flush();
 				}else if (msg.equals(AcaciaInstanceProtocol.TRIANGLES)){
@@ -476,7 +481,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Here we will receve the graph ID
 					msg = buff.readLine().trim();
 					
-					String graphID = msg;
+					val graphID:String = msg;
 					
 					//Once we get the graph ID we need to figureout on which partition are we going to operate on
 					//We get this information from the master
@@ -485,7 +490,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 					
 					//Here we will receve the graph ID
 					msg = buff.readLine().trim();
-					String partitionID = msg;
+					val partitionID:String = msg;
 					msg = countTrainglesLocal(graphID, partitionID);
 					out.println(msg);
 					out.flush();
@@ -501,21 +506,21 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					msg = buff.readLine().trim();
-					System.out.println(msg);
-					String graphID = msg;
+					Console.OUT.println(msg);
+					val graphID:String = msg;
 
 					out.println(AcaciaInstanceProtocol.SEND_FILE_NAME);
 					out.flush();
 					msg = buff.readLine().trim();
-					String fileName = msg;
-					System.out.println(msg);
+					var fileName:String = msg;
+					Console.OUT.println(msg);
 
 					out.println(AcaciaInstanceProtocol.SEND_FILE_LEN);
 					out.flush();
 
 					msg = buff.readLine().trim();
-					long fileLen = Long.parseLong(msg);
-					System.out.println(msg);
+					val fileLen:Long = Long.parseLong(msg);
+					Console.OUT.println(msg);
 
 					out.println(AcaciaInstanceProtocol.SEND_FILE_CONT);
 					out.flush();
@@ -525,13 +530,13 @@ public class AcaciaInstanceServiceSession extends Thread{
 					// Mere file exitance is not enough to continue, because we
 					// might have another thread writing data to the file.
 
-					String fullFilePath = "/tmp/dgr/" + fileName;
-					File f = new File(fullFilePath);
+					val fullFilePath:String = "/tmp/dgr/" + fileName;
+					val f:File = new File(fullFilePath);
 
 					while ((!f.exists()) && (f.length() < fileLen)) {
 						msg = buff.readLine().trim();
 
-						Logger_Java.info("curlen : " + f.length()
+						Logger.info("curlen : " + f.length()
 								+ " fileLen : " + fileLen);
 
 						if (msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)) {
@@ -547,11 +552,10 @@ public class AcaciaInstanceServiceSession extends Thread{
 						out.flush();
 					}
 
-					Logger_Java.info("Got the file--> : " + fileName);
+					Logger.info("Got the file--> : " + fileName);
 
-					fileName = fileName.substring(fileName.indexOf("_") + 1,
-							fileName.lastIndexOf("_"));
-					Logger_Java.info("Partition ID : " + fileName);
+					fileName = fileName.substring(fileName.indexOf("_") + 1n, fileName.lastIndexOf("_"));
+					Logger.info("Partition ID : " + fileName);
 					unzipAndBatchUploadCentralStore(graphID, fileName);
 
 					while (!isUploadCompleted(fullFilePath)) {
@@ -575,54 +579,53 @@ public class AcaciaInstanceServiceSession extends Thread{
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					msg = buff.readLine().trim();
-					System.out.println("RDF msg recieved"+msg);
-					String graphID = msg;
+					Console.OUT.println("RDF msg recieved"+msg);
+					val graphID:String = msg;
 				}else if(msg.equals(AcaciaInstanceProtocol.EXECUTE_QUERY)){
 					out.println(AcaciaInstanceProtocol.SEND_QUERY);
 					out.flush();
 					msg = buff.readLine().trim();
-					String query=msg;
+					val query:String=msg;
 					
 					out.println(AcaciaInstanceProtocol.SEND_GID);
 					out.flush();
 					msg = buff.readLine().trim();
-					String gID=msg;
+					val gID:String=msg;
 					
 					out.println(AcaciaInstanceProtocol.SEND_PARTITION_ID);
 					out.flush();
 					msg = buff.readLine().trim();
-					String pID=msg;
+					val pID:String=msg;
 
 					out.println(AcaciaInstanceProtocol.SEND_PLACEID);
 					out.flush();
 					msg = buff.readLine().trim();
-					String placeID=msg;
+					val placeID:String=msg;
 					
 					out.println(AcaciaInstanceProtocol.SEND_PLACEDETAILS);
 					out.flush();
 					msg = buff.readLine().trim();
-					String placeDetails=msg;
+					val placeDetails:String=msg;
 					
 					
 					//locally get the answers
-					ExecuteQuery execute_query=new ExecuteQuery();  
-					ArrayList<String> result=execute_query.executeQuery(query,gID,pID,placeID);
+					val execute_query:ExecuteQuery=new ExecuteQuery();  
+					val result:ArrayList[String]=execute_query.executeQuery(query,gID,pID,placeID);
 					
 					//globally get the answers
-					System.out.println(placeDetails);
+					Console.OUT.println(placeDetails);
 					loadDistributedCentralStoreData(gID,pID,placeID,placeDetails);
 					
 					if((result != null) && (!result.isEmpty())){
 						out.println("Not empty");
 						out.flush();
 						
-						for(int i=0;i<result.size();i++){
+						for(var i:Int=0n;i<result.size();i++){
 							
 							msg = buff.readLine().trim();
 							if(msg.equals("Send")){
-							
-						out.println(result.get(i));
-						out.flush();
+								out.println(result.get(i));
+								out.flush();
 							}
 						}
 						out.println("Finish");
@@ -633,93 +636,95 @@ public class AcaciaInstanceServiceSession extends Thread{
 						out.flush();
 					}
 				}else{
-					System.out.println("************************|" + msg + "|");
+					Console.OUT.println("************************|" + msg + "|");
 				}
 			}
-		}catch(IOException e){
-			Logger_Java.error("Error : " + e.getMessage());
+		}catch(val e:IOException){
+			Logger.error("Error : " + e.getMessage());
 		}
 	}
 
-	private void loadDistributedCentralStoreData(String gID,String pID, String placeId, String placeDetails) throws NumberFormatException, UnknownHostException, IOException{
+	private def loadDistributedCentralStoreData(val gID:String, val pID:String, val placeId:String, val placeDetails:String): void {	
+		val baseDir:String = "/var/tmp/acad-localstore";//Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
+		val places:Rail[String] = placeDetails.split(",");
 		
-		String baseDir = "/var/tmp/acad-localstore";//Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
-		String[] places=placeDetails.split(",");
-		
-		for(int i=0;i<places.length;i++){
-			
-			//placeid +host+prot
-			String[] details=places[i].split("/");
-			
-			if(details[0].equals(placeId)){
+        try{
+			for(var i:Int=0n;i<places.size;i++){
 				
-				continue;
-			}
-		
-			else{
+				//placeid +host+prot
+				val details:Rail[String]=places(i).split("/");
 				
-		Socket socket = new Socket(details[1], Integer.parseInt(details[2]));
-		PrintWriter out = new PrintWriter(socket.getOutputStream());
-		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		String response = "";		
-		
-		out.println(AcaciaInstanceProtocol.HANDSHAKE);
-		out.flush();
-		response = reader.readLine();
-		
-		System.out.println("resp1:" + response);
-		
-		if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
-			System.out.println("ccc");
-			out.println(java.net.InetAddress.getLocalHost().getHostName());
-			out.flush();
-		
-		//AcaciaHashMapNativeStore centralStore = new AcaciaHashMapNativeStore(Integer.parseInt(gID), Integer.parseInt(pID),baseDir,true,Integer.parseInt(placeId));
-		//centralStore.loadGraph();
-		
-		}
+				if(details(0).equals(placeId)){
+					continue;
+				}else{				
+					val socket:Socket = new Socket(details(1), Int.parseInt(details(2)));
+					val out:PrintWriter = new PrintWriter(socket.getOutputStream());
+					val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					var response:String = "";		
+					
+					out.println(AcaciaInstanceProtocol.HANDSHAKE);
+					out.flush();
+					response = reader.readLine();
+					
+					Console.OUT.println("resp1:" + response);
+					
+					if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+						Console.OUT.println("ccc");
+						out.println(java.net.InetAddress.getLocalHost().getHostName());
+						out.flush();
+					
+					//AcaciaHashMapNativeStore centralStore = new AcaciaHashMapNativeStore(Integer.parseInt(gID), Integer.parseInt(pID),baseDir,true,Integer.parseInt(placeId));
+					//centralStore.loadGraph();
+					
+					}
+				}
 			}
-	}
+        }catch(val ex:IOException){
+            Logger.error("Error : " + ex.getMessage());
+        }
 	}
 
 
-	private String countTrainglesLocal(String g, String p) {
-		String result = null;
-		String gid = g + "_" + p;
+	private def countTrainglesLocal(val g:String, val p:String) : String {
+		var result:String = null;
+		var gid:String = g + "_" + p;
 		//First we need to load the graph database server instance.
-		AcaciaLocalStore graphDB = null;
+		var graphDB:AcaciaLocalStore = null;
+
 		if (defaultGraph == null){	
 			graphDB = graphDBMap.get(gid);
 			if(graphDB == null){
 				//We see whether the graph is offline
 				if(isGraphDBExists(g, p)){
 					loadLocalStore(g, p);
-					//System.out.println("+++++++++++++++++++++++++++++>");
+					//Console.OUT.println("+++++++++++++++++++++++++++++>");
 				}
 				
 				graphDB = graphDBMap.get(gid);
 				if(graphDB == null){		
 					result = "-1";
-					System.out.println("==++-->The graph db is null");
+					Console.OUT.println("==++-->The graph db is null");
 					return result;
 				}
 			}
 		}else{
 			graphDB = defaultGraph;
 		}
-		//System.out.println("++==++-->now running traingles");
-		result = Triangles.run(graphDB, g, p, Utils_Java.getServerHost());
-		//System.out.println("++==++-->result at (1) : " + result);
+		//Console.OUT.println("++==++-->now running traingles");
+        //+Miyuru: Temp comment
+		//result = Triangles.run(graphDB, g, p, Utils_Java.getServerHost());
+		//Console.OUT.println("++==++-->result at (1) : " + result);
 		return result;
 	}
 
-	private String pageRankTopKLocal(String graphID, String partitionID, String hostList, int k) {
-		String result = null;
-		AcaciaLocalStore graphDB = null;
-		String gid = graphID + "_" + partitionID;
-		Logger_Java.info("PPPPP1");
+	private def pageRankTopKLocal(val graphID:String, val partitionID:String, val hostList:String, val k:Int) : String {
+		var result:String = null;
+		var graphDB:AcaciaLocalStore = null;
+		var gid:String = graphID + "_" + partitionID;
+		Logger.info("PPPPP1");
+
 		if (defaultGraph == null){	
-			System.out.println("PPPPP2");
+			Console.OUT.println("PPPPP2");
 			graphDB = graphDBMap.get(gid);
 			if(graphDB == null){
 				//We see whether the graph is offline
@@ -733,67 +738,69 @@ public class AcaciaInstanceServiceSession extends Thread{
 					return result;
 				}
 			}
-			System.out.println("PPPPP3");
+			Console.OUT.println("PPPPP3");
 		}else{
-			System.out.println("PPPPP4");
+			Console.OUT.println("PPPPP4");
 			graphDB = defaultGraph;
 		}
 		//entireGraphSize = Integer.parseInt(countVertices(graphID));
-		System.out.println("Started Approx Rank");
-		result = ApproxiRank.run(graphID, partitionID, graphDB, hostList, serverHostName, k);
-		System.out.println("Done Approx Rank");
+		Console.OUT.println("Started Approx Rank");
+        //+Miyuru : temporary comment
+		//result = ApproxiRank.run(graphID, partitionID, graphDB, hostList, serverHostName, k);
+		Console.OUT.println("Done Approx Rank");
 		return result;
 	}
 
-	private String getInstanceStatus() {
-        String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
-        String line = null;
-        String[] strArr = null;
-        String instanceCapacity = null;
-        String thisHost = null;
+	private def getInstanceStatus() : String {
+        var dataFolder:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
+        var line:String = null;
+        var strArr:Rail[String] = null;
+        var instanceCapacity:String = null;
+        var thisHost:String = null;
         
         try{
         	thisHost = java.net.InetAddress.getLocalHost().getHostName();
-	        BufferedReader reader = new BufferedReader(new FileReader("conf/localstorage.txt"));
+	        var reader:BufferedReader = new BufferedReader(new FileReader("conf/localstorage.txt"));
 	
 	        while((line = reader.readLine()) != null){
 	        	//Here we just read first line and then break. But this may not be the best option. Better iterate through all the
 	        	//lines and accumulate those to a HashMap in future.
 	        	strArr = line.split(":");
-	        	if(thisHost.equals(strArr[0])){
+	        	if(thisHost.equals(strArr(0))){
 	        		break;
-	        	}	        	
+	        	}
 	        }
-        }catch(UnknownHostException e){
-			Logger_Java.error("Connecting to localhost got error message (11) : " + e.getMessage());
-		}catch(IOException ec){
+        }catch(val e:UnknownHostException){
+			Logger.error("Connecting to localhost got error message (11) : " + e.getMessage());
+		}catch(val ec:IOException){
         	ec.printStackTrace();
         }
         
-        instanceCapacity = strArr[1];
+        instanceCapacity = strArr(1);
         
         //First we need to check whether the Acacia's data directory exists or not.
-        File fileChk = new File(dataFolder);
+        var fileChk:File = new File(dataFolder);
+        
         if(fileChk.exists() && fileChk.isDirectory()){
         	//There is no problem
         }else{
         	//Here we need to create the directory first
         	try{
         		FileUtils.forceMkdir(fileChk);
-        	}catch(IOException ex){
-        		Logger_Java.error("Creating the Acacia data folder threw an Exception : " + ex.getMessage());
+        	}catch(val ex:IOException){
+        		Logger.error("Creating the Acacia data folder threw an Exception : " + ex.getMessage());
         	}
         }
         
-        long size = Math.round(FileUtils.sizeOfDirectory(new File(dataFolder))/(1024*1024)); // Divide by 1024*1024 to convert to MB
-        double d = size/Double.parseDouble(instanceCapacity);
-        java.text.DecimalFormat f = new java.text.DecimalFormat();
-        f.setMaximumFractionDigits(2);
+        val size:Double = Math.round(FileUtils.sizeOfDirectory(new File(dataFolder)) * 1.0d/(1024*1024)); // Divide by 1024*1024 to convert to MB
+        val d:Double = size/Double.parseDouble(instanceCapacity);
+        val f:java.text.DecimalFormat = new java.text.DecimalFormat();
+        f.setMaximumFractionDigits(2n);
         
         //The status message is of the format <Size of the local storage usage>:<Max local storage size>:<percentage of local storage used>
         instanceCapacity = size + ":" + instanceCapacity + ":" + f.format(d);
         
-        System.out.println("status : " + instanceCapacity);
+        Console.OUT.println("status : " + instanceCapacity);
         
 		return instanceCapacity;
 	}
@@ -803,10 +810,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @param filePath
 	 * @return
 	 */
-	private boolean isUploadCompleted(String filePath){
-		boolean result = false;
-		
-		File f = new File(filePath);
+	private def isUploadCompleted(val filePath:String):Boolean{
+		var result:Boolean = false;
+		val f:File = new File(filePath);
 		
 		if(f.exists()){
 			result = false;
@@ -822,42 +828,42 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @param graphID
 	 * @return
 	 */
-	private boolean isGraphDBExists(String graphID, String partitionID){
-		File f = new File(dataFolder + "/" + graphID + "_" + partitionID);
+	private def isGraphDBExists(val graphID:String, val partitionID:String):Boolean{
+		val f:File = new File(dataFolder + "/" + graphID + "_" + partitionID);
 		
 		return f.isDirectory();
 	}
 	
-	private boolean isGraphDBLoaded(String graphID, String graphPartitionID){	
+	private def isGraphDBLoaded(val graphID:String, val graphPartitionID:String):Boolean{	
 		return graphDBMap.containsKey(graphID + "_" + graphPartitionID);
 	}
 	
-	public void unzipAndBatchUpload(final String graphID, final String partitionID) {
+	public def unzipAndBatchUpload(val graphID:String, val partitionID:String) : void {
 		//AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
 //		AcaciaHashMapLocalStore localStore = (AcaciaHashMapLocalStore)AcaciaLocalStoreFactory.create(Integer.parseInt(graphID), Integer.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false, AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
 //		localStore.loadGraph();
 		
 				try{
 					//Unzipping starts here
-					Runtime r = Runtime.getRuntime();
+					var r:Runtime = Runtime.getRuntime();
 					
 					//Next, we unzip the file
-					Process p = r.exec("unzip /tmp/dgr/" + graphID + "_" +  partitionID + ".zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator  + graphID + "_" + partitionID);
+					var p:Process = r.exec("unzip /tmp/dgr/" + graphID + "_" +  partitionID + ".zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator  + graphID + "_" + partitionID);
 					p.waitFor();
 					
-					BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-					String line = "";
+					val b:BufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					var line:String = "";
 					
 					while((line=b.readLine())!= null){
-						System.out.println(line);
+						Console.OUT.println(line);
 					}
-					System.out.println("Check 3");
+					Console.OUT.println("Check 3");
 					
-					System.out.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip|");
+					Console.OUT.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip|");
 					p = r.exec("rm /tmp/dgr/" + graphID + "_" + partitionID + ".zip");
 					p.waitFor();
 					
-					//System.out.println("Completed unzipping");
+					//Console.OUT.println("Completed unzipping");
 					//Unzipping completed
 					/*
 					 * August 3 2015 10 50pm: Wee need not have the following code since we are sending the serialized files.
@@ -886,74 +892,84 @@ public class AcaciaInstanceServiceSession extends Thread{
 					//Also we need to add a catalog record in the instance's local data store about the graph and its partition IDs
 					writeCatalogRecord("" + graphID + ":" + partitionID);
 					
-				}catch(Exception e){
-					e.printStackTrace();
+				}catch(val e1:java.io.IOException){
+                    Logger.error("Error : " + e1.getMessage());
+				}catch(val e2:java.lang.InterruptedException){
+                    Logger.error("Error : " + e2.getMessage());
+	            }catch(val e:Exception){
+                    Logger.error("Error : " + e.getMessage());
 				}
 	}
 	
-	private void unzipAndBatchUploadCentralStore(String graphID, String partitionID) {
+	private def unzipAndBatchUploadCentralStore(val graphID:String, val partitionID:String) : void{
 		try {
-			File f = new File(Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore");
+			val f:File = new File(Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore");
 			
 			if(!f.isDirectory()){
 				f.mkdir();
 			}
 			
-			Runtime r = Runtime.getRuntime();
-			Process p = r.exec("unzip /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore/" + graphID + "_" + partitionID);
+			val r:Runtime = Runtime.getRuntime();
+			var p:Process = r.exec("unzip /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore/" + graphID + "_" + partitionID);
 			p.waitFor();
 
-			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			String line = "";
+			val b:BufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			var line:String = "";
 
 			while((line=b.readLine())!= null){
-				System.out.println("Central store graph sending " + graphID + "_" + partitionID);
+				Console.OUT.println("Central store graph sending " + graphID + "_" + partitionID);
 			}
 			
-			System.out.println("Deleting676767");
-			System.out.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip|");
+			Console.OUT.println("Deleting676767");
+			Console.OUT.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip|");
 			p = r.exec("rm /tmp/dgr/" + graphID + "_" + partitionID + "_trf.zip");
 			p.waitFor();
 			
-			System.out.println("Completed unzipping");		
+			Console.OUT.println("Completed unzipping");		
 			
-		} catch (Exception e) {
-			Logger_Java.info("Error : " + e.getMessage());
+		}catch(val e1:java.io.IOException){
+            Logger.info("Error : " + e1.getMessage());
+		}catch(val e2:java.lang.InterruptedException){
+            Logger.info("Error : " + e2.getMessage());
+	    }catch (val e:Exception) {
+			Logger.info("Error : " + e.getMessage());
 		}
 	}
 
-	private void writeCatalogRecord(String record) {
+	private def writeCatalogRecord(val record:String) : void{
         //First we need to check whether the Acacia's data directory exists or not.
-        File fileChk = new File(dataFolder);
+        val fileChk:File = new File(dataFolder);
+        
         if(fileChk.exists() && fileChk.isDirectory()){
         	//There is no problem
         }else{
         	//Here we need to create the directory first
         	try{
         		org.apache.commons.io.FileUtils.forceMkdir(fileChk);
-        	}catch(IOException ex){
-        		Logger_Java.error("Creating the Acacia data folder threw an Exception : " + ex.getMessage());
+        	}catch(val ex:IOException){
+        		Logger.error("Creating the Acacia data folder threw an Exception : " + ex.getMessage());
         	}
         }				
 		
-		File catalog = new File(dataFolder + "/catalog");
-		boolean b = false;
+		val catalog:File = new File(dataFolder + "/catalog");
+		var b:Boolean = false;
+
 		try{
 			if(!catalog.exists()){
 				b = catalog.createNewFile();
 			}
 			
 			if(b){
-				System.out.println("The catalog file was newly created.");
+				Console.OUT.println("The catalog file was newly created.");
 			}
 		
-			BufferedWriter writer = new BufferedWriter(new FileWriter(catalog, true));//We are appending to the file rather than replacing
+			val writer:BufferedWriter = new BufferedWriter(new FileWriter(catalog, true));//We are appending to the file rather than replacing
 			writer.write(record);
 			writer.write("\n");//We need a new line to separate between two records.
 			writer.flush();
 			writer.close();
-		}catch(IOException e){
-			System.out.println("There is an error is writing to the AcaciaInstance's catalog.");
+		}catch(val e:IOException){
+			Console.OUT.println("There is an error is writing to the AcaciaInstance's catalog.");
 		}
 	}
 	
@@ -969,26 +985,26 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @return
 	 */
     //ToDO: In future we need to update the catalog file located in the data directory.
-	private String deleteGraph(String graphID, String partitionID) {
-		String result = "0";
+	private def deleteGraph(val graphID:String, val partitionID:String) : String {
+		var result:String = "0";
 		
 		//We need to first turn-off the graph DB instance
 		if (graphDBMap.containsKey(graphID)){
-			Logger_Java.info("Unloading the graph - " + graphID + ":" + partitionID);
+			Logger.info("Unloading the graph - " + graphID + ":" + partitionID);
 			unloadLocalStore(graphID, partitionID);
 		}else{
-			Logger_Java.info("The following graph was not loaded to the system - " + graphID + ":" + partitionID);
+			Logger.info("The following graph was not loaded to the system - " + graphID + ":" + partitionID);
 		}
 		
 		//Next we need to delete the file content from the acacia instance directory.
 		try{
-			Logger_Java.info("Deleting the folder: " + dataFolder + "/" + graphID + "_" + partitionID);
+			Logger.info("Deleting the folder: " + dataFolder + "/" + graphID + "_" + partitionID);
 			FileUtils.deleteDirectory(new File(dataFolder + "/" + graphID + "_" + partitionID));
-			Logger_Java.info("Deleting the folder: " + dataFolder + "/" + graphID + "_centralstore");
+			Logger.info("Deleting the folder: " + dataFolder + "/" + graphID + "_centralstore");
 			FileUtils.deleteDirectory(new File(dataFolder + "/" + graphID + "_centralstore"));
-			Logger_Java.info("Done deleting.");
-		}catch(IOException ec){
-			Logger_Java.error("Error in deleting the file : " + ec.getMessage());
+			Logger.info("Done deleting.");
+		}catch(var ec:IOException){
+			Logger.error("Error in deleting the file : " + ec.getMessage());
 		}
 		
 		/*
@@ -1004,7 +1020,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		
 		for(File file : files){
 			if(!file.delete()){
-				Logger_Java.info("Cannot delete file : " + file.getName());
+				Logger.info("Cannot delete file : " + file.getName());
 				result = "-1";
 			}
 		}
@@ -1017,34 +1033,34 @@ public class AcaciaInstanceServiceSession extends Thread{
 		return result;
 	}
 
-	public void setDefaultGraph(String graphID, String partitionID){
-		String gid = graphID + "_" + partitionID;
+	public def setDefaultGraph(val graphID:String, val partitionID:String):void{
+		val gid:String = graphID + "_" + partitionID;
 		defaultGraph = graphDBMap.get(gid);
 		defaultGraphID = gid;
-		System.out.println("The default graph is set to : " + gid);
+		Console.OUT.println("The default graph is set to : " + gid);
 	}
 	
-	public void unSetDefaultGraph(String graphID, String partitionID){
+	public def unSetDefaultGraph(val graphID:String, val partitionID:String):void{
 		defaultGraph = null;
 		defaultGraphID = null;
 	}
 	
-	public void loadLocalStore(String graphID, String partitionID){
-		String gid = graphID + "_" + partitionID;
-		System.out.println("gid:"+gid);
+	public def loadLocalStore(val graphID:String, val partitionID:String):void{
+		val gid:String = graphID + "_" + partitionID;
+		Console.OUT.println("gid:"+gid);
 		//int graphID, int partitionID
 		//AcaciaHashMapLocalStore graphDB = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
-		AcaciaLocalStore graphDB = AcaciaLocalStoreFactory.load(Integer.parseInt(graphID), Integer.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false);
+		val graphDB:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), Int.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false);
 		//graphDB.loadGraph();
 		graphDBMap.put(gid, graphDB);
 		loadedGraphs.add(gid);
 		
 //		try{
-//			//Logger_Java.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
+//			//Logger.info("Loaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
 //		}catch(UnknownHostException ex){
-//			Logger_Java.error("Error : " + ex.getMessage());
+//			Logger.error("Error : " + ex.getMessage());
 //		}
-		//System.out.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
+		//Console.OUT.println("------------ Done Running from AAAAAAAAAAAAAAAAAAAAAAAAAAAA--------");
 	}
 	
 	/**
@@ -1054,20 +1070,21 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * the data by graph id without use of partition id. 
 	 * @param graphID
 	 */
-	public void unloadLocalStore(String graphID, String partitionID){
-		Iterator it = graphDBMap.entrySet().iterator();
-		HashMap<String, AcaciaLocalStore> graphDBMap2 = new HashMap<String, AcaciaLocalStore>();
-		ArrayList<String> loadedGraphs2 = new ArrayList<String>();
-		String gid = graphID + "_" + partitionID;
+	public def unloadLocalStore(val graphID:String, val partitionID:String):void{
+		val it:Iterator[Map.Entry[String, AcaciaLocalStore]] = graphDBMap.entries().iterator();
+		var graphDBMap2:HashMap[String, AcaciaLocalStore] = new HashMap[String, AcaciaLocalStore]();
+		var loadedGraphs2:ArrayList[String] = new ArrayList[String]();
+		val gid:String = graphID + "_" + partitionID;
 		
 		while(it.hasNext()){
-			Map.Entry<String, AcaciaLocalStore> pairs = (Map.Entry<String, AcaciaLocalStore>)it.next();
-			if (pairs.getKey().equals(gid)){
-				((AcaciaLocalStore)pairs.getValue()).storeGraph();
+			val pairs:Map.Entry[String, AcaciaLocalStore] = it.next() as Map.Entry[String, AcaciaLocalStore];
+
+            if (pairs.getKey().equals(gid)){
+				(pairs.getValue() as AcaciaLocalStore).storeGraph();
 				try{
-					Logger_Java.info("Unloaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
-				}catch(UnknownHostException ex){
-					Logger_Java.error("Error : " + ex.getMessage());
+					Logger.info("Unloaded the graph " + gid + " at " + java.net.InetAddress.getLocalHost().getHostName());
+				}catch(val ex:UnknownHostException){
+					Logger.error("Error : " + ex.getMessage());
 				}
 			}else{
 				graphDBMap2.put(pairs.getKey(), pairs.getValue());
@@ -1079,11 +1096,11 @@ public class AcaciaInstanceServiceSession extends Thread{
 		loadedGraphs = loadedGraphs2; 
 	}
 	
-	private void fireDBTruncateEvent(DBTruncateEvent evt){
+	private def fireDBTruncateEvent(val evt:DBTruncateEvent):void{
 		listener.truncateEventOccurred(evt);
 	}
 	
-	private void fireShutdownEvent(ShutdownEvent evt){
+	private def fireShutdownEvent(val evt:ShutdownEvent):void{
 		listenerShtdn.shutdownEventOccurred(evt);
 	}
 	
@@ -1092,13 +1109,13 @@ public class AcaciaInstanceServiceSession extends Thread{
 	 * @param startVertexID
 	 * @param endVertexID
 	 */
-	public void insertEdge(long graphID, long startVertexID, long endVertexID){		
-		AcaciaLocalStore graphDB = null;
+	public def insertEdge(val graphID:Long, val startVertexID:Long, val endVertexID:Long):void{		
+		var graphDB:AcaciaLocalStore = null;
 		
 		if (defaultGraph == null){	
-			graphDB = graphDBMap.get(graphID);
+			graphDB = graphDBMap.get(""+ graphID) as AcaciaLocalStore;
 			if(graphDB == null){
-				Logger_Java.error("Error : The graph database instance is NULL.");
+				Logger.error("Error : The graph database instance is NULL.");
 			}
 		}else{
 			graphDB = defaultGraph;
@@ -1106,7 +1123,7 @@ public class AcaciaInstanceServiceSession extends Thread{
 		
 		graphDB.addEdge(startVertexID, endVertexID);
 
-		System.out.println("Done adding edge : " + startVertexID + " " + endVertexID);
+		Console.OUT.println("Done adding edge : " + startVertexID + " " + endVertexID);
 	}
 	
 	/**
@@ -1174,17 +1191,17 @@ public class AcaciaInstanceServiceSession extends Thread{
 		if(itr.hasNext()){
 			resultStr = itr.next().toString();
 //			
-//			System.out.println("1111============================");
+//			Console.OUT.println("1111============================");
 //			Pattern p = Pattern.compile("\\d+(,[ ]\\d+)*");
-//			System.out.println("2222============================");
-//			System.out.println("resultStr : |" + resultStr+"|");
+//			Console.OUT.println("2222============================");
+//			Console.OUT.println("resultStr : |" + resultStr+"|");
 //			Matcher m = p.matcher(resultStr);
-//			System.out.println("wwwwww============================");
+//			Console.OUT.println("wwwwww============================");
 //			while(m.find()){
 //				resultStr = m.group();
 //				break;
 //			}
-//			System.out.println("llllll============================");
+//			Console.OUT.println("llllll============================");
 //			
 			int beginIdx = resultStr.indexOf("[");
 			int endIdx = resultStr.indexOf("]");
@@ -1223,9 +1240,9 @@ public class AcaciaInstanceServiceSession extends Thread{
 	
 	*/
 	
-	public String countVertices(String graphID, String partitionID){
-		String result = "-1";	
-		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+	public def countVertices(val graphID:String, val partitionID:String):String{
+		var result:String = "-1";	
+		var localStore:AcaciaHashMapLocalStore = new AcaciaHashMapLocalStore(Int.parseInt(graphID), Int.parseInt(partitionID));
 		localStore.loadGraph();
 		result = "" + localStore.getVertexCount();
 		
@@ -1234,37 +1251,37 @@ public class AcaciaInstanceServiceSession extends Thread{
 		return result;
 	}
 	
-	public String countEdges(String graphID, String partitionID){
-		String result = "-1";		
-		AcaciaHashMapLocalStore localStore = new AcaciaHashMapLocalStore(Integer.parseInt(graphID), Integer.parseInt(partitionID));
+	public def countEdges(val graphID:String, val partitionID:String):String{
+		var result:String = "-1";		
+		val localStore:AcaciaHashMapLocalStore = new AcaciaHashMapLocalStore(Int.parseInt(graphID), Int.parseInt(partitionID));
 		localStore.loadGraph();
 		result = "" + localStore.getEdgeCount();
 		
 		return result;
 	}
 	
-	public String outDegreeDistribution(String graphID, String partitionID){
-		org.acacia.log.java.Logger_Java.info("Out degree distribution calculation started at : " + org.acacia.util.java.Utils_Java.getHostName());
-		StringBuilder resultSB = new StringBuilder();		
-		AcaciaLocalStore graphDB = null;
-		String gid = graphID + "_" + partitionID;
+	public def outDegreeDistribution(val graphID:String, val partitionID:String):String{
+		Logger.info("Out degree distribution calculation started at : " + org.acacia.util.java.Utils_Java.getHostName());
+		val resultSB:StringBuilder = new StringBuilder();		
+		var graphDB:AcaciaLocalStore = null;
+		val gid:String = graphID + "_" + partitionID;
 		
 		if (defaultGraph == null){
-			System.out.println("MM1");
+			Console.OUT.println("MM1");
 			graphDB = graphDBMap.get(gid);
-			System.out.println("MM2");
+			Console.OUT.println("MM2");
 			if(graphDB == null){
 				//We see whether the graph is offline
-				System.out.println("MM4");
+				Console.OUT.println("MM4");
 				if(isGraphDBExists(graphID, partitionID)){
-					System.out.println("Start loading the graph : " + graphID);
+					Console.OUT.println("Start loading the graph : " + graphID);
 					loadLocalStore(graphID, partitionID);
-					System.out.println("Loaded the graph : " + graphID);
+					Console.OUT.println("Loaded the graph : " + graphID);
 				}
-				System.out.println("MM5");
+				Console.OUT.println("MM5");
 				graphDB = graphDBMap.get(gid);
 				if(graphDB == null){		
-					resultSB.append("-1");
+					resultSB.add("-1");
 					return resultSB.toString();
 				}
 			}
@@ -1272,10 +1289,10 @@ public class AcaciaInstanceServiceSession extends Thread{
 			graphDB = defaultGraph;
 		}	
 		
-		HashMap<Long, Long> resMap = null;
+		var resMap:HashMap[Long, Long] = null;
 		
 //		//Next we get the out degree of each vertex
-//		System.out.println("ASDS111");
+//		Console.OUT.println("ASDS111");
 //		ExecutionEngine engine = new ExecutionEngine(graphDB);		
 //		HashMap<Long, Long> resMap = new HashMap<Long, Long>(); 
 //		ExecutionResult execResult = engine.execute("start n=node(*) match n-->m return n, n.vid, count(m)");
@@ -1302,14 +1319,14 @@ public class AcaciaInstanceServiceSession extends Thread{
 //				resMap.put(vid, oDeg);
 //			}
 //		}
-//		System.out.println("ASDS222");
+//		Console.OUT.println("ASDS222");
 		
 //        String dataFolder = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 //        String line = null;
 		
-		resMap = ((AcaciaHashMapLocalStore)graphDB).getOutDegreeDistributionHashMap();
+		resMap = (graphDB as AcaciaHashMapLocalStore).getOutDegreeDistributionHashMap();
 		
-        int partitionId = -1;
+        var partitionId:Int = -1n;
 //        try{
 //	        BufferedReader reader = new BufferedReader(new FileReader(dataFolder + "/catalog"));
 //	
@@ -1324,53 +1341,61 @@ public class AcaciaInstanceServiceSession extends Thread{
 //        }
 //        
 //        partitionId = Integer.parseInt(line.split(":")[1]);
-        System.out.println("ASDS223");
+        Console.OUT.println("ASDS223");
         //partitionId = Utils_Java.getPartitionIDFromCatalog(Integer.parseInt(graphID));
         
-        //System.out.println("partition ID : " + partitionId);
+        //Console.OUT.println("partition ID : " + partitionId);
         //Next we request and get all the local to world degree distribution. This will be a list of vertices of this
         //graph partition which are connected with the extrenal world, each vertex will have its associated out degree.
         
         //AcaciaInstanceToManagerAPI
         //String serverHost, int graphID, int partitionID
-        String serverHostName = Utils_Java.getServerHost();
+        var serverHostName:String = Utils.getServerHost();
 		
 		//Next, we need to resolve the out links that are from the vertices of this subgraph to the external world
-		HashMap<String, String> res = AcaciaInstanceToManagerAPI.getLambdaOutDegreeDistribution(serverHostName, graphID, partitionID);
-		long vertex = 0;
-		long outDegree = 0;
-		long updatecount = 0;
-		for(Entry<String, String> item : res.entrySet()){
-			vertex = Integer.parseInt(item.getKey());
-			outDegree = Integer.parseInt(item.getValue());
+        //+Miyuru : temporary comment
+		//val res:HashMap[String, String] = AcaciaInstanceToManagerAPI.getLambdaOutDegreeDistribution(serverHostName, graphID, partitionID);
+        val res:HashMap[String, String] = null;
+        
+        var vertex:Long = 0;
+		var outDegree:Long = 0;
+		var updatecount:Long = 0;
+        var itr1:Iterator[Map.Entry[String, String]] = res.entries().iterator();
+        
+		while(itr1.hasNext()){
+            var item:Map.Entry[String, String] = itr1.next();
+			vertex = Int.parseInt(item.getKey());
+			outDegree = Int.parseInt(item.getValue());
 			
 			if(resMap.containsKey(vertex)){
-				outDegree += resMap.get(vertex);
+				outDegree += resMap.get(vertex) as Long;
 				updatecount++;
 			}
 			
 			resMap.put(vertex, outDegree);
 		}
 		
-		System.out.println("=========================> updated this many vertices : " + updatecount);
-		
-		for(Entry<Long, Long> item : resMap.entrySet()){
-			resultSB.append("" + item.getKey() + ":" + item.getValue()+";");
+		Console.OUT.println("=========================> updated this many vertices : " + updatecount);
+		var itr:Iterator[Map.Entry[Long, Long]] = resMap.entries().iterator();
+
+		while(itr.hasNext()){
+            var item:Map.Entry[Long, Long] = itr.next();
+			resultSB.add("" + item.getKey() + ":" + item.getValue()+";");
 		}
 		
-		org.acacia.log.java.Logger_Java.info("Out degree distribution calculation completed at : " + org.acacia.util.java.Utils_Java.getHostName());
+		org.acacia.log.Logger.info("Out degree distribution calculation completed at : " + org.acacia.util.Utils.getHostName());
 		
 		return resultSB.toString();
 	}
 	
-	public String pageRankLocal(String graphID, String partitionID, String hostList){
-		String result = null;
-		AcaciaLocalStore graphDB = null;
-		System.out.println("PPPPP1");
-		String gid = graphID + "_" + partitionID;
+	public def pageRankLocal(val graphID:String, val partitionID:String, val hostList:String):String{
+		var result:String = null;
+		var graphDB:AcaciaLocalStore = null;
+		Console.OUT.println("PPPPP1");
+		val gid:String = graphID + "_" + partitionID;
 		
 		if (defaultGraph == null){	
-			System.out.println("PPPPP2");
+			Console.OUT.println("PPPPP2");
 			graphDB = graphDBMap.get(gid);
 			if(graphDB == null){
 				//We see whether the graph is offline
@@ -1384,15 +1409,17 @@ public class AcaciaInstanceServiceSession extends Thread{
 					return result;
 				}
 			}
-			System.out.println("PPPPP3");
+			Console.OUT.println("PPPPP3");
 		}else{
-			System.out.println("PPPPP4");
+			Console.OUT.println("PPPPP4");
 			graphDB = defaultGraph;
 		}
 		//entireGraphSize = Integer.parseInt(countVertices(graphID));
-		System.out.println("Started Approx Rank");
-		result = ApproxiRank.run(graphID, partitionID, graphDB, hostList, serverHostName, -1); //Here we send -1 meaning we want the entire pagerank vector, nit top-k pageranks.
-		System.out.println("Done Approx Rank");
+		Console.OUT.println("Started Approx Rank");
+
+        //+Miyuru : Oct 4 2015, just commenting out for the moment to facilitate the migration
+		//result = ApproxiRank.run(graphID, partitionID, graphDB, hostList, serverHostName, -1n); //Here we send -1 meaning we want the entire pagerank vector, nit top-k pageranks.
+		Console.OUT.println("Done Approx Rank");
 		return result;
 	}
 	
@@ -1428,11 +1455,11 @@ public class AcaciaInstanceServiceSession extends Thread{
 //		return result;
 //	}	
 	
-	public void addDBTruncateEventListener(DBTruncateEventListener listener){
+	public def addDBTruncateEventListener(val listener:DBTruncateEventListener):void{
 		this.listener = listener;
 	}
 	
-	public void addShutdownEventListener(ShutdownEventListener listener){
+	public def addShutdownEventListener(val listener:ShutdownEventListener):void{
 		this.listenerShtdn = listener;
 	}
 }

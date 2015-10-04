@@ -14,9 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.localstore.java;
+package org.acacia.localstore;
 
-public class AcaciaLocalStoreTypes {
-	public final static int HASH_MAP_LOCAL_STORE = 0;
-	public final static int HASH_MAP_NATIVE_STORE = 1;
+import x10.util.HashMap;
+import x10.util.HashSet;
+
+public interface AcaciaLocalStore {
+
+	public def loadGraph():Boolean;
+	
+	public def storeGraph():Boolean;
+	
+	public def getUnderlyingHashMap():HashMap[Long, HashSet[Long]];
+	
+	public def getOutDegreeDistributionHashMap():HashMap[Long, Long];
+	
+	public def initialize():void;
+	
+	public def addVertex(attributes:Rail[Any]):void;
+	
+	public def addEdge(startVid:Long, endVid:Long):void;
+	
+	public def getVertexCount():Long;
+	
+	public def getEdgeCount():Long;
+
 }

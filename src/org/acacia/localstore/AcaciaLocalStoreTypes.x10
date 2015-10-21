@@ -14,14 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package test.acacia.server;
+package org.acacia.localstore;
 
-import org.acacia.server.java.AcaciaInstanceServiceSession;
-
-public class TestAcaciaInstanceServiceSession{
-	public static void main(String[] args){
-		AcaciaInstanceServiceSession session = new AcaciaInstanceServiceSession();
-		session.unzipAndBatchUpload("1", "480");
-	}
+public class AcaciaLocalStoreTypes {
+	public static val HASH_MAP_LOCAL_STORE:Int = 0n;
+	public static val HASH_MAP_NATIVE_STORE:Int = 1n;
 }
-

@@ -14,14 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package test.acacia.server;
+package org.acacia.tinkerpop.blueprints.impl.java;
 
-import org.acacia.server.java.AcaciaInstanceServiceSession;
-
-public class TestAcaciaInstanceServiceSession{
-	public static void main(String[] args){
-		AcaciaInstanceServiceSession session = new AcaciaInstanceServiceSession();
-		session.unzipAndBatchUpload("1", "480");
+public class AcaciaPredicate implements com.tinkerpop.blueprints.Predicate {
+	public boolean evaluate(Object first, Object second){
+           return false;
 	}
 }
-

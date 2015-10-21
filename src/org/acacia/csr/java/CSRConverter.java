@@ -61,7 +61,6 @@ import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.mapred.lib.TotalOrderPartitioner;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapred.lib.MultipleInputs;
-
 import org.acacia.util.java.Utils_Java;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -74,8 +73,6 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.util.Bytes;
-
-
 import org.acacia.csr.java.LineCount.Map;
 import org.acacia.csr.java.LineCount.Reduce;
 import org.acacia.csr.java.WordCount.IntSumReducer;
@@ -89,8 +86,8 @@ import org.acacia.log.java.Logger_Java;
 //import org.acacia.partitioner.hbase.java.HTableDescriptor;
 //import org.acacia.partitioner.hbase.java.Result;
 import org.acacia.util.java.Conts_Java;
-import org.acacia.vertexcounter.VertexCounterClient;
-import org.acacia.vertexcounter.VertexCounterProtocol;
+import org.acacia.vertexcounter.java.VertexCounterClient;
+import org.acacia.vertexcounter.java.VertexCounterProtocol;
 
 /**
  * Converts and edgelist to CSR format.

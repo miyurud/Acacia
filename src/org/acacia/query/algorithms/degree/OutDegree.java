@@ -24,7 +24,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import org.acacia.log.java.Logger_Java;
-import org.acacia.server.AcaciaInstanceProtocol;
+import org.acacia.server.java.AcaciaInstanceProtocol;
 import org.acacia.util.java.Conts_Java;
 
 import x10.lang.Place;

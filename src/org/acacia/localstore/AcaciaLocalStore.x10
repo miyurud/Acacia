@@ -14,14 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package test.acacia.server;
+package org.acacia.localstore;
 
-import org.acacia.server.java.AcaciaInstanceServiceSession;
+import x10.util.HashMap;
+import x10.util.HashSet;
 
-public class TestAcaciaInstanceServiceSession{
-	public static void main(String[] args){
-		AcaciaInstanceServiceSession session = new AcaciaInstanceServiceSession();
-		session.unzipAndBatchUpload("1", "480");
-	}
+public interface AcaciaLocalStore {
+
+	public def loadGraph():Boolean;
+	
+	public def storeGraph():Boolean;
+	
+	public def getUnderlyingHashMap():HashMap[Long, HashSet[Long]];
+	
+	public def getOutDegreeDistributionHashMap():HashMap[Long, Long];
+	
+	public def initialize():void;
+	
+	public def addVertex(attributes:Rail[Any]):void;
+	
+	public def addEdge(startVid:Long, endVid:Long):void;
+	
+	public def getVertexCount():Long;
+	
+	public def getEdgeCount():Long;
+
 }
-

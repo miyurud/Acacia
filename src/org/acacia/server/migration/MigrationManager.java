@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.acacia.server.AcaciaManager;
+import org.acacia.server.java.AcaciaManager;
 import org.acacia.util.java.Utils_Java;
 
 /**
@@ -312,13 +312,4 @@ public class MigrationManager {// extends Thread {
 //		
 //		System.out.println(mm.getAllocationStrategy(mp));
 	}
-	
-	
-//	public void run(){
-//		while(true){
-//			for(String host : hostList){
-//				AcaciaManager.getFreeSpaceInfo(host);
-//			}
-//		}
-//	}
 }

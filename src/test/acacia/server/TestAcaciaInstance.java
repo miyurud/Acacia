@@ -20,8 +20,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import org.acacia.server.AcaciaInstance;
-import org.acacia.server.AcaciaInstanceFileTransferService;
+import org.acacia.server.java.AcaciaInstance;
+import org.acacia.server.java.AcaciaInstanceFileTransferService;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.log.java.Logger_Java;
 

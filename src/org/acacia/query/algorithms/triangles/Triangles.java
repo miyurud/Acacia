@@ -31,7 +31,7 @@ import java.io.IOException;
 import org.acacia.localstore.java.AcaciaHashMapLocalStore;
 import org.acacia.localstore.java.AcaciaLocalStore;
 import org.acacia.log.java.Logger_Java;
-import org.acacia.server.AcaciaInstanceToManagerAPI;
+import org.acacia.server.java.AcaciaInstanceToManagerAPI;
 import org.acacia.util.java.Utils_Java;
 
 /**

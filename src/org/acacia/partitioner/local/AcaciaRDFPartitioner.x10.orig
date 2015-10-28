@@ -52,7 +52,6 @@ import org.acacia.localstore.java.AcaciaHashMapNativeStore;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 import org.acacia.util.java.Utils_Java;
-import org.acacia.resilience.FaultToleranceScheduler;
 
 /**
  * Class AcaciaRDFPartitioner
@@ -149,10 +148,8 @@ public class AcaciaRDFPartitioner {
     }
     
     public def readDirectory(val inputDirectory:String):void{
-    try{    
     	val dir = new File(inputDirectory);
     	val files = dir.list();
-    Console.OUT.println("creating model inside testing");
     	for(var i:Int=0n;i<files.size;i++){
     		readFile(inputDirectory + java.io.File.separator + files(i));
     	}
@@ -164,10 +161,6 @@ public class AcaciaRDFPartitioner {
     	writeMap(attributeMap,"attributeMap");
     	writeMap(relationsMap,"relationMap");
     }
-    catch(e:Exception){
-    	e.printStackTrace();
-    }
-    }
        
     public def readFile(val inputFile:String):void{
     	val edgeList = new File(edgeListPath);
@@ -178,9 +171,9 @@ public class AcaciaRDFPartitioner {
     	}
     
     	// create an empty model
-    	Console.OUT.println("creating model");
+    	//Console.OUT.println("creating model");
     	var model:Model = ModelFactory.createDefaultModel();
-    	Console.OUT.println("model created");
+    	//Console.OUT.println("model created");
         var fis:java.io.FileInputStream = null;
         try{
         	fis = new java.io.FileInputStream(new java.io.File(inputFile));
@@ -735,10 +728,6 @@ public class AcaciaRDFPartitioner {
     		Console.OUT.println("hostSize:" + hostCount);
                 Console.OUT.println("n:" + n);
 
-            var fs:FaultToleranceScheduler = new FaultToleranceScheduler();
-            
-            var fsmap:HashMap[Int,String] = fs.mapReplicationstoPlaces();    
-
     		for(var j:Int = 0n; j < n; j++){		             
     			nPlaces = Place.places().size as Int;
     			hostID = (j % hostCount) as Int;
@@ -758,27 +747,9 @@ public class AcaciaRDFPartitioner {
     			val hostDI:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + hostName + "'")(0);
     			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(HOST_IDHOST, PARTITION_IDPARTITION, PARTITION_GRAPH_IDGRAPH) VALUES(" + hostDI + "," + actualPartID + "," + graphID + ")");
     
-			    //send replicates
-			    val placeList = fsmap.get(j);
-			    val repPlaces = placeList.substring(0n,placeList.length()-1n).split(",");
-			    var replicationHostID:Int = 0n;
-			    var replicationHostName:String = null;
-			    for(val repPlace in repPlaces){
-			    	val i:Int = Int.parse(repPlace);
-			    	replicationHostID = (i % hostCount) as Int;
-			    	replicationHostName = hostList.get(hostID);
-				    //val replicationActualPartID:String = partitionIDsMap.get(i);
-				    val replicationWithinPlaceIndex:Int = ((i - hostID) as Int)/hostCount;
-				    val replicationInstancePort:Int = port + replicationWithinPlaceIndex;
-				    Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
-				    val replicationFileTransferport:Int = instancePort + (nPlaces/hostCount);
-			    	AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,hostID);
-			    	Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
-			    }
-    
 			    //delete local store files in tmp directory
-			    //val p1:java.lang.Process = r.exec("rm -r "+filePath);
-			    //val p2:java.lang.Process = r.exec("rm "+filePath+".zip");
+			    val p1:java.lang.Process = r.exec("rm -r "+filePath);
+			    val p2:java.lang.Process = r.exec("rm "+filePath+".zip");
     		}
     	}catch(val e:Exception){
     		Console.OUT.println("Error : "+e.getMessage());

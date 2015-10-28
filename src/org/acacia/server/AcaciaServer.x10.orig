@@ -538,15 +538,13 @@ public class AcaciaServer {
 	    
 	    val isDistrbutedCentralPartitions:Boolean = true;
 	    val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', '" + inputDirectory + "', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.LOADING + ",0 )");
-	    Console.OUT.println("Uploading test2");
+	    
 	    rdfPartitioner.readDirectory(inputDirectory);
-	    Console.OUT.println("Uploading test3");	    
+	    	    
 	    val edgeListPath = rdfPartitioner.getEdgeList();
-	    Console.OUT.println("Uploading test4");
+	    
 	    val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
-	    Console.OUT.println("Uploading test5");
 	    rdfPartitioner.convert(item, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
-	    Console.OUT.println("Uploading test6");	
 	    rdfPartitioner.distributePartitionedData();
 	    
 	    // val initialPartID:Int = rdfPartitioner.getInitlaPartitionID();

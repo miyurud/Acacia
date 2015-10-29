@@ -922,7 +922,7 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 					while((line=b.readLine())!= null){
 						Console.OUT.println(line);
 					}
-					Console.OUT.println("Check 3| replication");
+					Console.OUT.println("Check 3");
 					
 					Console.OUT.println("Deleting|" + "rm /tmp/dgr/replication/"+placeID+"/" + graphID + "_" + partitionID + "_trf.zip|");
 					p = r.exec("rm /tmp/dgr/replication/"+placeID+"/" + graphID + "_" + partitionID + ".zip");		

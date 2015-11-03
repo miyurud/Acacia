@@ -116,7 +116,6 @@ public class AcaciaHSQLDBComm {
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.host(idhost INT NOT NULL IDENTITY, name VARCHAR(45), ip VARCHAR(45));");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.host_has_partition(host_idhost INT, partition_idpartition INT, partition_graph_idgraph INT);");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.edgemap(idfrom INT NOT NULL, idto INT NOT NULL);");
-			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.replication_stored_in(idreplication INT NOT NULL,stored_partition_id INT NOT NULL,stored_host_id INT,PRIMARY KEY (idreplication, stored_partition_id));");			
 			//
 			System.out.println("Done creating tables");
 			dbCon.commit();
@@ -148,8 +147,6 @@ public class AcaciaHSQLDBComm {
 			e.printStackTrace();
 			return false;
 		}
-		
-		System.out.println("Altering ACACIA_META.partition");
 				
 		try {
 			dbCon = DriverManager.getConnection(connectionString, "SA", "");
@@ -162,30 +159,6 @@ public class AcaciaHSQLDBComm {
 		try {
 			stmt = dbCon.createStatement();
 			stmt.executeUpdate("ALTER TABLE ACACIA_META.PARTITION ADD FOREIGN KEY (graph_idgraph) REFERENCES ACACIA_META.GRAPH(IDGRAPH);");
-			dbCon.commit();
-			dbCon.close();
-		} catch (SQLException e) {
-			//Logger.getLogger(Conts.MANAGER_LOGGER_NAME).error("Error : " + e.getMessage() + "\r\nError Details : \r\n" + Utils.getStackTraceAsString(e));
-			e.printStackTrace();
-			return false;
-		}
-		
-		
-		System.out.println("Altering ACACIA_META.replication_stored_in");
-		
-		try {
-			dbCon = DriverManager.getConnection(connectionString, "SA", "");
-		} catch (SQLException e) {
-			System.out.println("Again cloud not find the db folder.");
-			e.printStackTrace();
-			return false;
-		}
-		
-		try {
-			stmt = dbCon.createStatement();
-			stmt.executeUpdate("ALTER TABLE ACACIA_META.REPLICATION_STORED_IN ADD FOREIGN KEY (idreplication) REFERENCES ACACIA_META.PARTITION(idpartition);");
-			stmt.executeUpdate("ALTER TABLE ACACIA_META.REPLICATION_STORED_IN ADD FOREIGN KEY (stored_partition_id) REFERENCES ACACIA_META.PARTITION(idpartition);");
-			stmt.executeUpdate("ALTER TABLE ACACIA_META.REPLICATION_STORED_IN ADD FOREIGN KEY (stored_host_id) REFERENCES ACACIA_META.HOST(idhost);");
 			dbCon.commit();
 			dbCon.close();
 		} catch (SQLException e) {

@@ -772,7 +772,10 @@ public class AcaciaRDFPartitioner {
 				    val replicationInstancePort:Int = port + replicationWithinPlaceIndex;
 				    Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
 				    val replicationFileTransferport:Int = instancePort + (nPlaces/hostCount);
-			    	AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,hostID);
+			    	AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,i);
+			    	//val replicationHost:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + replicationHostName + "'")(0);
+			    	MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.REPLICATION_STORED_IN(idreplication, stored_partition_id, stored_host_id) VALUES(" + j + "," + i + "," + replicationHostID + ")");
+			    
 			    	Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
 			    }
     

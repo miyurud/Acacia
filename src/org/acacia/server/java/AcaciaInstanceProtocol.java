@@ -78,4 +78,5 @@ public class AcaciaInstanceProtocol{
 	public static final String SEND_GID= "send-graphID";	
 	public static final String SEND_PLACEDETAILS="send-placeDetails";
 	public static final String SEND_PLACEID="send-placeID";
+	public static final String BATCH_UPLOAD_REPLICATION="batch-replication";
 }

@@ -16,27 +16,13 @@ limitations under the License.
 
 package org.acacia.server.java;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.HashMap;
 
-import org.apache.commons.io.FileUtils;
-import org.acacia.events.java.DBTruncateEvent;
-import org.acacia.events.java.DBTruncateEventListener;
-import org.acacia.events.java.ShutdownEvent;
-import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.log.java.Logger_Java;
-import org.acacia.util.java.Conts_Java;
-import org.acacia.util.java.Utils_Java;
 
 public class AcaciaInstanceFileTransferService{
 	private ServerSocket srv;

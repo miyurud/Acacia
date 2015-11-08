@@ -45,13 +45,14 @@ import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.FileUtils;
 
 import org.acacia.server.AcaciaManager;
-import org.acacia.partitioner.local.java.MetisPartitioner;
-import org.acacia.partitioner.local.java.PartitionWriter;
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
-import org.acacia.localstore.java.AcaciaHashMapNativeStore;
+import org.acacia.partitioner.local.MetisPartitioner;
+import org.acacia.partitioner.local.PartitionWriter;
+import org.acacia.centralstore.AcaciaHashMapCentralStore;
+import org.acacia.localstore.AcaciaHashMapNativeStore;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 import org.acacia.util.java.Utils_Java;
+import org.acacia.resilience.FaultToleranceScheduler;
 
 /**
  * Class AcaciaRDFPartitioner
@@ -140,7 +141,7 @@ public class AcaciaRDFPartitioner {
     }
     
     public def getPartitionFileList():Rail[String]{
-    	return x10.interop.Java.convert(converter.getPartitionFileList());
+    	return converter.getPartitionFileList();
     }
     
     public def getPartitionIDList():Rail[String]{
@@ -148,8 +149,10 @@ public class AcaciaRDFPartitioner {
     }
     
     public def readDirectory(val inputDirectory:String):void{
+    try{    
     	val dir = new File(inputDirectory);
     	val files = dir.list();
+    Console.OUT.println("creating model inside testing");
     	for(var i:Int=0n;i<files.size;i++){
     		readFile(inputDirectory + java.io.File.separator + files(i));
     	}
@@ -160,6 +163,10 @@ public class AcaciaRDFPartitioner {
     	writeStore(predicates,"predicateStore");
     	writeMap(attributeMap,"attributeMap");
     	writeMap(relationsMap,"relationMap");
+    }
+    catch(e:Exception){
+    	e.printStackTrace();
+    }
     }
        
     public def readFile(val inputFile:String):void{
@@ -393,15 +400,15 @@ public class AcaciaRDFPartitioner {
     
     			if(refToHashMapNativeStore == null){
     				val actualPartitionID:String = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
-                    		refToHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parse(actualPartitionID) as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), false);
-                    refToHashMapNativeStore.initializeRelationshipMapWithProperties(x10.interop.Java.convert(predicates.keySet().size() as Int));
+                    refToHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parse(actualPartitionID) as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), false);
+                    refToHashMapNativeStore.initializeRelationshipMapWithProperties(predicates.keySet().size() as Int);
                     //It will be inefficient for storing the same set of predicates in each and every native store created.
                     //However, for the moment we do it because the number of predicates available is less.
                     val itr:x10.lang.Iterator[x10.util.Map.Entry[String, Long]] = predicates.entries().iterator() as x10.lang.Iterator[x10.util.Map.Entry[String, Long]];
                     
                     while(itr.hasNext()){
                         val entry:x10.util.Map.Entry[String, Long] = itr.next();
-    					refToHashMapNativeStore.addPredicate(x10.interop.Java.convert(entry.getValue() as Int), entry.getKey() as x10.lang.String);
+    					refToHashMapNativeStore.addPredicate(entry.getValue() as Int, entry.getKey() as x10.lang.String);
                     }
                     
     				partitionFilesMap.put(partitionID, refToHashMapNativeStore);
@@ -471,13 +478,13 @@ public class AcaciaRDFPartitioner {
         
         for(var i:Int = 0n; i < numberOfCentralPartitions; i++){
             val central:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), i as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), true);
-            central.initializeRelationshipMapWithProperties(x10.interop.Java.convert(predicates.keySet().size() as Int));
+            central.initializeRelationshipMapWithProperties(predicates.keySet().size() as Int);
             
             val itr2:x10.lang.Iterator[x10.util.Map.Entry[String, Long]] = predicates.entries().iterator() as x10.lang.Iterator[x10.util.Map.Entry[String, Long]];
             
             while(itr2.hasNext()){
             	val entry:x10.util.Map.Entry[String, Long] = itr2.next();
-            	central.addPredicate(x10.interop.Java.convert(entry.getValue() as Int), entry.getKey() as x10.lang.String);
+            	central.addPredicate(entry.getValue() as Int, entry.getKey() as String);
             }
             
         	centralStoresMap.put(i, central);
@@ -490,7 +497,7 @@ public class AcaciaRDFPartitioner {
         
         	//Iterator<Integer> itrN = graphStorage[u].keySet().iterator();
         var itrN:x10.lang.Iterator[Int] = graphStorage.keySet().iterator();
-        Console.OUT.println("-----------------A");
+        //Console.OUT.println("-----------------A");
         var fromVertex:Int = 0n;
         var fromVertexPartition:Int = 0n;
         toVertex = 0n;
@@ -575,7 +582,7 @@ public class AcaciaRDFPartitioner {
 	                        if(ll != null){
 		                        if(ll.contains((""+toVertex))){
 		                        //Console.OUT.println("-----------------B10--6--1");
-		                        	nativeStore.addRelationship(x10.interop.Java.convert(fromVertex as Long), x10.interop.Java.convert(toVertex as Long), x10.interop.Java.convert(key as Int));
+		                        	nativeStore.addRelationship(fromVertex as Long, toVertex as Long, key as Int);
 		                        //Console.OUT.println("-----------------B10--6--2");
 		                        }
 	                        }
@@ -597,7 +604,7 @@ public class AcaciaRDFPartitioner {
                             while(itr3.hasNext()){
                             	//x10.interop.Java.convert((itr3.next() as x10.lang.String).chars())
                             	//x10.interop.Java.convert(new Rail[String](1))
-                                nativeStore.addAttributeByValue(x10.interop.Java.convert(fromVertex as Int), x10.interop.Java.convert(retType as Int), itr3.next() as x10.lang.String);
+                                nativeStore.addAttributeByValue(fromVertex as Int, retType as Int, itr3.next() as String);
                             }
                         }
                     }                   
@@ -616,7 +623,7 @@ public class AcaciaRDFPartitioner {
                     		while(itr3.hasNext()){
                     			//x10.interop.Java.convert((itr3.next() as x10.lang.String).chars())
                     			//x10.interop.Java.convert(new Rail[String](1))
-                    			nativeStore.addAttributeByValue(x10.interop.Java.convert(fromVertex as Int), x10.interop.Java.convert(retType as Int), itr3.next() as x10.lang.String);
+                    			nativeStore.addAttributeByValue(fromVertex as Int, retType as Int, itr3.next() as String);
                     		}
                     	}
                     }
@@ -728,6 +735,10 @@ public class AcaciaRDFPartitioner {
     		Console.OUT.println("hostSize:" + hostCount);
                 Console.OUT.println("n:" + n);
 
+            var fs:FaultToleranceScheduler = new FaultToleranceScheduler();
+            
+            var fsmap:HashMap[Int,String] = fs.mapReplicationstoPlaces();    
+
     		for(var j:Int = 0n; j < n; j++){		             
     			nPlaces = Place.places().size as Int;
     			hostID = (j % hostCount) as Int;
@@ -746,6 +757,24 @@ public class AcaciaRDFPartitioner {
     			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
     			val hostDI:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + hostName + "'")(0);
     			MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(HOST_IDHOST, PARTITION_IDPARTITION, PARTITION_GRAPH_IDGRAPH) VALUES(" + hostDI + "," + actualPartID + "," + graphID + ")");
+    
+			    //send replicates
+			    val placeList = fsmap.get(j);
+			    val repPlaces = placeList.substring(0n,placeList.length()-1n).split(",");
+			    var replicationHostID:Int = 0n;
+			    var replicationHostName:String = null;
+			    for(val repPlace in repPlaces){
+			    	val i:Int = Int.parse(repPlace);
+			    	replicationHostID = (i % hostCount) as Int;
+			    	replicationHostName = hostList.get(hostID);
+				    //val replicationActualPartID:String = partitionIDsMap.get(i);
+				    val replicationWithinPlaceIndex:Int = ((i - hostID) as Int)/hostCount;
+				    val replicationInstancePort:Int = port + replicationWithinPlaceIndex;
+				    Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
+				    val replicationFileTransferport:Int = instancePort + (nPlaces/hostCount);
+			    	//AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,hostID);
+			    	Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
+			    }
     
 			    //delete local store files in tmp directory
 			    val p1:java.lang.Process = r.exec("rm -r "+filePath);

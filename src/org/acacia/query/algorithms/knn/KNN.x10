@@ -16,17 +16,19 @@ limitations under the License.
 
 package org.acacia.query.algorithms.knn;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import x10.util.HashMap;
+import x10.util.HashSet;
 
-import org.acacia.localstore.java.AcaciaHashMapLocalStore;
-import org.acacia.localstore.java.AcaciaLocalStore;
-import org.acacia.log.java.Logger_Java;
+import org.acacia.localstore.AcaciaHashMapLocalStore;
+import org.acacia.localstore.AcaciaLocalStore;
+import org.acacia.log.Logger;
 import org.acacia.server.AcaciaInstanceToManagerAPI;
 import org.acacia.util.java.Utils_Java;
 
 public class KNN {
 
+//Oct31, 2015 - commeting out the KNN class just for the moment
+/*
     public static def run(val graphDB:AcaciaLocalStore, val serverHostName:String, val kValue:Int, val vertexID:Long) : HashSet {
         return run(graphDB, null, null, serverHostName, kValue, vertexID);
     }
@@ -65,7 +67,7 @@ public class KNN {
 		//Currently this returns only the k-nearest vertices.
 		//Can improve to return a graph that containd k-nearest vertices.
 		
-		var neighboursPrev:HashSet = localSubGraphMap.get(vertexID) as java.util.HashSet;
+		var neighboursPrev:HashSet = localSubGraphMap.get(vertexID) as HashSet;
 		val result:HashSet = neighboursPrev;
 		
 		for(var i:Int = 1n; i < kValue; i++){
@@ -75,7 +77,7 @@ public class KNN {
                 var itr:java.util.Iterator = neighboursPrev.iterator();
                 while(itr.hasNext()){
                   	var v:Long = itr.next() as Long;
-					val neighbourSet:HashSet = localSubGraphMap.get(v) as java.util.HashSet;
+					val neighbourSet:HashSet = localSubGraphMap.get(v) as HashSet;
 	
 					if(neighbourSet != null) {
 						if(neighboursCurrent == null) {
@@ -109,4 +111,5 @@ public class KNN {
 //        }
 		return result;
 	}
+ * */
 }

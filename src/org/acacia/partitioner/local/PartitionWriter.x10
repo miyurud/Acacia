@@ -1,5 +1,5 @@
 package org.acacia.partitioner.local;
-import org.acacia.localstore.java.AcaciaHashMapLocalStore;
+import org.acacia.localstore.AcaciaHashMapLocalStore;
 import java.io.File;
 import java.lang.Runtime;
 import java.lang.Process;
@@ -72,7 +72,7 @@ public class PartitionWriter {
 		// } catch (e:java.io.IOException) {
 		// 	e.printStackTrace();
 		// }
-	 	store.addEdge(x10.interop.Java.convert(firstVertex), x10.interop.Java.convert(secondVertex));		
+	 	store.addEdge(firstVertex, secondVertex);
  	}
 
  	public def getOutputFilePath():String{

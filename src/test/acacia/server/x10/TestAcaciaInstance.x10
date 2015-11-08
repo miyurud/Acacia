@@ -21,13 +21,13 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 import org.acacia.server.AcaciaInstance;
-import org.acacia.server.AcaciaInstanceFileTransferService;
 
 import org.acacia.log.java.Logger_Java;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import org.acacia.server.AcaciaInstance;
+import org.acacia.server.java.AcaciaInstanceFileTransferService;
 
 public class TestAcaciaInstance{
 	public static def main(val args:Rail[String]):Int {
@@ -71,7 +71,7 @@ public class TestAcaciaInstance{
         				val server:AcaciaInstance = new AcaciaInstance();
         				try {
         					server.start_running();
-        				} catch (val e:UnknownHostException) {
+        				} catch (val e:Exception) {
         					e.printStackTrace();
         				}
         				

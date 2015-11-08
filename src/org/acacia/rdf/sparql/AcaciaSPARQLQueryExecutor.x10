@@ -15,7 +15,7 @@ import org.acacia.server.AcaciaServer;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.rdf.sparql.java.SparqlLexer;
 import org.acacia.rdf.sparql.java.SparqlParser;
-import org.acacia.rdf.sparql.java.ExecuteQuery;
+import org.acacia.rdf.sparql.ExecuteQuery;
 import org.acacia.util.Utils;
 import org.acacia.util.PlaceToNodeMapper;
 

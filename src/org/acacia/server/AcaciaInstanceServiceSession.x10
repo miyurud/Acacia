@@ -57,14 +57,15 @@ import org.acacia.log.Logger;
 import org.acacia.util.Utils;
 
 import org.acacia.util.java.Utils_Java;
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.centralstore.AcaciaHashMapCentralStore;
 import org.acacia.events.java.ShutdownEvent;
 import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;
-import org.acacia.query.algorithms.triangles.Triangles;
+//import org.acacia.query.algorithms.triangles.Triangles;
 import org.acacia.query.algorithms.pagerank.ApproxiRank;
 import org.acacia.rdf.sparql.ExecuteQuery;
+import org.acacia.server.java.AcaciaInstanceProtocol;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.
@@ -889,6 +890,45 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 		            
 		            localStore.storeGraph();
 		            */
+					//Also we need to add a catalog record in the instance's local data store about the graph and its partition IDs
+					writeCatalogRecord("" + graphID + ":" + partitionID);
+					
+				}catch(val e1:java.io.IOException){
+                    Logger.error("Error : " + e1.getMessage());
+				}catch(val e2:java.lang.InterruptedException){
+                    Logger.error("Error : " + e2.getMessage());
+	            }catch(val e:Exception){
+                    Logger.error("Error : " + e.getMessage());
+				}
+	}
+
+		public def unzipAndBatchUploadReplication(val graphID:String, val partitionID:String, val placeID:Int) : void {
+				
+				try{
+					//Unzipping starts here
+					var r:Runtime = Runtime.getRuntime();
+					
+					//Next, we unzip the file
+					var p:Process = r.exec("unzip /tmp/dgr/replication/"+placeID+"/" + graphID + "_" +  partitionID + ".zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator+"replication"+File.separator+placeID+File.separator  + graphID + "_" + partitionID);
+					p.waitFor();
+					val f:File = new File(Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator+"replication"+File.separator+placeID+File.separator);
+					if(!f.exists()){
+						f.mkdirs();
+					}
+
+					
+					val b:BufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					var line:String = "";
+					
+					while((line=b.readLine())!= null){
+						Console.OUT.println(line);
+					}
+					Console.OUT.println("Check 3| replication");
+					
+					Console.OUT.println("Deleting|" + "rm /tmp/dgr/replication/"+placeID+"/" + graphID + "_" + partitionID + "_trf.zip|");
+					p = r.exec("rm /tmp/dgr/replication/"+placeID+"/" + graphID + "_" + partitionID + ".zip");		
+					p.waitFor();
+					
 					//Also we need to add a catalog record in the instance's local data store about the graph and its partition IDs
 					writeCatalogRecord("" + graphID + ":" + partitionID);
 					

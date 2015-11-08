@@ -38,15 +38,15 @@ import org.acacia.partitioner.hadoop.HDFSFile;
 import org.acacia.metadata.db.HSQLDBInterface;
 import org.acacia.frontend.AcaciaFrontEnd;
 import org.acacia.backend.AcaciaBackEnd;
-import org.acacia.vertexcounter.VertexCounter;
+import org.acacia.vertexcounter.java.VertexCounter;
 import org.acacia.partitioner.local.AcaciaRDFPartitioner;
 
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
-import org.acacia.partitioner.local.java.MetisPartitioner;
+import org.acacia.partitioner.local.MetisPartitioner;
 
-import org.acacia.vertexcounter.VertexCounterClient;
+import org.acacia.vertexcounter.java.VertexCounterClient;
 
 import org.acacia.metadata.db.java.MetaDataDBInterface;
 
@@ -69,7 +69,7 @@ import java.io.InputStreamReader;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import org.acacia.vertexcounter.VertexCounter;
+import org.acacia.vertexcounter.java.VertexCounter;
 import org.acacia.server.migration.MigrationManager;
 
 /**
@@ -472,9 +472,9 @@ public class AcaciaServer {
     converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
     val initialPartID:Int = converter.getInitlaPartitionID();
     //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
-    var batchUploadFileList:Rail[String] = x10.interop.Java.convert(converter.getPartitionFileList());
+    var batchUploadFileList:Rail[String] = converter.getPartitionFileList();
                 
-        var ptnArrLst:Rail[String] = x10.interop.Java.convert(converter.getPartitionIDList());
+        var ptnArrLst:Rail[String] = converter.getPartitionIDList();
         
         
         Console.OUT.println("+++++++++++++++++A");
@@ -510,14 +510,14 @@ public class AcaciaServer {
              val filePath:String = batchUploadFileList(i);
              Console.OUT.println("---->>>filePath : " + filePath);
              val partitionID:String = filePath.substring(filePath.indexOf("_")+1n, filePath.indexOf("."));
-             call_batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
+             AcaciaManager.batchUploadFile(itemHost.getValue(), PlaceToNodeMapper.getInstancePort(itemHost.getKey()), Long.parse(graphID), batchUploadFileList(i), PlaceToNodeMapper.getFileTransferServicePort(itemHost.getKey()));
              Console.OUT.println("========================>Super2");
              //Once we are done with batch uploading the partition file, we need to update the related tables.
              call_runInsert("INSERT INTO ACACIA_META.HOST_HAS_PARTITION(host_idhost, partition_idpartition, partition_graph_idgraph) VALUES(" + hostIDMap.get(itemHost.getValue()) + "," + partitionID + "," + graphID + ")");
              
-             val vcount:Long = call_countVertices(""+itemHost.getValue(), graphID, partitionID);
+             val vcount:Long = AcaciaManager.countVertices(""+itemHost.getValue(), graphID, partitionID);
              Console.OUT.println("** vcnt : " + vcount);
-             val ecount:Long = call_countEdges(""+itemHost.getValue(), graphID, partitionID);
+             val ecount:Long = AcaciaManager.countEdges(""+itemHost.getValue(), graphID, partitionID);
              Console.OUT.println("** ecnt : " + ecount);
              
              val result:Boolean = call_runUpdate("UPDATE ACACIA_META.PARTITION SET VERTEXCOUNT=" + vcount + ", EDGECOUNT=" + ecount + " WHERE GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID);
@@ -1042,7 +1042,7 @@ public class AcaciaServer {
 			    try {
 				    at(p){
 				    Console.OUT.println("Initializing graph at : " + Utils.getHostName());
-				    call_initGraph(Utils.getHostName(), graphID);
+				    AcaciaManager.initializeGraphOnLocalInstance(Utils.getHostName(), graphID);
 				    }
 			    } catch (e:DeadPlaceException) {
 			    	Console.OUT.println(e.place + " died"); // report failure
@@ -1057,7 +1057,8 @@ public class AcaciaServer {
 		    try {
 			    at(p){
 			    Console.OUT.println("Setting default graph at : " + Utils.getHostName());
-			    call_setGraph(Utils.getHostName(), graphID);
+			    //call_setGraph(Utils.getHostName(), graphID);
+			    AcaciaManager.setDefaultGraph(Utils.getHostName(), graphID);
 			    }
 		    } catch (e:DeadPlaceException) {
 		    	Console.OUT.println(e.place + " died"); // report failure
@@ -1163,30 +1164,30 @@ public class AcaciaServer {
     @Native("java", "org.acacia.server.AcaciaManager.run()")
     static native def call_server():void;
     
-    @Native("java", "org.acacia.server.AcaciaManager.insertEdge(#1, #2, #3, #4)")
-    static native def call_insertEdge(String, long, long, long):Boolean;
+    // @Native("java", "org.acacia.server.AcaciaManager.insertEdge(#1, #2, #3, #4)")
+    // static native def call_insertEdge(String, long, long, long):Boolean;
     
-    //batchUploadFile(String host, int port, long graphID, String filePath)
-    @Native("java", "org.acacia.server.AcaciaManager.batchUploadFile(#1, #2, #3, #4, #5)")
-    static native def call_batchUploadFile(String, Int, Long, String, Int):Boolean;
+    // //batchUploadFile(String host, int port, long graphID, String filePath)
+    // @Native("java", "org.acacia.server.AcaciaManager.batchUploadFile(#1, #2, #3, #4, #5)")
+    // static native def call_batchUploadFile(String, Int, Long, String, Int):Boolean;
     
-    @Native("java", "org.acacia.server.AcaciaManager.initializeGraphOnLocalInstance(#1, #2)")
-    static native def call_initGraph(String, Int):Boolean;
+    // @Native("java", "org.acacia.server.AcaciaManager.initializeGraphOnLocalInstance(#1, #2)")
+    // static native def call_initGraph(String, Int):Boolean;
     
-    @Native("java", "org.acacia.server.AcaciaManager.setDefaultGraph(#1, #2)")
-    static native def call_setGraph(String, Int):Boolean;
+    // @Native("java", "org.acacia.server.AcaciaManager.setDefaultGraph(#1, #2)")
+    // static native def call_setGraph(String, Int):Boolean;
     
-    @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
-    static native def call_countVertices(String, String):Long;
+    // @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
+    // static native def call_countVertices(String, String):Long;
+    // 
+    // @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2, #3)")
+    // static native def call_countVertices(String, String, String):Long;
     
-    @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2, #3)")
-    static native def call_countVertices(String, String, String):Long;
-    
-    @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1, #2)")
-    static native def call_countEdges(String, String):Long;
-    
-    @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1, #2, #3)")
-    static native def call_countEdges(String, String, String):Long;
+    // @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1, #2)")
+    // static native def call_countEdges(String, String):Long;
+    // 
+    // @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1, #2, #3)")
+    // static native def call_countEdges(String, String, String):Long;
     
     @Native("java", "org.acacia.server.AcaciaManager.truncateLocalInstance(#1, #2)")
     static native def call_truncateLocalInstance(String, Int):void; 

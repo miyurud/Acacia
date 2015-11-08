@@ -21,9 +21,9 @@ import x10.util.ArrayList;
 
 import x10.regionarray.Array;
 
-import org.acacia.log.java.Logger_Java;
-import org.acacia.util.java.Conts_Java;
-import org.acacia.util.java.Utils_Java;
+import org.acacia.log.Logger;
+import org.acacia.util.Conts;
+import org.acacia.util.Utils;
 
 import java.io.IOException;
 
@@ -42,10 +42,10 @@ public class AcaciaFrontEnd {
 	
     public def run(){
     	try{
-    		Logger_Java.info("Starting the frontend");
-    		srv = new ServerSocket(Conts_Java.ACACIA_FRONTEND_PORT);
-    		Logger_Java.info("Done creating frontend");
-    		Logger_Java.info("Place count : "+Place.places().size);
+    		Logger.info("Starting the frontend");
+    		srv = new ServerSocket(Conts.ACACIA_FRONTEND_PORT);
+    		Logger.info("Done creating frontend");
+    		Logger.info("Place count : "+Place.places().size);
     		
     		//finish{
 	    		while(runFlag){
@@ -70,9 +70,9 @@ public class AcaciaFrontEnd {
     		// }
     		
     	}catch(var e:BindException){
-    		Logger_Java.error("Error : " + e.getMessage());
+    		Logger.error("Error : " + e.getMessage());
     	} catch (var e:IOException) {
-    		Logger_Java.error("Error : " + e.getMessage());
+    		Logger.error("Error : " + e.getMessage());
     	}
     }
     

@@ -178,9 +178,9 @@ public class AcaciaRDFPartitioner {
     	}
     
     	// create an empty model
-    	Console.OUT.println("creating model");
+    	//Console.OUT.println("creating model");
     	var model:Model = ModelFactory.createDefaultModel();
-    	Console.OUT.println("model created");
+    	//Console.OUT.println("model created");
         var fis:java.io.FileInputStream = null;
         try{
         	fis = new java.io.FileInputStream(new java.io.File(inputFile));
@@ -777,8 +777,8 @@ public class AcaciaRDFPartitioner {
 			    }
     
 			    //delete local store files in tmp directory
-			    //val p1:java.lang.Process = r.exec("rm -r "+filePath);
-			    //val p2:java.lang.Process = r.exec("rm "+filePath+".zip");
+			    val p1:java.lang.Process = r.exec("rm -r "+filePath);
+			    val p2:java.lang.Process = r.exec("rm "+filePath+".zip");
     		}
     	}catch(val e:Exception){
     		Console.OUT.println("Error : "+e.getMessage());

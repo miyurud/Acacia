@@ -85,14 +85,14 @@ public class AcaciaFrontEndServiceSession {
                         sessionSkt.close();
                         break;
                      }catch(val e:IOException){
-                        Logger_Java.error("Error : " + e.getMessage());
+                        Logger.error("Error : " + e.getMessage());
                      }
                  }else{
 					process(msg, buff, out);
 				}
 			}			
 		}catch(val e:IOException){
-			Logger_Java.error("Error : " + e.getMessage());
+			Logger.error("Error : " + e.getMessage());
 		}
 	}
 	
@@ -124,16 +124,16 @@ public class AcaciaFrontEndServiceSession {
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
-				Logger_Java.error("Error : " + e.getMessage());
+				Logger.error("Error : " + e.getMessage());
 			}
-			Logger_Java.info("graph|" + str + "|");
+			Logger.info("graph|" + str + "|");
 			
 			if(!graphExistsByID(str)){
 				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
 				out.flush();				
 			}else{			
 				val vcnt:Long = countVertices(str);
-				Logger_Java.info("vertcount|" + vcnt + "|");
+				Logger.info("vertcount|" + vcnt + "|");
 				out.println(vcnt);
 				out.flush();
 			}
@@ -147,7 +147,7 @@ public class AcaciaFrontEndServiceSession {
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
-				Logger_Java.error("Error : " + e.getMessage());
+				Logger.error("Error : " + e.getMessage());
 			}
 			val strArr:Rail[String] = str.split("|");
 			
@@ -191,7 +191,7 @@ public class AcaciaFrontEndServiceSession {
 			try{
 				graphID = buff.readLine();
 			}catch(val e:IOException){
-				Logger_Java.error("Error : " + e.getMessage());
+				Logger.error("Error : " + e.getMessage());
 			}
 			
 			if(!graphExistsByID(graphID)){
@@ -212,7 +212,7 @@ public class AcaciaFrontEndServiceSession {
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
-				Logger_Java.error("Error : " + e.getMessage());
+				Logger.error("Error : " + e.getMessage());
 			}
 
 			val strArr:Rail[String] = str.split("|");
@@ -252,16 +252,16 @@ public class AcaciaFrontEndServiceSession {
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
-				Logger_Java.error("Error : " + e.getMessage());
+				Logger.error("Error : " + e.getMessage());
 			}
-			Logger_Java.info("graph|" + str + "|");
+			Logger.info("graph|" + str + "|");
 			
 			if(!graphExistsByID(str)){
 				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
 				out.flush();				
 			}else{
 				val ecnt:Long = countEdges(str);
-				Logger_Java.info("edge count|" + str + "|");
+				Logger.info("edge count|" + str + "|");
 				out.println(ecnt);
 				out.flush();
 			}
@@ -293,9 +293,9 @@ public class AcaciaFrontEndServiceSession {
             try{
             	str = buff.readLine();
             }catch(val e:IOException){
-            	Logger_Java.error("Error : " + e.getMessage());
+            	Logger.error("Error : " + e.getMessage());
             }
-            Logger_Java.info("graph|" + str + "|");
+            Logger.info("graph|" + str + "|");
             
             if(!graphExistsByID(str)){
             	out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
@@ -328,9 +328,9 @@ public class AcaciaFrontEndServiceSession {
 			        Console.OUT.println("TK Pagerank end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
 		        }        
 	        }catch(val e:IOException){
-	        	Logger_Java.error("Error : " + e.getMessage());
+	        	Logger.error("Error : " + e.getMessage());
 	        }
-	        Logger_Java.info("graph|" + str + "|");
+	        Logger.info("graph|" + str + "|");
 	        out.println("result is |" + str + "|");
 	        out.flush();
         }else if(msg.equals(AcaciaFrontEndProtocol.OUT_DEGREE)){
@@ -341,9 +341,9 @@ public class AcaciaFrontEndServiceSession {
         	try{
         		str = buff.readLine();
         	}catch(val e:IOException){
-        		Logger_Java.error("Error : " + e.getMessage());
+        		Logger.error("Error : " + e.getMessage());
         	}
-            Logger_Java.info("graph|" + str + "|");
+            Logger.info("graph|" + str + "|");
         
         	if(!graphExistsByID(str)){
         		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
@@ -363,14 +363,14 @@ public class AcaciaFrontEndServiceSession {
             try{
                 str = buff.readLine();
             }catch(val e:IOException){
-                Logger_Java.error("Error : " + e.getMessage());
+                Logger.error("Error : " + e.getMessage());
             }
         
             if(!graphExistsByID(str)){
                 out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
                 out.flush();				
             }else{
-            	org.acacia.log.java.Logger_Java.info("Average out degree start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+            	org.acacia.log.Logger.info("Average out degree start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
                 val outDegDist:String = getOutDegreeDistribution(str);
                 var outDegreeEntireGraph:HashMap[int, int] = new x10.util.HashMap[int, int]();
                 var res1:Rail[String] = outDegDist.split(";");
@@ -394,12 +394,12 @@ public class AcaciaFrontEndServiceSession {
                 }
                 
                 val aodeg = (totalDeg as Double/vCount);
-                org.acacia.log.java.Logger_Java.info("Average out degree end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+                org.acacia.log.Logger.info("Average out degree end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
                                 
                 out.println(aodeg);//Write the result to the client.
                 out.flush();
             }
-            org.acacia.log.java.Logger_Java.info("********************* Done average out degree *****");
+            org.acacia.log.Logger.info("********************* Done average out degree *****");
         }else if(msg.equals(AcaciaFrontEndProtocol.TRIANGLES)){
 	        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
 	        out.flush();
@@ -407,7 +407,7 @@ public class AcaciaFrontEndServiceSession {
 	        try{
 	        	str = buff.readLine();
 	        }catch(val e:IOException){
-	        	Logger_Java.error("Error : " + e.getMessage());
+	        	Logger.error("Error : " + e.getMessage());
 	        }
 	        
 	        if(!graphExistsByID(str)){
@@ -544,7 +544,7 @@ public class AcaciaFrontEndServiceSession {
         	try{
         		str = buff.readLine();
         	}catch(val e:IOException){
-        		Logger_Java.error("Error : " + e.getMessage());
+        		Logger.error("Error : " + e.getMessage());
         	}
         
         	if(!graphExistsByID(str)){

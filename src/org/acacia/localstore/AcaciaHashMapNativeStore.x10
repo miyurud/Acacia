@@ -150,7 +150,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         try {
              var stream:FileInputStream = new FileInputStream(metaInoMapPath);
              var input:Input  = new Input(stream);
-            //metaInfo = (HashMap[String, String])this.kryo.readObject(input, HashMap.class);
+             metaInfo = this.kryo.readObject(input, x10.interop.Java.getClass(new HashMap[String, String]())) as HashMap[String, String];
             input.close();//This will close the FileInputStream as well.
              
             if(metaInfo != null){
@@ -166,7 +166,8 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         }
 
         //Need to initialize the variables with the loaded info.
-        //System.out.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+        Console.OUT.println("metaInfo.size():"+metaInfo.size());
+        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
         predicateCount = Int.parse(metaInfo.get(PREDICATE_COUNT));
         partitionID = Int.parse(metaInfo.get(PARTITION_ID));
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array

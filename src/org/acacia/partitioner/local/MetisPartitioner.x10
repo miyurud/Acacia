@@ -36,12 +36,13 @@ import java.lang.Process;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import com.google.common.base.Splitter;
+//import com.google.common.base.Splitter;
 
 import org.acacia.server.AcaciaManager;
-import org.acacia.metadata.db.java.MetaDataDBInterface;
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.centralstore.AcaciaHashMapCentralStore;
 import org.acacia.util.Utils;
+import x10.interop.Java;
+import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 public class MetisPartitioner {
  	//The following TreeMap loads the entire graph data file into memory. This is plausible because
@@ -101,8 +102,6 @@ public class MetisPartitioner {
   		//which is aimed for large graphs. But for local mode of operation we can rely on such index.
   
   		partitionIndex = new Rail[short]((vertexCount + 1) as Int);
-  	
-  	
   		var br:BufferedReader;
 
   		try{
@@ -144,6 +143,7 @@ public class MetisPartitioner {
   		var same:int = 0n;
   		var different:int = 0n;
 		var numberOfPartitions:int ;//= partitionFilesMap.keySet().size() < nThreads ? nThreads : partitionFilesMap.keySet().size();
+
  		if(partitionFilesMap.keySet().size() < nThreads){
  			numberOfPartitions = nThreads;
  		}else{
@@ -193,6 +193,7 @@ public class MetisPartitioner {
  			};
  			tArray(i).start();
  		}
+ 
  		while(true){
  			var flag:boolean = true;
  			for(var x:int = 0n; x < nThreads; x++){
@@ -266,7 +267,7 @@ public class MetisPartitioner {
    						if(fromVertexPartition != toVertexPartition){
    							//Here the assumption is that we will create same number of central store partitions as the number of local store partitions.
    							val central:AcaciaHashMapCentralStore = centralStoresMap.get(fromVertexPartition as short);								
-   							central.addEdge(x10.interop.Java.convert(fromVertex as Long), x10.interop.Java.convert(toVertex as Long));
+   							central.addEdge(fromVertex as Long, toVertex as Long);
    						}else{
    							var pw:PartitionWriter = partitionFilesMap.get(fromVertexPartition as short);
    							pw.writeEdge(fromVertex, toVertex);
@@ -575,28 +576,42 @@ public class MetisPartitioner {
   		try{
   			br = new BufferedReader(new FileReader(filePath));
   			var line:String = br.readLine();
-  			var splitter:Splitter = null;
+  			var splitter:com.google.common.base.Splitter = null;
   
   			if(line != null){
   				if(line.indexOf(" ")>=0){
-  					splitter = Splitter.on(' ');
+  					Console.OUT.println("space");
+  					splitter = com.google.common.base.Splitter.on(' ');
   				}else if(line.indexOf("\t")>=0){
-  					splitter = Splitter.on('\t');
+  					Console.OUT.println("tab");
+  					splitter = com.google.common.base.Splitter.on('\t');
   				}else if(line.indexOf(",")>=0){
-  					splitter = Splitter.on(',');
+  					Console.OUT.println("comma");
+  					splitter = com.google.common.base.Splitter.on(',');
 	  			}else{
 	  				Console.OUT.println("Error : Could not find the required splitter character ...");
 	  			}
   			}
-  
+  			
 	  		//Here first we need to scan through the file one round and see whether the file contains a zero vertex.
 	  		//If it contains a zero vertex we have to treat it separately. So that will be done in the second round.
 	  
 		  	while (line != null) {
-		  		val dataStrIterator:Iterator[String] = splitter.split(line).iterator() as Iterator[String];
-		  		firstVertex = Int.parseInt(dataStrIterator.next());
-		  		secondVertex = Int.parseInt(dataStrIterator.next());
+		  		//val dataStrIterator:Iterator[String] = splitter.split(line).iterator() as Iterator[String];
 		  
+		        val dataStrIterator:java.util.Iterator = splitter.split(line).iterator();
+		  		        
+		        // Console.OUT.println("first:" + dataStrIterator.next());
+		        // Console.OUT.println("second:" + dataStrIterator.next());
+		  
+		  		// firstVertex = x10.interop.Java.convert(dataStrIterator.next());
+		  		// secondVertex = x10.interop.Java.convert(dataStrIterator.next());
+		  
+		        firstVertex = Int.parse("" + dataStrIterator.next());
+		        secondVertex = Int.parse("" + dataStrIterator.next());
+		        
+		  		// Console.OUT.println("first:" + firstVertex + " second:" + secondVertex);
+		  		
 		  		if((firstVertex == 0n)||(secondVertex == 0n)){
 		  			zeroVertFlag = true;
 					//Once we found a zero vertex, we should break
@@ -617,9 +632,13 @@ public class MetisPartitioner {
 		  	line = br.readLine();
 		  
 		  	while (line != null) {
-		  		val dataStrIterator:Iterator[String] = splitter.split(line).iterator() as Iterator[String];		
-		  		firstVertex = Int.parseInt(dataStrIterator.next());
-		  		secondVertex = Int.parseInt(dataStrIterator.next());
+		  		//val dataStrIterator:Iterator[String] = splitter.split(line).iterator() as Iterator[String];		
+		  		// firstVertex = Int.parseInt(dataStrIterator.next());
+		  		// secondVertex = Int.parseInt(dataStrIterator.next());
+		  
+		        val dataStrIterator:java.util.Iterator = splitter.split(line).iterator();
+		        firstVertex = Int.parse("" + dataStrIterator.next());
+		        secondVertex = Int.parse("" + dataStrIterator.next());
 		  
 		  		if(firstVertex == secondVertex){
 		  			line = br.readLine();
@@ -651,7 +670,7 @@ public class MetisPartitioner {
 		  			//Note: we are getting a reference, so no need to put it back.
 		  			//graphStorage.put(firstVertex, vertexSet);
 	  			}
-	  
+		  		
 		  		//Next, treat the second vertex
 			  	val secondVertexIdx:int = secondVertex%nThreads;
 			  	vertexSet = graphStorage(secondVertexIdx).get(secondVertex) as Set[Int];

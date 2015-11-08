@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.backend;
+package org.acacia.backend.java;
 
 public class AcaciaBackEndProtocol {
     //This protocol will too have a handshaking session. This is to enable the server track with whom it communicated.

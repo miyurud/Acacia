@@ -14,43 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.backend.java;
-
-import org.acacia.log.java.Logger_Java;
-import org.acacia.util.java.Conts_Java;
-import org.acacia.util.java.Utils_Java;
+package org.acacia.backend;
 
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import x10.util.ArrayList;
+import org.acacia.util.Conts;
+import org.acacia.log.Logger;
 
 
 /**
  * The Acacia back-end.
  */
 public class AcaciaBackEnd {
-	private boolean runFlag = true;
-	private ServerSocket srv;
-	private ArrayList<AcaciaBackEndServiceSession> sessions = new ArrayList<AcaciaBackEndServiceSession>();
+	private var runFlag:Boolean = true;
+	private var srv:ServerSocket;
+	private var sessions:ArrayList[AcaciaBackEndServiceSession] = new ArrayList[AcaciaBackEndServiceSession]();
 	
-	public static void main(String[] args){
-		AcaciaBackEnd backend = new AcaciaBackEnd();
+    public static def main(val args:Rail[String]) {
+		var backend:AcaciaBackEnd = new AcaciaBackEnd();
 		backend.run();
 	}
 	
-    public void run(){
+    public def run():void{
     	try{
     		//Logger_Java.info("Starting the backend");
-    		srv = new ServerSocket(Conts_Java.ACACIA_BACKEND_PORT);
+    		srv = new ServerSocket(Conts.ACACIA_BACKEND_PORT);
     		//Logger_Java.info("Done creating backend2222");
 
     		while(runFlag){
     				//Logger_Java.info("AAAAAAAAAAAAAA8");
-	                Socket socket = srv.accept();
+	                var socket:Socket = srv.accept();
 	                //Logger_Java.info("AAAAAAAAAAAAAA82");
-	                AcaciaBackEndServiceSession session = new AcaciaBackEndServiceSession(socket);
+	                var session:AcaciaBackEndServiceSession = new AcaciaBackEndServiceSession(socket);
 	                //Logger_Java.info("AAAAAAAAAAAAAA833");
 	                sessions.add(session);
 	                //Logger_Java.info("AAAAAAAAAAAAAA84");
@@ -66,10 +64,10 @@ public class AcaciaBackEnd {
     		// 	session.start();
     		// }
     		//Logger_Java.info("Exitting from backend...");
-    	}catch(BindException e){
-    		Logger_Java.error("Error : " + e.getMessage());
-    	} catch (IOException e) {
-    		Logger_Java.error("Error : " + e.getMessage());
+    	}catch(var e:BindException){
+    		Logger.error("Error : " + e.getMessage());
+    	} catch (var e2:IOException) {
+    		Logger.error("Error : " + e2.getMessage());
     	}
     }
     

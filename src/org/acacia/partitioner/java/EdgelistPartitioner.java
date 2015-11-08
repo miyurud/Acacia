@@ -52,7 +52,8 @@ import org.apache.hadoop.mapreduce.Reducer.Context;
 public class EdgelistPartitioner {
   static class SequenceFileMapper extends MapReduceBase implements Mapper<NullWritable, BytesWritable, Text, Text> {
     
-    private JobConf conf;
+    @SuppressWarnings("unused")
+	private JobConf conf;
     
     @Override
     public void configure(JobConf conf) {
@@ -85,6 +86,7 @@ public class EdgelistPartitioner {
 		}
 			
 		public void reduce(Text key, Iterator<Text> values, OutputCollector<NullWritable, Text> output, Reporter reporter) throws IOException {	
+			@SuppressWarnings("rawtypes")
 			OutputCollector collector = multipleOutputs.getCollector("partition", key.toString(), reporter);
 			
 			while(values.hasNext()){
@@ -99,12 +101,13 @@ public class EdgelistPartitioner {
 			multipleOutputs.close();
 		}
 		
-		public void cleanup(Context context) throws IOException, InterruptedException{
+		public void cleanup(@SuppressWarnings("rawtypes") Context context) throws IOException, InterruptedException{
 			multipleOutputs.close();
 		}
 	}
   
-  public static void main(String[] args) throws IOException {
+  @SuppressWarnings("unused")
+public static void main(String[] args) throws IOException {
 	    JobConf conf = new JobConf(EdgelistPartitioner.class);
 	    
 	    if (conf == null) {

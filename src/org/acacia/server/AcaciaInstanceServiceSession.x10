@@ -57,14 +57,15 @@ import org.acacia.log.Logger;
 import org.acacia.util.Utils;
 
 import org.acacia.util.java.Utils_Java;
-import org.acacia.centralstore.java.AcaciaHashMapCentralStore;
+import org.acacia.centralstore.AcaciaHashMapCentralStore;
 import org.acacia.events.java.ShutdownEvent;
 import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;
-import org.acacia.query.algorithms.triangles.Triangles;
+//import org.acacia.query.algorithms.triangles.Triangles;
 import org.acacia.query.algorithms.pagerank.ApproxiRank;
 import org.acacia.rdf.sparql.ExecuteQuery;
+import org.acacia.server.java.AcaciaInstanceProtocol;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.

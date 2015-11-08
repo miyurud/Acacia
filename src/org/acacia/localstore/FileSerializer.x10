@@ -5,12 +5,12 @@ import org.acacia.util.Utils;
 import x10.io.File;
 import java.util.ListIterator;
 import x10.util.HashSet;
-import org.acacia.localstore.java.NodeRecord;
-import org.acacia.localstore.java.RelationshipRecord;
-import org.acacia.localstore.java.AcaciaHashMapNativeStore;
+import org.acacia.localstore.NodeRecord;
+import org.acacia.localstore.RelationshipRecord;
+import org.acacia.localstore.AcaciaHashMapNativeStore;
 
 public class FileSerializer {
- 	val nodes:HashMap[Long,org.acacia.localstore.java.NodeRecord] = new HashMap[Long,org.acacia.localstore.java.NodeRecord]();
+ 	val nodes:HashMap[Long,NodeRecord] = new HashMap[Long,NodeRecord]();
  	val relationships:HashMap[Long,RelationshipRecord] = new HashMap[Long,RelationshipRecord]();
  	val relationshipList:HashMap[Long,HashSet[Int]] = new HashMap[Long,HashSet[Int]]();
  	//val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(100n);
@@ -27,9 +27,9 @@ public class FileSerializer {
  
  	public def serializeNodes(){
  		nativeStore.loadNodes();
- 		var itr:Iterator[x10.util.Map.Entry[Long,org.acacia.localstore.java.NodeRecord]] = nodes.entries().iterator();
+ 		var itr:Iterator[x10.util.Map.Entry[Long,NodeRecord]] = nodes.entries().iterator();
  		while(itr.hasNext()){
- 			var item:x10.util.Map.Entry[Long,org.acacia.localstore.java.NodeRecord] = itr.next();
+ 			var item:x10.util.Map.Entry[Long,NodeRecord] = itr.next();
  			nativeStore.addNodeRecord(x10.interop.Java.convert(Long.parse(item.getKey().toString())),item.getValue() as org.acacia.localstore.java.NodeRecord);
  		}
  		nativeStore.storeNodeRecord();

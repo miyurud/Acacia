@@ -29,14 +29,14 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import org.acacia.log.Logger;
-import org.acacia.log.java.Logger_Java;
 import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 import org.acacia.util.PlaceToNodeMapper;
-import org.acacia.util.java.Utils_Java;
 import org.acacia.util.Utils;
+import org.acacia.util.java.Utils_Java;
 
 import org.acacia.server.AcaciaServer;
+import org.acacia.server.AcaciaManager;
 import org.acacia.rdf.sparql.AcaciaSPARQLQueryExecutor;
 import x10.util.StringBuilder;
 import x10.regionarray.Array;
@@ -48,8 +48,8 @@ import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.NoViableAltException;
 import org.antlr.runtime.MismatchedTokenException;
-import org.acacia.rdf.sparql.SparqlLexer;
-import org.acacia.rdf.sparql.SparqlParser;
+import org.acacia.rdf.sparql.java.SparqlLexer;
+import org.acacia.rdf.sparql.java.SparqlParser;
 
 /**
  * Class AcaciaFrontEndServiceSession
@@ -732,7 +732,7 @@ public class AcaciaFrontEndServiceSession {
 	        // }
 	        
 	        async{
-	        	intermRes(k) = call_countTraingles(host, port, graphID, ptID);
+	        	intermRes(k) = AcaciaManager.countTraingles(host, port, graphID, ptID);
 	        }
 	        
 	        cntr++;
@@ -754,7 +754,7 @@ public class AcaciaFrontEndServiceSession {
 	    
 	    //Console.OUT.println("---------- Now calculating the global only traingles --------");
 	    //Next we need to count the traingles in the global graph only.
-	    val globalTriangleCount = call_countGlobalTraingles(graphID);
+	    val globalTriangleCount = AcaciaManager.countGlobalTraingles(graphID);
 	    
 	    /*
 	     * This is the X10 way of doing this. But the connection with the HSQLDB is not successful.
@@ -880,7 +880,7 @@ public class AcaciaFrontEndServiceSession {
 	        async{
 	        	//intermRes(k) = call_removeVertices(PlaceToNodeMapper.getHost(k), PlaceToNodeMapper.getInstancePort(k), graphID, ""+k);
 	            val hst:String = PlaceToNodeMapper.getHost(k);
-	            intermRes(k) = call_removeVertices(hst, PlaceToNodeMapper.getInstancePort(k), graphID, mp.get(hst+k));
+	            intermRes(k) = AcaciaManager.removeVertices(hst, PlaceToNodeMapper.getInstancePort(k), graphID, mp.get(hst+k));
 	        }
         }
         
@@ -926,14 +926,14 @@ public class AcaciaFrontEndServiceSession {
 	 * This method counts the number of vertices in a graph stored in Acacia.
 	 */
 	private static def countVertices(val graphID:String):Long{
-        return call_countVertices(graphID);
+        return AcaciaManager.countVertices(graphID);
 	}
 	
 	/**
 	 * This method counts the number of edges in a graph stored in Acacia.
 	 */
 	private static def countEdges(val graphID:String):Long{
-         return call_countEdges(graphID);
+         return AcaciaManager.countEdges(graphID);
 	}
 	
 /**
@@ -1173,17 +1173,17 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
 	// static native def call_countVertices(String, String):Long;
 
-	@Native("java", "org.acacia.server.AcaciaManager.countVertices(#1)")
-	static native def call_countVertices(String):Long;
+	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1)")
+	// static native def call_countVertices(String):Long;
 	
 	// @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1, #2)")
 	// static native def call_countEdges(String, String):Long;
 
-    @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1)")
-    static native def call_countEdges(String):Long;	
+    // @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1)")
+    // static native def call_countEdges(String):Long;	
 	
-	@Native("java", "org.acacia.server.AcaciaManager.removeVertices(#1, #2, #3, #4)")
-	static native def call_removeVertices(String, Int, String, String):Long;
+	// @Native("java", "org.acacia.server.AcaciaManager.removeVertices(#1, #2, #3, #4)")
+	// static native def call_removeVertices(String, Int, String, String):Long;
 	
 	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runDelete(#1)")
 	static native def call_runDelete(String):Int;
@@ -1199,11 +1199,11 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
     @Native("java", "org.acacia.server.AcaciaManager.pageRankTopK(#1, #2, #3, #4, #5)")
     static native def call_pageRankTopK(String, String, String, String, String):String;
     
-    @Native("java", "org.acacia.server.AcaciaManager.countTraingles(#1, #2, #3, #4)")
-    static native def call_countTraingles(String, Int, String, String):Long;
+    // @Native("java", "org.acacia.server.AcaciaManager.countTraingles(#1, #2, #3, #4)")
+    // static native def call_countTraingles(String, Int, String, String):Long;
     
-    @Native("java", "org.acacia.server.AcaciaManager.countGlobalTraingles(#1)")
-    static native def call_countGlobalTraingles(String):Long;
+    // @Native("java", "org.acacia.server.AcaciaManager.countGlobalTraingles(#1)")
+    // static native def call_countGlobalTraingles(String):Long;
     
     @Native("java", "org.acacia.query.algorithms.degree.OutDegree.run(#1, #2, #3)")
     static native def call_outDegree(String, String, String):String; 

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.acacia.server.java;
+package org.acacia.server;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,6 +41,7 @@ import org.acacia.localstore.AcaciaLocalStore;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
+import org.acacia.server.java.AcaciaInstanceProtocol;
 
 public class AcaciaInstance{
 	//private GraphDatabaseService graphDB;

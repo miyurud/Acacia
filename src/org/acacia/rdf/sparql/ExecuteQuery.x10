@@ -39,6 +39,8 @@ import org.acacia.localstore.AcaciaHashMapNativeStore;
 import org.acacia.util.Utils;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
+import org.acacia.rdf.sparql.java.SparqlLexer;
+import org.acacia.rdf.sparql.java.SparqlParser;
 //import org.antlr.runtime.RecognitionException;
 
 
@@ -160,14 +162,16 @@ public class ExecuteQuery {
 				val firstHs:HashSet[String] = vertexPropertyMap.get(startVertexID);
 
 				if(firstHs != null){
-					val startVertexPropertyValue:String = firstHs.toArray()(0) as String;
+ 					var itrHs:Iterator[String] = firstHs.iterator();
+					val startVertexPropertyValue:String = itrHs.next();
 					var itr2:Iterator[Long] = endVertices.iterator();
 					while( itr2.hasNext() ){
-                        var endVertexID:Long = itr2.next();
+                        		var endVertexID:Long = itr2.next();
 						val secondHs:HashSet[String] = vertexPropertyMap.get(endVertexID);
 
 						if(secondHs != null){
-							val endVertexPropertyValue:String = secondHs.toArray()(0) as String;
+ 							itrHs = secondHs.iterator();
+							val endVertexPropertyValue:String = itrHs.next();;
 							graphData.add(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);
 							//data.add(startVertexPropertyValue + " " + predicate + " " + endVertexPropertyValue);								
 							//System.out.println(startVertexPropertyValue + "," + predicate + "," + endVertexPropertyValue);				

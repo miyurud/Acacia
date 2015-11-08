@@ -26,9 +26,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.acacia.localstore.java.AcaciaLocalStore;
-import org.acacia.localstore.java.AcaciaLocalStoreCatalogManager;
-import org.acacia.localstore.java.AcaciaLocalStoreTypes;
+import org.acacia.localstore.AcaciaLocalStore;
+import org.acacia.localstore.AcaciaLocalStoreCatalogManager;
+import org.acacia.localstore.AcaciaLocalStoreTypes;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Utils_Java;
 

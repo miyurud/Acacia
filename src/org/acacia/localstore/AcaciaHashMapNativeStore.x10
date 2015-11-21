@@ -102,7 +102,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	public def this(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean ){
 		this.partitionID = partitionID;
 		kryo = new Kryo();
-		//kryo.register(HashMap.class, new MapSerializer());
+ 		kryo.register(Java.javaClass[HashMap[String,String]](), new MapSerializer());
 		dataFolder = baseDir;
 		gid:String = graphID + "_" + partitionID;
 		this.graphID = graphID;
@@ -122,7 +122,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
     	this.partitionID = partitionID;
     	this.placeID = placeID;
     	kryo = new Kryo();
-    	kryo.register(Java.getClass(new HashMap[String, String]()), new MapSerializer());
+    	kryo.register(Java.javaClass[HashMap[String,String]](), new MapSerializer());
     	dataFolder = baseDir;
     	var gid:String = graphID + "_" + placeID;
     	this.graphID = graphID;
@@ -146,17 +146,23 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 			metaInfo = new HashMap[String, String]();
 			return result;
 		}
-		
+var metaInfo1:java.util.HashMap = null;
         try {
              var stream:FileInputStream = new FileInputStream(metaInoMapPath);
              var input:Input  = new Input(stream);
-             metaInfo = this.kryo.readObject(input, x10.interop.Java.getClass(new HashMap[String, String]())) as HashMap[String, String];
-            input.close();//This will close the FileInputStream as well.
+             var temp1:Any = 1n;
+             var temp2:int = temp1 as Int;
+             Console.OUT.println("start reading Meta info");
+             Console.OUT.println(Java.javaClass[HashMap[String,String]]().toString());
+             metaInfo1 = this.kryo.readClassAndObject(input) as java.util.HashMap;
+             Console.OUT.println(Java.getClass(metaInfo1).toString());
+             Console.OUT.println("complete reading Meta info");
+             input.close();//This will close the FileInputStream as well.
              
-            if(metaInfo != null){
+            if(metaInfo1 != null){
             	result = true;
             }else{
-            	metaInfo = new HashMap[String, String]();
+            	//metaInfo = new java.util.HashMap();
             }
         }catch(e:java.io.IOException){
         	e.printStackTrace(); 
@@ -166,10 +172,10 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         }
 
         //Need to initialize the variables with the loaded info.
-        Console.OUT.println("metaInfo.size():"+metaInfo.size());
-        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
-        predicateCount = Int.parse(metaInfo.get(PREDICATE_COUNT));
-        partitionID = Int.parse(metaInfo.get(PARTITION_ID));
+        Console.OUT.println("metaInfo.size():"+metaInfo1.size());
+        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo1.get(PREDICATE_COUNT));
+        predicateCount = Int.parse(metaInfo1.get(PREDICATE_COUNT) as String);
+        partitionID = Int.parse(metaInfo1.get(PARTITION_ID) as String);
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
         
 		edgeStorePath:String = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
@@ -325,7 +331,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + EDGE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeObject(output, localSubGraphMap);
+	            this.kryo.writeClassAndObject(output, Java.getClass(localSubGraphMap));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -343,7 +349,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeObject(output, vertexPropertyMap);
+	            this.kryo.writeClassAndObject(output, Java.getClass(vertexPropertyMap));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -362,7 +368,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 		        try {
 		            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db");
 		            var output:Output = new Output(stream);
-		            this.kryo.writeObject(output, relationshipMapWithProperties(i));
+		            this.kryo.writeClassAndObject(output, Java.getClass(relationshipMapWithProperties(i)));
 		            stream.flush();
 		            output.close();
 		        }catch(e:java.io.IOException){
@@ -381,7 +387,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeObject(output, attributeMap);
+	            this.kryo.writeClassAndObject(output, Java.getClass(attributeMap));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -397,7 +403,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeObject(output, predicateStore);
+	            this.kryo.writeClassAndObject(output, Java.getClass(predicateStore));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -417,7 +423,8 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + METADATA_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeObject(output, metaInfo);
+	            Console.OUT.println("Writing -------------------------------------------");
+	            this.kryo.writeClassAndObject(output,toJavaHashMap(metaInfo));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -431,6 +438,18 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         
 		return result;
 	}
+
+ 	//convert String,String HashMap to java.util.HashMap
+ 	public def toJavaHashMap(val hMap:HashMap[String,String]):java.util.HashMap{
+ 		val jMap:java.util.HashMap = new java.util.HashMap();
+ 		val itr:Iterator[x10.util.Map.Entry[String,String]] = hMap.entries().iterator();
+ 		var entry:x10.util.Map.Entry[String,String] = null;
+ 		while(itr.hasNext()){
+ 			entry = itr.next();
+ 			jMap.put(entry.getKey(),entry.getValue());
+ 		}
+ 		return jMap;
+ 	}
 	
 	
 	/**

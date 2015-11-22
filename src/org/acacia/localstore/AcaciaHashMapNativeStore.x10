@@ -61,7 +61,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//This will enable fast access to relationships between vertices
 	//EDGE_STORE_NAME
 	private var localSubGraphMap:HashMap[Long, HashSet[Long]];
- 	private var javaLocalSubGraphMap:java.util.HashMap;
+ 	//private var javaLocalSubGraphMap:java.util.HashMap;
 	
 	//The following is an array of adjacency lists. Each array element corresponds to one type of relationship that
 	//exists between two vertices. Hence in this data structure the edges are grouped based on the type of the relationship
@@ -69,7 +69,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//RELATIONSHIP_STORE_NAME
 	//private HashMap<Long, HashSet<Long>>[] relationshipMapWithProperties;
 	private var relationshipMapWithProperties:Rail[HashMap[Long, HashSet[Long]]];
- 	private var javaRelationshipMapWithProperties:Rail[java.util.HashMap];
+ 	//private var javaRelationshipMapWithProperties:Rail[java.util.HashMap];
 	
 	//private HashMap<Long, Long>[] hmp;
 	
@@ -78,13 +78,13 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//The attributedMap may store both vertex properties as well as edge properties.
 	//ATTRIBUTE_STORE_NAME
 	private var attributeMap:HashMap[Long, HashMap[Int, HashSet[String]]];
- 	private var javaAttributeMap:java.util.HashMap;
+ 	//private var javaAttributeMap:java.util.HashMap;
 	
 	private var predicateStore:HashMap[Int, String]; //This is exactly same as the predicate map.
- 	private var javaPredicateStore:java.util.HashMap;
+ 	//private var javaPredicateStore:java.util.HashMap;
 
 	private var metaInfo:HashMap[String, String];
- 	private var javaMetaInfo:java.util.HashMap;
+ 	//private var javaMetaInfo:java.util.HashMap;
 	
 	private var kryo:Kryo = null;
 	
@@ -156,14 +156,14 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         try {
              var stream:FileInputStream = new FileInputStream(metaInoMapPath);
              var input:Input  = new Input(stream);
-             javaMetaInfo = this.kryo.readClassAndObject(input) as java.util.HashMap;
+             toX10MetaInfo(this.kryo.readClassAndObject(input) as java.util.HashMap);
              Console.OUT.println("complete reading Meta info");
              input.close();//This will close the FileInputStream as well.
              
-            if(javaMetaInfo != null){
+            if(metaInfo != null){
             	result = true;
             }else{
-            	javaMetaInfo = new java.util.HashMap();
+            	metaInfo = new HashMap[String,String]();
             }
         }catch(e:java.io.IOException){
         	e.printStackTrace(); 
@@ -173,10 +173,10 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         }
 
         //Need to initialize the variables with the loaded info.
-        Console.OUT.println("metaInfo.size():"+javaMetaInfo.size());
-        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+javaMetaInfo.get(PREDICATE_COUNT));
-        predicateCount = Int.parse(javaMetaInfo.get(PREDICATE_COUNT) as String);
-        partitionID = Int.parse(javaMetaInfo.get(PARTITION_ID) as String);
+        Console.OUT.println("metaInfo.size():"+metaInfo.size());
+        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+        predicateCount = Int.parse(metaInfo.get(PREDICATE_COUNT) as String);
+        partitionID = Int.parse(metaInfo.get(PARTITION_ID) as String);
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
         
 		edgeStorePath:String = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
@@ -190,13 +190,13 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         try {
         	stream:FileInputStream = new FileInputStream(edgeStorePath);
             input:Input  = new Input(stream);
-            javaLocalSubGraphMap = this.kryo.readClassAndObject(input) as java.util.HashMap;
+            toX10LocalSubgraphMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
             input.close();//This will close the FileInputStream as well.
             
-            if(javaLocalSubGraphMap != null){
+            if(localSubGraphMap != null){
             	result = true;
             }else{
-            	javaLocalSubGraphMap = new java.util.HashMap();
+            	localSubGraphMap = new HashMap[Long,HashSet[Long]]();
             }
             
             result = true;
@@ -219,7 +219,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         try {
             var stream:FileInputStream = new FileInputStream(vertexPropertyMapPath);
             var input:Input = new Input(stream);
-            javaVertexPropertyMap = this.kryo.readClassAndObject(input) as java.util.HashMap;
+            toX10VertexPropertyMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
             input.close();//This will close the FileInputStream as well.
             
             if(javaVertexPropertyMap != null){
@@ -247,14 +247,14 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
             try {
                 var stream:FileInputStream = new FileInputStream(relationshipMapWithPropertiesPath);
                 var input:Input  = new Input(stream);
-                javaRelationshipMapWithProperties(i) = this.kryo.readClassAndObject(input) as java.util.HashMap;
+                toX10RelationshipMapWithProperties(this.kryo.readClassAndObject(input) as java.util.HashMap,i);
                 input.close();//This will close the FileInputStream as well.
                 
-                if(javaRelationshipMapWithProperties(i) != null){
+                if(relationshipMapWithProperties(i) != null){
                 	result = true;
                 }else{
                 	//In this case the deserialization did not work as expected.
-                	javaRelationshipMapWithProperties(i) = new java.util.HashMap();
+                	relationshipMapWithProperties(i) = new HashMap[Long,HashSet[Long]]();
                 }
                 
                 result = true;
@@ -277,13 +277,13 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         try {
             var stream:FileInputStream = new FileInputStream(attributeMapPath);
             var input:Input  = new Input(stream);
-            javaAttributeMap = this.kryo.readClassAndObject(input) as java.util.HashMap;
+            toX10AttributeMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
             input.close();//This will close the FileInputStream as well.
             
-            if(javaAttributeMap != null){
+            if(attributeMap != null){
             	result = true;
             }else{
-            	javaAttributeMap = new java.util.HashMap();
+            	attributeMap = new HashMap[Long,HashMap[Int,HashSet[String]]]();
             }
             
             result = true;
@@ -306,13 +306,13 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
             var stream:FileInputStream = new FileInputStream(predicateMapPath);
             var input:Input = new Input(stream);
             Console.OUT.println("Load PredicateStore 3333333333333333333333333333333333333333333");
-            javaPredicateStore = this.kryo.readClassAndObject(input) as java.util.HashMap;
+            toX10PredicateStore(this.kryo.readClassAndObject(input) as java.util.HashMap);
             input.close();//This will close the FileInputStream as well.
             
-            if(javaPredicateStore != null){
+            if(predicateStore != null){
             		result = true;
             }else{
-            		javaPredicateStore = new java.util.HashMap();
+            		predicateStore = new HashMap[Int,String]();
             }
             
             result = true;
@@ -526,6 +526,98 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 		 }
 		 return jMap;
 	 }
+	 
+	 public def toX10LocalSubgraphMap(val jMap:java.util.HashMap){
+	 	localSubGraphMap = new HashMap[Long,HashSet[Long]]();
+	 	val itr:java.util.Iterator = jMap.entrySet().iterator();
+	 	var entry:java.util.Map.Entry = null;
+		while(itr.hasNext()){
+ 			entry = itr.next() as java.util.Map.Entry;
+ 			val jSet:java.util.HashSet = entry.getValue() as java.util.HashSet;
+ 			val itr1:java.util.Iterator = jSet.iterator();
+ 			val hSet:HashSet[Long] = new HashSet[Long]();
+ 			while(itr1.hasNext()){
+ 				hSet.add(itr1.next() as Long);
+ 			}
+ 			localSubGraphMap.put(entry.getKey() as Long,hSet);
+		}
+	 }
+	 
+	 public def toX10VertexPropertyMap(val jMap:java.util.HashMap){
+		 vertexPropertyMap = new HashMap[Long,HashSet[String]]();
+		 val itr:java.util.Iterator = jMap.entrySet().iterator();
+		 var entry:java.util.Map.Entry = null;
+		 while(itr.hasNext()){
+			 entry = itr.next() as java.util.Map.Entry;
+			 val jSet:java.util.HashSet = entry.getValue() as java.util.HashSet;
+			 val itr1:java.util.Iterator = jSet.iterator();
+			 val hSet:HashSet[String] = new HashSet[String]();
+			 while(itr1.hasNext()){
+			 	hSet.add(itr1.next() as String);
+			 }
+			 vertexPropertyMap.put(entry.getKey() as Long,hSet);
+		 }
+	 }
+	 
+	 public def toX10RelationshipMapWithProperties(val jMap:java.util.HashMap, val i:Int){
+		 relationshipMapWithProperties(i) = new HashMap[Long,HashSet[Long]]();
+		 val itr:java.util.Iterator = jMap.entrySet().iterator();
+		 var entry:java.util.Map.Entry = null;
+		 while(itr.hasNext()){
+			 entry = itr.next() as java.util.Map.Entry;
+			 val jSet:java.util.HashSet = entry.getValue() as java.util.HashSet;
+			 val itr1:java.util.Iterator = jSet.iterator();
+			 val hSet:HashSet[Long] = new HashSet[Long]();
+			 while(itr1.hasNext()){
+			 	hSet.add(itr1.next() as Long);
+			 }
+			 relationshipMapWithProperties(i).put(entry.getKey() as Long,hSet);
+		 }
+	 }
+	 
+	 public def toX10AttributeMap(val jMap:java.util.HashMap){
+		 attributeMap = new HashMap[Long,HashMap[Int,HashSet[String]]]();
+		 val itr:java.util.Iterator = jMap.entrySet().iterator();
+		 var entry:java.util.Map.Entry = null;
+		 while(itr.hasNext()){
+			 entry = itr.next() as java.util.Map.Entry;
+			 val jhMap:java.util.HashMap = entry.getValue() as java.util.HashMap;
+			 val itr1:java.util.Iterator = jhMap.entrySet().iterator();
+			 val hMap:HashMap[Int,HashSet[String]] = new HashMap[Int,HashSet[String]]();
+			 var entry1:java.util.Map.Entry = null;
+			 while(itr1.hasNext()){
+			 	entry1 = itr1.next() as java.util.Map.Entry;
+			 	val jSet:java.util.HashSet = entry1.getValue() as java.util.HashSet;
+			 	val itr2:java.util.Iterator = jSet.iterator();
+			 	val hSet:HashSet[String] = new HashSet[String]();
+			 	while(itr2.hasNext()){
+			 		hSet.add(itr2.next() as String);
+			 	}
+			 	hMap.put(entry1.getKey() as Int,hSet);
+			 }
+			 attributeMap.put(entry.getKey() as Long,hMap);
+		 }
+	 }
+	 
+	 public def toX10PredicateStore(val jMap:java.util.HashMap){
+		 predicateStore = new HashMap[Int,String]();
+		 val itr:java.util.Iterator = jMap.entrySet().iterator();
+		 var entry:java.util.Map.Entry = null;
+		 while(itr.hasNext()){
+		 entry = itr.next() as java.util.Map.Entry;
+			 predicateStore.put(entry.getKey() as Int,entry.getValue() as String);
+		 }
+	 }
+	 
+	 public def toX10MetaInfo(val jMap:java.util.HashMap){
+		 metaInfo = new HashMap[String,String]();
+		 val itr:java.util.Iterator = jMap.entrySet().iterator();
+		 var entry:java.util.Map.Entry = null;
+		 while(itr.hasNext()){
+			 entry = itr.next() as java.util.Map.Entry;
+			 metaInfo.put(entry.getKey() as String,entry.getValue() as String);
+		 }
+	 }
 	
 	/**
 	 * This method adds a single vertex with a single property to the native store's data structure.
@@ -680,7 +772,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	public def initializeRelationshipMapWithProperties(predicateSize:Int):void{
 		//private var relationshipMapWithProperties:Rail[HashMap[Long, HashSet[Long]]];
 		relationshipMapWithProperties = new Rail[HashMap[Long,HashSet[Long]]](predicateSize);
- 		javaRelationshipMapWithProperties = new Rail[java.util.HashMap](predicateSize);
+ 		//javaRelationshipMapWithProperties = new Rail[java.util.HashMap](predicateSize);
 		//Console.OUT.println("=========Len=====>"+relationshipMapWithProperties.length);
 		
 		//hmp = new HashMap[predicateSize];
@@ -718,7 +810,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
     	return predicateStore;
     }
     
-    public def getJavaLocalSubGraphMap():java.util.HashMap{
+    /*public def getJavaLocalSubGraphMap():java.util.HashMap{
     	return javaLocalSubGraphMap;
     }
     
@@ -736,7 +828,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 
     public def getJavaPredicateStore():java.util.HashMap {
     	return javaPredicateStore;
-    }
+    }*/
     
     public def getVertexCount():Long{
     	if(updatedFlagVertex){

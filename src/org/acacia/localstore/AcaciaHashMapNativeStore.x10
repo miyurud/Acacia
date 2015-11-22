@@ -55,11 +55,13 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//The following is just a map of the each vertex with a list of properties.
 	//VERTEX_STORE_NAME
 	private var vertexPropertyMap:HashMap[Long, HashSet[String]];
+ 	private var javaVertexPropertyMap:java.util.HashMap;
 	//We need to keep the main graph structure as a plain adjacency list since we may want to answer some basic
 	//graph algorithms which just needs the adjacency list structure of the graph.
 	//This will enable fast access to relationships between vertices
 	//EDGE_STORE_NAME
-	private var localSubGraphMap:HashMap[Long, HashSet[Long]] ;
+	private var localSubGraphMap:HashMap[Long, HashSet[Long]];
+ 	private var javaLocalSubGraphMap:java.util.HashMap;
 	
 	//The following is an array of adjacency lists. Each array element corresponds to one type of relationship that
 	//exists between two vertices. Hence in this data structure the edges are grouped based on the type of the relationship
@@ -67,6 +69,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//RELATIONSHIP_STORE_NAME
 	//private HashMap<Long, HashSet<Long>>[] relationshipMapWithProperties;
 	private var relationshipMapWithProperties:Rail[HashMap[Long, HashSet[Long]]];
+ 	private var javaRelationshipMapWithProperties:Rail[java.util.HashMap];
 	
 	//private HashMap<Long, Long>[] hmp;
 	
@@ -74,11 +77,14 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//a property called ID in the attributeMap. In that way we need not to have a separate file called nodeStore.
 	//The attributedMap may store both vertex properties as well as edge properties.
 	//ATTRIBUTE_STORE_NAME
-	private var attributeMap:HashMap[Long, HashMap[Int, HashSet[String]]] ;
+	private var attributeMap:HashMap[Long, HashMap[Int, HashSet[String]]];
+ 	private var javaAttributeMap:java.util.HashMap;
 	
 	private var predicateStore:HashMap[Int, String]; //This is exactly same as the predicate map.
-	
+ 	private var javaPredicateStore:java.util.HashMap;
+
 	private var metaInfo:HashMap[String, String];
+ 	private var javaMetaInfo:java.util.HashMap;
 	
 	private var kryo:Kryo = null;
 	
@@ -102,7 +108,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	public def this(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean ){
 		this.partitionID = partitionID;
 		kryo = new Kryo();
- 		kryo.register(Java.javaClass[HashMap[String,String]](), new MapSerializer());
+ 		kryo.register(Java.javaClass[java.util.HashMap](), new MapSerializer());
 		dataFolder = baseDir;
 		gid:String = graphID + "_" + partitionID;
 		this.graphID = graphID;
@@ -122,7 +128,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
     	this.partitionID = partitionID;
     	this.placeID = placeID;
     	kryo = new Kryo();
-    	kryo.register(Java.javaClass[HashMap[String,String]](), new MapSerializer());
+    	kryo.register(Java.javaClass[java.util.HashMap](), new MapSerializer());
     	dataFolder = baseDir;
     	var gid:String = graphID + "_" + placeID;
     	this.graphID = graphID;
@@ -146,23 +152,18 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 			metaInfo = new HashMap[String, String]();
 			return result;
 		}
-var metaInfo1:java.util.HashMap = null;
+
         try {
              var stream:FileInputStream = new FileInputStream(metaInoMapPath);
              var input:Input  = new Input(stream);
-             var temp1:Any = 1n;
-             var temp2:int = temp1 as Int;
-             Console.OUT.println("start reading Meta info");
-             Console.OUT.println(Java.javaClass[HashMap[String,String]]().toString());
-             metaInfo1 = this.kryo.readClassAndObject(input) as java.util.HashMap;
-             Console.OUT.println(Java.getClass(metaInfo1).toString());
+             javaMetaInfo = this.kryo.readClassAndObject(input) as java.util.HashMap;
              Console.OUT.println("complete reading Meta info");
              input.close();//This will close the FileInputStream as well.
              
-            if(metaInfo1 != null){
+            if(javaMetaInfo != null){
             	result = true;
             }else{
-            	//metaInfo = new java.util.HashMap();
+            	javaMetaInfo = new java.util.HashMap();
             }
         }catch(e:java.io.IOException){
         	e.printStackTrace(); 
@@ -172,10 +173,10 @@ var metaInfo1:java.util.HashMap = null;
         }
 
         //Need to initialize the variables with the loaded info.
-        Console.OUT.println("metaInfo.size():"+metaInfo1.size());
-        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo1.get(PREDICATE_COUNT));
-        predicateCount = Int.parse(metaInfo1.get(PREDICATE_COUNT) as String);
-        partitionID = Int.parse(metaInfo1.get(PARTITION_ID) as String);
+        Console.OUT.println("metaInfo.size():"+javaMetaInfo.size());
+        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+javaMetaInfo.get(PREDICATE_COUNT));
+        predicateCount = Int.parse(javaMetaInfo.get(PREDICATE_COUNT) as String);
+        partitionID = Int.parse(javaMetaInfo.get(PARTITION_ID) as String);
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
         
 		edgeStorePath:String = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
@@ -189,13 +190,13 @@ var metaInfo1:java.util.HashMap = null;
         try {
         	stream:FileInputStream = new FileInputStream(edgeStorePath);
             input:Input  = new Input(stream);
-            //localSubGraphMap = (HashMap[Long, HashSet[Long]])this.kryo.readObject(input, HashMap.class);
+            javaLocalSubGraphMap = this.kryo.readClassAndObject(input) as java.util.HashMap;
             input.close();//This will close the FileInputStream as well.
             
-            if(localSubGraphMap != null){
+            if(javaLocalSubGraphMap != null){
             	result = true;
             }else{
-            	localSubGraphMap = new HashMap[Long, HashSet[Long]]();
+            	javaLocalSubGraphMap = new java.util.HashMap();
             }
             
             result = true;
@@ -218,13 +219,13 @@ var metaInfo1:java.util.HashMap = null;
         try {
             var stream:FileInputStream = new FileInputStream(vertexPropertyMapPath);
             var input:Input = new Input(stream);
-            //vertexPropertyMap = (HashMap[Long, HashSet[String]])this.kryo.readObject(input, HashMap.class);
+            javaVertexPropertyMap = this.kryo.readClassAndObject(input) as java.util.HashMap;
             input.close();//This will close the FileInputStream as well.
             
-            if(vertexPropertyMap != null){
+            if(javaVertexPropertyMap != null){
             	result = true;
             }else{
-            	vertexPropertyMap = new HashMap[Long, HashSet[String]]();
+            	javaVertexPropertyMap = new java.util.HashMap();
             }
             
             result = true;
@@ -246,14 +247,14 @@ var metaInfo1:java.util.HashMap = null;
             try {
                 var stream:FileInputStream = new FileInputStream(relationshipMapWithPropertiesPath);
                 var input:Input  = new Input(stream);
-                //relationshipMapWithProperties(i) = (HashMap[Long, HashSet[Long]])this.kryo.readObject(input, HashMap.class);
+                javaRelationshipMapWithProperties(i) = this.kryo.readClassAndObject(input) as java.util.HashMap;
                 input.close();//This will close the FileInputStream as well.
                 
-                if(relationshipMapWithProperties(i) != null){
+                if(javaRelationshipMapWithProperties(i) != null){
                 	result = true;
                 }else{
                 	//In this case the deserialization did not work as expected.
-                	relationshipMapWithProperties(i) = new HashMap[Long, HashSet[Long]]();
+                	javaRelationshipMapWithProperties(i) = new java.util.HashMap();
                 }
                 
                 result = true;
@@ -276,13 +277,13 @@ var metaInfo1:java.util.HashMap = null;
         try {
             var stream:FileInputStream = new FileInputStream(attributeMapPath);
             var input:Input  = new Input(stream);
-            //attributeMap = (HashMap[Long, HashMap[Int,HashSet[String]])this.kryo.readObject(input, HashMap.class);
+            javaAttributeMap = this.kryo.readClassAndObject(input) as java.util.HashMap;
             input.close();//This will close the FileInputStream as well.
             
-            if(attributeMap != null){
+            if(javaAttributeMap != null){
             	result = true;
             }else{
-            	attributeMap = new HashMap[Long, HashMap[Int,HashSet[String]]]();
+            	javaAttributeMap = new java.util.HashMap();
             }
             
             result = true;
@@ -304,13 +305,14 @@ var metaInfo1:java.util.HashMap = null;
         try {
             var stream:FileInputStream = new FileInputStream(predicateMapPath);
             var input:Input = new Input(stream);
-            //predicateStore = (HashMap[Int, String])this.kryo.readObject(input, HashMap.class);
+            Console.OUT.println("Load PredicateStore 3333333333333333333333333333333333333333333");
+            javaPredicateStore = this.kryo.readClassAndObject(input) as java.util.HashMap;
             input.close();//This will close the FileInputStream as well.
             
-            if(predicateStore != null){
+            if(javaPredicateStore != null){
             		result = true;
             }else{
-            		predicateStore = new HashMap[Int, String]();
+            		javaPredicateStore = new java.util.HashMap();
             }
             
             result = true;
@@ -331,7 +333,7 @@ var metaInfo1:java.util.HashMap = null;
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + EDGE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeClassAndObject(output, Java.getClass(localSubGraphMap));
+	            this.kryo.writeClassAndObject(output, toJavaHashMap(localSubGraphMap));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -349,7 +351,8 @@ var metaInfo1:java.util.HashMap = null;
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeClassAndObject(output, Java.getClass(vertexPropertyMap));
+	            //Console.OUT.println("Writing vertexPropertyMap-------------------------------------------");
+	            this.kryo.writeClassAndObject(output, toJavaHashMap(vertexPropertyMap));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -368,7 +371,8 @@ var metaInfo1:java.util.HashMap = null;
 		        try {
 		            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db");
 		            var output:Output = new Output(stream);
-		            this.kryo.writeClassAndObject(output, Java.getClass(relationshipMapWithProperties(i)));
+		            //Console.OUT.println("Writing relationshipMapWithProperties["+i+"]-------------------------------------------");
+		            this.kryo.writeClassAndObject(output, toJavaHashMap(relationshipMapWithProperties(i)));
 		            stream.flush();
 		            output.close();
 		        }catch(e:java.io.IOException){
@@ -387,7 +391,8 @@ var metaInfo1:java.util.HashMap = null;
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeClassAndObject(output, Java.getClass(attributeMap));
+	            //Console.OUT.println("Writing attributeMap-------------------------------------------");
+	            this.kryo.writeClassAndObject(output, toJavaHashMap(attributeMap));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -403,7 +408,8 @@ var metaInfo1:java.util.HashMap = null;
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            this.kryo.writeClassAndObject(output, Java.getClass(predicateStore));
+	            //Console.OUT.println("Writing predicates-------------------------------------------");
+	            this.kryo.writeClassAndObject(output, toJavaHashMap(predicateStore));
 	            stream.flush();
 	            output.close();
 	        }catch(e:java.io.IOException){
@@ -423,7 +429,7 @@ var metaInfo1:java.util.HashMap = null;
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + METADATA_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            Console.OUT.println("Writing -------------------------------------------");
+	            //Console.OUT.println("Writing metaInfo-------------------------------------------");
 	            this.kryo.writeClassAndObject(output,toJavaHashMap(metaInfo));
 	            stream.flush();
 	            output.close();
@@ -440,7 +446,7 @@ var metaInfo1:java.util.HashMap = null;
 	}
 
  	//convert String,String HashMap to java.util.HashMap
- 	public def toJavaHashMap(val hMap:HashMap[String,String]):java.util.HashMap{
+ 	private def toJavaHashMap(val hMap:HashMap[String,String]):java.util.HashMap{
  		val jMap:java.util.HashMap = new java.util.HashMap();
  		val itr:Iterator[x10.util.Map.Entry[String,String]] = hMap.entries().iterator();
  		var entry:x10.util.Map.Entry[String,String] = null;
@@ -450,7 +456,76 @@ var metaInfo1:java.util.HashMap = null;
  		}
  		return jMap;
  	}
+ 
+ 	//convert Long,HashSet[Long] HashMap to java.util.HashMap
+ 	private def toJavaHashMap(val hMap:HashMap[Long,HashSet[Long]]):java.util.HashMap{
+	 	val jMap:java.util.HashMap = new java.util.HashMap();
+	 	val itr:Iterator[x10.util.Map.Entry[Long,HashSet[Long]]] = hMap.entries().iterator();
+	 	var entry:x10.util.Map.Entry[Long,HashSet[Long]] = null;
+	 	while(itr.hasNext()){
+ 			entry = itr.next();
+ 			val itr1:Iterator[Long] = entry.getValue().iterator();
+ 			val jSet:java.util.HashSet = new java.util.HashSet();
+ 			while(itr1.hasNext()){
+ 				jSet.add(Java.convert(itr1.next()));
+ 			}
+ 			jMap.put(Java.convert(entry.getKey()),jSet);
+ 		}
+ 		return jMap;
+ 	}
 	
+	 //convert Long,HashSet[String] HashMap to java.util.HashMap
+	 private def toJavaHashMap(val hMap:HashMap[Long,HashSet[String]]):java.util.HashMap{
+		 val jMap:java.util.HashMap = new java.util.HashMap();
+		 val itr:Iterator[x10.util.Map.Entry[Long,HashSet[String]]] = hMap.entries().iterator();
+		 var entry:x10.util.Map.Entry[Long,HashSet[String]] = null;
+		 while(itr.hasNext()){
+		 	entry = itr.next();
+		 	val itr1:Iterator[String] = entry.getValue().iterator();
+		 	val jSet:java.util.HashSet = new java.util.HashSet();
+		 	while(itr1.hasNext()){
+		 		jSet.add(itr1.next());
+		 	}
+		 	jMap.put(Java.convert(entry.getKey()),jSet);
+		 }
+		 return jMap;
+	 }
+	 
+	 //convert Long,HashMap[Int,HashSet[String]] HashMap to java.util.HashMap
+	 private def toJavaHashMap(val hMap:HashMap[Long,HashMap[Int,HashSet[String]]]):java.util.HashMap{
+		 val jMap:java.util.HashMap = new java.util.HashMap();
+		 val itr:Iterator[x10.util.Map.Entry[Long,HashMap[Int,HashSet[String]]]] = hMap.entries().iterator();
+		 var entry:x10.util.Map.Entry[Long,HashMap[Int,HashSet[String]]] = null;
+		 while(itr.hasNext()){
+		 	entry = itr.next();
+		 	val jMap1:java.util.HashMap = new java.util.HashMap();
+		 	val itr1:Iterator[x10.util.Map.Entry[Int,HashSet[String]]] = entry.getValue().entries().iterator();
+		 	var entry1:x10.util.Map.Entry[Int,HashSet[String]] = null;	
+		 	while(itr1.hasNext()){
+		 		entry1 = itr1.next();
+		 		val jSet:java.util.HashSet = new java.util.HashSet();
+		 		val itr2:Iterator[String] = entry1.getValue().iterator();
+		 		while(itr2.hasNext()){
+		 			jSet.add(itr2.next());
+		 		}
+		 		jMap1.put(Java.convert(entry1.getKey()),jSet);
+		 	}
+		 	jMap.put(Java.convert(entry.getKey()),jMap1);
+		 }
+		 return jMap;
+	 }
+	 
+	 //convert Int,String HashMap to java.util.HashMap
+	 private def toJavaHashMap(val hMap:HashMap[Int,String]):java.util.HashMap{
+		 val jMap:java.util.HashMap = new java.util.HashMap();
+		 val itr:Iterator[x10.util.Map.Entry[Int,String]] = hMap.entries().iterator();
+		 var entry:x10.util.Map.Entry[Int,String] = null;
+		 while(itr.hasNext()){
+			 entry = itr.next();
+			 jMap.put(Java.convert(entry.getKey()),entry.getValue());
+		 }
+		 return jMap;
+	 }
 	
 	/**
 	 * This method adds a single vertex with a single property to the native store's data structure.
@@ -605,7 +680,7 @@ var metaInfo1:java.util.HashMap = null;
 	public def initializeRelationshipMapWithProperties(predicateSize:Int):void{
 		//private var relationshipMapWithProperties:Rail[HashMap[Long, HashSet[Long]]];
 		relationshipMapWithProperties = new Rail[HashMap[Long,HashSet[Long]]](predicateSize);
-		
+ 		javaRelationshipMapWithProperties = new Rail[java.util.HashMap](predicateSize);
 		//Console.OUT.println("=========Len=====>"+relationshipMapWithProperties.length);
 		
 		//hmp = new HashMap[predicateSize];
@@ -641,6 +716,26 @@ var metaInfo1:java.util.HashMap = null;
 
     public def getpredicateStore():HashMap[Int, String] {
     	return predicateStore;
+    }
+    
+    public def getJavaLocalSubGraphMap():java.util.HashMap{
+    	return javaLocalSubGraphMap;
+    }
+    
+    public def getJavaVertexPropertyMap():java.util.HashMap {
+    	return javaVertexPropertyMap;
+    }
+    
+    public def getJavaRelationshipMapWithProperties():Rail[java.util.HashMap] {
+    	return javaRelationshipMapWithProperties;
+    }
+    
+    public def getJavaAattributeMap():java.util.HashMap{
+    	return javaAttributeMap;
+    }
+
+    public def getJavaPredicateStore():java.util.HashMap {
+    	return javaPredicateStore;
     }
     
     public def getVertexCount():Long{

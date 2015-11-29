@@ -17,16 +17,21 @@ limitations under the License.
 package org.acacia.query.algorithms.kcore;
 
 import org.acacia.localstore.AcaciaHashMapNativeStore;
+import org.acacia.centralstore.AcaciaHashMapCentralStore;
 import org.acacia.util.java.Utils_Java;
+import org.acacia.util.Utils;
 
 import x10.util.HashMap;
 import x10.util.HashSet;
 import x10.util.Map.Entry;
 import x10.util.Set;
+import x10.util.StringBuilder;
+import x10.lang.Iterator;
+
 import x10.io.File;
 
-import org.acacia.util.Utils;
 import org.apache.commons.io.FileUtils;
+import x10.util.ArrayList;
 
 /**
  * Class KCore
@@ -35,94 +40,129 @@ public class KCore {
 
  	private val location = Utils.call_getAcaciaProperty("org.acacia.server.runtime.location")+"/KCoreFiles/";
 	private var baseDir:String  = "";
- 	private var localSubGraphMap:HashMap[Long, HashSet[Long]];
+ 	private var nativeStoreLocalSubGraphMap:HashMap[Long, HashSet[Long]];
+ 	private var centralStoreLocalSubGraphMap:HashMap[Long, HashSet[Long]];
     private var KCorenessOfGraph:Long = 0;
+ 
+    public def getVertexIdsResults(kValue:String,graphID:String,partitionID:String,placeID:String):ArrayList[Long]{
     
-    public def this() {
-    	val f = new File(location);
-    	if(!f.exists()){
-    		f.mkdir();
-    	}else{
-		    //Delete the existing files
-		    val dir:java.io.File = new java.io.File(location);
-		    val files:x10.interop.Java.array[java.io.File] = dir.listFiles();
-		    
-		    for(var i:Int = 0n; i < files.length; i++ ){
-		    	var delStatus:Boolean = false;
-		    	try{
-				    if(files(i).isDirectory()){
-				    	FileUtils.deleteDirectory(files(i));
-			    	}else{
-			    		delStatus = files(i).delete();
-			    	}
-		    	}catch(var ex:java.io.IOException){
-		    		ex.printStackTrace();
-		    	}
-		    }
+	    var result:Rail[Long]= null;
+	    var resultArrayList:ArrayList[Long] = new ArrayList[Long]();
+	    Console.OUT.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+	    try {
+	    	loadGraphData(graphID, partitionID, placeID);
+	    	createFilesLocation();
+	    	resultArrayList.addAll(calculateKCoreness(Long.parse(kValue)));
+	    
+	    	
+	    }catch(e:Exception){
+	    	e.printStackTrace();
+	    }finally{
+	    Console.OUT.println(resultArrayList.size());
 	    }
+	    return resultArrayList;
+	    
     }
 
- 	public def loadGraphData(graphID:String, partitionID:String, placeID:String) {
+ 	def loadGraphData(graphID:String, partitionID:String, placeID:String) {
  
  		baseDir = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
  
  		//native store
  		val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(partitionID),baseDir,false);
- 		createARelationshipMapCopy(nativeStore, 0); 
-		//central store
- 		//val centralStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(placeID),baseDir,true, Int.parse(placeID));
-
- 	}
+  		nativeStore.loadGraph();
+ 		nativeStoreLocalSubGraphMap = nativeStore.getlocalSubGraphMap();
  
-	//Create a copy of the graph
-	public def createARelationshipMapCopy(val store:AcaciaHashMapNativeStore, val graphId:Long){
-	 	//Console.OUT.println("Create a copy of relationshipMap of graph "+graphId);
-        
- 		localSubGraphMap = store.getlocalSubGraphMap(); 
+ 		//central store
+ 		val centraleStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(partitionID),baseDir,true,Int.parse(placeID));
+ 		centraleStore.loadGraph();
+ 		centralStoreLocalSubGraphMap = centraleStore.getUnderlyingHashMap();
+ 
 	}
+ 
+ 	// Create the files/location to store results
+ 	def createFilesLocation() {
+ 
+ 		val f = new File(location);
+ 
+ 		if(!f.exists()){
+ 			f.mkdir();
+ 		}else{
+ 			//Delete the existing files
+ 			val dir:java.io.File = new java.io.File(location);
+ 			val files:x10.interop.Java.array[java.io.File] = dir.listFiles();
+
+ 			for(var i:Int = 0n; i < files.length; i++ ){
+ 				var delStatus:Boolean = false;
+ 				try{
+ 					if(files(i).isDirectory()){
+ 						FileUtils.deleteDirectory(files(i));
+ 					}else{
+ 						delStatus = files(i).delete();
+ 					}
+ 				}catch(var ex:java.io.IOException){
+ 					ex.printStackTrace();
+ 				}
+ 			}
+ 		}
+ 	}
 	
 	// calculate K Coreness value 
-	public def calculateKCoreness(){
+	def calculateKCoreness(kCoreValue:Long):ArrayList[long]{
 	
 	 	var edgesCount:Long = 0n;
 	    var count:Long = 1;
-	    var vertexIds:Rail[Long];
-	    var vertexIdsWriteToFile:Rail[Long];
+	    var vertexIds:ArrayList[Long];
 	    var vertexCount:Long = 0;
 	    var endOfArray:Long;
+	    var vertexIdsWriteToFile:ArrayList[Long] = null;
 	    
 	    vertexCount = getVertexCount();
-	    // algorithm
-	    while(vertexCount > 0){
-	    	vertexIds = getVertexIdsOfSameKCoreness(count);
-	    	vertexIdsWriteToFile = new Rail[Long](vertexCount);
+	    
+	    // algorithm 
+	    while(vertexCount > 0 && kCoreValue >= count){
+	    Console.OUT.println(nativeStoreLocalSubGraphMap.size()+":"+count);
+	    Console.OUT.println(centralStoreLocalSubGraphMap.size()+":"+count);
+	    	vertexIds = getVertexIdsOfSameKCoreness(count,vertexCount);
+	    	vertexIdsWriteToFile = new ArrayList[Long]();
 	    	endOfArray = 0;
-		    while(vertexIds.size > 0){
-			    for(var i:Long = 0; i< vertexIds.size; i+1){
-			    	vertexIdsWriteToFile(i+endOfArray);
+		    while(vertexIds.size() > 0){
+		    
+			    for(var i:Long = 0; i< vertexIds.size(); i++){
+			    	vertexIdsWriteToFile.add(vertexIds(i));
 			        removeVertexAndEdges(vertexIds(i));
+			        //Console.OUT.println("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb "+i+":"+vertexIds.size());
 			    }
-			    vertexCount -= vertexIds.size;
-			    vertexIds = getVertexIdsOfSameKCoreness(count);
-			    endOfArray += vertexIds.size;
+			    vertexCount -= vertexIds.size();
+			    Console.OUT.println("vertexCount : "+vertexCount);
+			    vertexIds = getVertexIdsOfSameKCoreness(count,vertexCount);
+			    endOfArray += vertexIds.size();
+			    Console.OUT.println("cccccccccccccccccccccccccccc");
 		    }
-		    addVertexToFile(vertexIdsWriteToFile, count);
+		    //Console.OUT.println("cccccccccccccccccccccccccccc");
+		    //addVertexToFile(vertexIdsWriteToFile, count);
 		    count++;
 	    }
+	    if(vertexCount == 0 && kCoreValue > count){
+	    	vertexIdsWriteToFile = new ArrayList[Long]();
+	    }
 	    KCorenessOfGraph = --count;
+	    
+	    return vertexIdsWriteToFile;
 	}
 	
 	// from the graph get the vertices which has the same degree 
-	public def getVertexIdsOfSameKCoreness(count:Long):Rail[Long]{
+	def getVertexIdsOfSameKCoreness(count:Long, vertexCount:Long):ArrayList[Long]{
 	
   		var countVertexIds:Int = 0n;
-	 	var vertexIds:Rail[Long]=null;
-	 	var itr:Iterator[Long]  = localSubGraphMap.keySet().iterator();
+	 	var vertexIds:ArrayList[Long]= new ArrayList[Long]();
+	 	var itr:Iterator[Long]  = nativeStoreLocalSubGraphMap.keySet().iterator();
+	 
 		while(itr.hasNext()){
 		 	vertexID:Long = itr.next();
 		 	k:Long = countEdges(vertexID);
-		 	if(k == count){
-		 		vertexIds(countVertexIds) = vertexID;
+		 	if(k <= count){
+		 		vertexIds.add(vertexID);
 		 	}
 		 	countVertexIds++;
 		 }
@@ -135,37 +175,50 @@ public class KCore {
 	}
 	
 	//get the vertex count of original graph
-	public def getVertexCount(){
+	def getVertexCount(){
+
 	 	var vertexCount:long = 0;
-	 	vertexCount = localSubGraphMap.keySet().size();
+	 
+	 	vertexCount = nativeStoreLocalSubGraphMap.keySet().size();
+	 
 	 	return vertexCount;
 	}
 	
 	// get the count of edges of a paticular vertex
-	public def countEdges(vertexId:Long):Long{ 
+	def countEdges(vertexId:Long):Long{ 
 	
- 		var k:Long =0n;
-		var itr:x10.lang.Iterator[x10.util.HashMap.Entry[Long, x10.util.HashSet[Long]]] = localSubGraphMap.entries().iterator();
-				 
-		while(itr.hasNext()){
-			 var entry:x10.util.HashMap.Entry[Long, x10.util.HashSet[Long]] = itr.next();
-			 var key:Long = entry.getKey();
-			 if(key == vertexId){
-			 	var hs:x10.util.HashSet[Long] = entry.getValue() as x10.util.HashSet[Long];
-			    k = hs.size();
-			 }
-		}
-	 	return k;
+ 		var edgeCount:Long = 0;	
+ 
+ 		edgeCount = countEdgesInLocalSubGraphs(nativeStoreLocalSubGraphMap, vertexId)+
+ 					countEdgesInLocalSubGraphs(centralStoreLocalSubGraphMap, vertexId);
+ 
+ 	 	return edgeCount;
 	}
+ 	// get the count in each subGraph
+ 	def countEdgesInLocalSubGraphs(store:HashMap[Long, HashSet[Long]],vertexId:Long):Long{
+ 		
+ 		var count:Long =0;
+ 		var itr:x10.lang.Iterator[HashMap.Entry[Long, HashSet[Long]]] = store.entries().iterator();
+ 
+ 		while(itr.hasNext()){
+ 			var entry: HashMap.Entry[Long,  HashSet[Long]] = itr.next();
+ 			var key:Long = entry.getKey();
+ 			if(key == vertexId){
+ 				var hs: HashSet[Long] = entry.getValue();
+ 				count = hs.size();
+ 			}
+ 		}
+ 		return count;
+ 	}
 	
 	// add the paticular vertex to the relavant file
-	public def addVertexToFile(vertexIdsToFile:Rail[Long], k:Long){
+	def addVertexToFile(vertexIdsToFile:ArrayList[Long], k:Long){
  		
  		val fileName:String = k+"-core";
 		val file = new File(location+fileName);
 		val printer = file.printer();
 		//Console.OUT.println(attributeItem.getKey()+" "+attributeItem.getValue());
- 		for(var i:Long = 0; i < vertexIdsToFile.size; i++){
+ 		for(var i:Long = 0; i < vertexIdsToFile.size(); i++){
  			printer.println(vertexIdsToFile(i)+"");
  		}
  		printer.flush();
@@ -174,26 +227,33 @@ public class KCore {
 	}
 	
 	// remove the vertex and its edges from the original graph
-	public def removeVertexAndEdges(vertexId:Long){
+ 	def removeVertexAndEdges(vertexId:Long){
 
-		var itr:x10.lang.Iterator[x10.util.HashMap.Entry[Long, x10.util.HashSet[Long]]] = localSubGraphMap.entries(). iterator();
-		while(itr.hasNext()){
-			var entry:x10.util.HashMap.Entry[Long, x10.util.HashSet[Long]] = itr.next();
-			var key:Long = entry.getKey();
-			if(key == vertexId){
- 				localSubGraphMap.remove(vertexId);
-			}
-		}
+ 		removeVertexAndEdgesFromLocalSubGraphs(nativeStoreLocalSubGraphMap, vertexId);
+ 		removeVertexAndEdgesFromLocalSubGraphs(centralStoreLocalSubGraphMap, vertexId);
 
  		//Console.OUT.println("Deleted "+vertexId);
 	}
-	
-	// when required the k core value of a paticular vertex return it to the outside
-	public def getKCoreValueOfAVertex(vertexId:Long):Long{
-	
-	    var kCoreness:Long = 0;
-	    
-	    return kCoreness;
-	}
-
-}
+ 
+ 	// remove vertices from a subgraph
+ 	def removeVertexAndEdgesFromLocalSubGraphs(var store:HashMap[Long, HashSet[Long]],vertexId:Long){
+ 
+ 		val valueStore:HashSet[Long] = new HashSet[Long]();
+ 		store.delete(vertexId);
+ 		var itr:Iterator[HashMap.Entry[Long, HashSet[Long]]] = store.entries().iterator();
+ 		while(itr.hasNext()){
+ 			var entry: HashMap.Entry[Long, HashSet[Long]] = itr.next();
+	 		var key:Long = entry.getKey();
+	 		var values:HashSet[Long]= entry.getValue();
+	 		if(values.contains(vertexId)){
+	 			valueStore.add(key);
+	 		}
+ 		}
+ 
+ 		val itrHS:Iterator[Long] = valueStore.iterator();
+ 		while(itrHS.hasNext()){
+ 			store.get(itrHS.next()).remove(vertexId);
+ 		}
+ 	}
+ 
+ }

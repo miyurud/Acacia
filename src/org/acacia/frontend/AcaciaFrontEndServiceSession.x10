@@ -42,14 +42,15 @@ import x10.util.StringBuilder;
 import x10.regionarray.Array;
 import x10.util.HashMap;
 import x10.util.ArrayList;
+import x10.util.HashSet;
 
-import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.CommonTokenStream;
-import org.antlr.runtime.RecognitionException;
-import org.antlr.runtime.NoViableAltException;
-import org.antlr.runtime.MismatchedTokenException;
-import org.acacia.rdf.sparql.java.SparqlLexer;
-import org.acacia.rdf.sparql.java.SparqlParser;
+// import org.antlr.runtime.ANTLRStringStream;
+// import org.antlr.runtime.CommonTokenStream;
+// import org.antlr.runtime.RecognitionException;
+// import org.antlr.runtime.NoViableAltException;
+// import org.antlr.runtime.MismatchedTokenException;
+// import org.acacia.rdf.sparql.java.SparqlLexer;
+// import org.acacia.rdf.sparql.java.SparqlParser;
 
 /**
  * Class AcaciaFrontEndServiceSession
@@ -538,30 +539,54 @@ public class AcaciaFrontEndServiceSession {
         //}
         
         }else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
-        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-        	out.flush();
         
-        	try{
-        		str = buff.readLine();
-        	}catch(val e:IOException){
-        		Logger.error("Error : " + e.getMessage());
-        	}
-        
-        	if(!graphExistsByID(str)){
-        		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-        		out.flush();				
-        	}else{
-        		//Console.OUT.println("Triangle counting start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-        		val startTime:Long = java.lang.System.currentTimeMillis();
-        		val result:ArrayList[String] = runKCore(str);	
+	        out.println(AcaciaFrontEndProtocol.K_VALUE);
+	        out.flush();
+	
+	        // var kcore:String = "";
+	        try{
+	        	str = buff.readLine();
+	        }catch(val e:IOException){
+	        	Logger.error("Error : " + e.getMessage());
+	        }
 
-        //Console.OUT.println("Triangle counting end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
-        Console.OUT.println("K-Core duration(ms) : " + duration);
-        
-        //out.println(nTraingles);//Write the result to the client.
-        out.flush();
-        }
+	        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+	        out.flush();
+	
+	        var graphID:String = "";
+	        
+	        try{
+	        	graphID = buff.readLine();
+	        }catch(val e:IOException){
+	        	Logger.error("Error : " + e.getMessage());
+	        }
+	        
+	        if(!graphExistsByID(graphID)){
+		        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+		        out.flush();				
+	        }else{
+		        out.println("Processing...");
+		        out.flush();
+		        val startTime:Long = java.lang.System.currentTimeMillis();
+		        var kCoreIds:HashSet[String] = runKCore(graphID,str);	
+	
+		        if((kCoreIds == null) || (kCoreIds.isEmpty())){
+			        out.println("No vertices exist for K Core value : "+str);
+			        out.flush();
+		        }else{
+				    var itr:Iterator[String]  = kCoreIds.iterator();
+				    var vertexID:String;
+			        while(itr.hasNext()){
+			        	vertexID = itr.next();
+			        	out.print(vertexID+" ");//print the result     
+		        	}
+			        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+			        Console.OUT.println("K-Core duration(ms) : " + duration);
+			        out.flush();
+        		}
+        	}
+     
+        	
         }else if(msg.equals(AcaciaFrontEndProtocol.K_NN)){
             
         } else {
@@ -576,10 +601,88 @@ public class AcaciaFrontEndServiceSession {
         return null;
     }
     
-    private def runKCore(val graphID:String):ArrayList[String]{
-        //To be implemented
-        return null;
+    // private def runKCore(val graphID:String):ArrayList[String]{
+    //     //To be implemented
+    //     return null;
+    // }
+    
+    
+    private def runKCore(val graphID:String, val kcore:String):HashSet[String]{
+    
+	    //Console.OUT.println("It is K Core");
+	    var result:HashSet[String] = new HashSet[String]();
+	    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
+	    val hostListLen:Int = Place.places().size as Int;
+	    val intermRes:Rail[Rail[String]] = new Rail[Rail[String]](hostListLen);
+	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
+	    //Console.OUT.println(l.size+"&&&&&&&&&&&&&&&&&&&&&&&7777777777777777777777777777777777777777777");
+    
+	    for(var i:long=0; i<l.size; i++){
+	    	Console.OUT.println(l(i));
+	    
+		    val items:Rail[String] = l(i).split(",");
+		    val pts = mp.get(items(0));
+		    var partitions:ArrayList[String] = null;
+		    
+		    if(pts == null){
+		    	partitions = new ArrayList[String]();
+		    }else{
+		    	partitions = pts as ArrayList[String];
+		    }
+    
+    		partitions.add(items(1));
+    		mp.put(items(0), partitions);
+	    }
+	    
+	    var cntr:Int = 0n;
+	    var placeDetails:String="";
+	    
+	    finish for (val p in Place.places()){
+	    
+	    	placeDetails= placeDetails+p.id+"/"+PlaceToNodeMapper.getHost(p.id)+"/"+ PlaceToNodeMapper.getInstancePort(p.id)+",";             
+	    
+	    }
+    
+	    finish for (val p in Place.places()){
+	    
+		    val k:Int = cntr;
+		    val host = PlaceToNodeMapper.getHost(p.id);
+		    val port = PlaceToNodeMapper.getInstancePort(p.id);
+		    var partitionID:String = null;
+		    
+		    var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+		    if(partitions==null){
+	    
+		    }
+    
+		    if(partitions.size() > 0){
+		    	partitionID = partitions.removeFirst();
+		    }
+    
+	    	val ptID:String = partitionID;
+	    
+	    	async{
+	    		intermRes(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
+    		}
+    
+    		cntr++;
+    	}
+    	for(var i:Int=0n; i < hostListLen; i++){
+		    val intermResult = intermRes(i);
+		    if(intermResult != null){
+		    	for(var j:Int=0n; j < intermResult.size; j++){
+		    		result.add(intermResult(j));//result += intermResult;
+	    		}
+		    }
+    
+    		Console.OUT.println("Result at (" + i + ") : " + intermResult);
+    	}
+    
+    	return result;
     }
+    
+
 
     private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
         var result:ArrayList[String] = new ArrayList[String]();
@@ -1160,9 +1263,7 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 		
 		return result;
 	}
-	
-	
-	
+		
 	
 	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
 	static native def call_runSelect(String):Rail[String];
@@ -1170,6 +1271,9 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
     @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5, #6, #7)")
     static native def call_runSPARQL(String, Int, String, String, String, Long, String):Rail[String];
 	
+    // @Native("java", "org.acacia.server.AcaciaManager.runKCore(#1, #2, #3, #4, #5, #6, #7)")
+    // static native def call_runKCore(String, Int, String, String, String, Long, String):Rail[String];
+    // 
 	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
 	// static native def call_countVertices(String, String):Long;
 

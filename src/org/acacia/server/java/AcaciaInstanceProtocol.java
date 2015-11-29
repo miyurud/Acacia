@@ -79,4 +79,6 @@ public class AcaciaInstanceProtocol{
 	public static final String SEND_PLACEDETAILS="send-placeDetails";
 	public static final String SEND_PLACEID="send-placeID";
 	public static final String BATCH_UPLOAD_REPLICATION="batch-replication";
+	public static final String SEND_KVALUE = "kvalue";
+	public static final String RUN_KCORE = "run-kcore";
 }

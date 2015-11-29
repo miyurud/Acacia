@@ -65,6 +65,7 @@ import org.acacia.events.java.DBTruncateEventListener;
 //import org.acacia.query.algorithms.triangles.Triangles;
 import org.acacia.query.algorithms.pagerank.ApproxiRank;
 import org.acacia.rdf.sparql.ExecuteQuery;
+import org.acacia.query.algorithms.kcore.KCore;
 import org.acacia.server.java.AcaciaInstanceProtocol;
 
 /**
@@ -636,9 +637,58 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 						out.println("Empty");
 						out.flush();
 					}
-				}else{
-					Console.OUT.println("************************|" + msg + "|");
+				 }else if(msg.equals(AcaciaInstanceProtocol.RUN_KCORE)){
+					out.println(AcaciaInstanceProtocol.SEND_KVALUE);
+					out.flush();
+					msg = buff.readLine().trim();
+					val kValue:String = msg;
+					
+					out.println(AcaciaInstanceProtocol.SEND_GID);
+					out.flush();
+					msg = buff.readLine().trim();
+					val gID:String = msg;
+					
+					out.println(AcaciaInstanceProtocol.SEND_PARTITION_ID);
+					out.flush();
+					msg = buff.readLine().trim();
+					val pID:String = msg;
+
+					out.println(AcaciaInstanceProtocol.SEND_PLACEID);
+					out.flush();
+					msg = buff.readLine().trim();
+					val placeID:String = msg;
+					
+					out.println(AcaciaInstanceProtocol.SEND_PLACEDETAILS);
+					out.flush();
+					msg = buff.readLine().trim();
+					val placeDetails:String = msg;
+					
+ 					val kCore:KCore = new KCore();  
+					val result:ArrayList[Long] = kCore.getVertexIdsResults(kValue,gID,pID,placeID);				
+					
+ 					if((result != null) && (!result.isEmpty())){
+ 						out.println("Not empty");
+ 						out.flush();
+
+ 						for(var i:Int=0n;i<result.size();i++){
+
+ 							msg = buff.readLine().trim();
+ 							if(msg.equals("Send")){
+ 							out.println(result.get(i));
+ 							out.flush();
+ 							}
+ 						}
+						out.println("Finish");
+						out.flush();
+ 					}
+ 					else{
+ 						out.println("Empty");
+ 						out.flush();
+ 					}
 				}
+				else{
+					Console.OUT.println("************************|" + msg + "|");
+				 }
 			}
 		}catch(val e:IOException){
 			Logger.error("Error : " + e.getMessage());

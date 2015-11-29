@@ -45,7 +45,7 @@ import x10.util.ArrayList;
 
 public class AcaciaManager {
 
- 	public static def run() throws UnknownHostException{
+ 	public static def run() throws java.net.UnknownHostException{
 
  	}
  
@@ -186,7 +186,7 @@ public class AcaciaManager {
 	 				Console.OUT.println("There was an error in the upload parocess.");
 	 			}
 	 		}
-	 	}catch(e:UnknownHostException ){
+	 	}catch(e:java.net.UnknownHostException ){
 	 		Logger_Java.error(e.getMessage());
 	 		result = false;
 	 	}catch(ec:java.io.IOException ){
@@ -305,7 +305,7 @@ public class AcaciaManager {
 	 				Console.OUT.println("There was an error in the upload parocess.");
 	 			}
 	 		}
-	 	}catch(e:UnknownHostException){
+	 	}catch(e:java.net.UnknownHostException){
 	 		Logger_Java.error(e.getMessage());
 	 		result = false;
 	 	}catch(ec:java.io.IOException){
@@ -410,7 +410,7 @@ public class AcaciaManager {
 	 		if((response != null)&&(response.equals(AcaciaInstanceProtocol.INSERT_EDGES_ACK))){
 	 			out.close();
 	 		}			
-	 	}catch(e:UnknownHostException){
+	 	}catch(e:java.net.UnknownHostException){
 	 		Logger_Java.error(e.getMessage());
 	 		return false;
 	 	}catch(ec:java.io.IOException){
@@ -456,7 +456,7 @@ public class AcaciaManager {
  			Logger_Java.info("Deleting the central store");
  			FileUtils.deleteDirectory(new java.io.File(Utils_Java.getAcaciaProperty("org.acacia.centralstore.location")));
  			Logger_Java.info("Done deleting the central store");
- 		}catch(e:UnknownHostException){
+ 		}catch(e:java.net.UnknownHostException){
  			Logger_Java.error(e.getMessage());
  		}catch(ec:java.io.IOException){
  			Logger_Java.error(ec.getMessage());
@@ -492,7 +492,7 @@ public class AcaciaManager {
 			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SET_GRAPH_ID_ACK))){
 			 	out.close();
 			 }
-		 }catch(e:UnknownHostException){
+		 }catch(e:java.net.UnknownHostException){
 		 	Logger_Java.error(e.getMessage());
 		 }catch(ec:java.io.IOException){
 		 	Logger_Java.error(ec.getMessage());
@@ -531,7 +531,7 @@ public class AcaciaManager {
 			if((response != null)&&(response.equals(AcaciaInstanceProtocol.LOAD_GRAPH_ACK))){
 				out.close();
 			}
-		}catch(e:UnknownHostException){
+		}catch(e:java.net.UnknownHostException){
 			Logger_Java.error(e.getMessage());
 		}catch(ec:java.io.IOException){
 			Logger_Java.error(ec.getMessage());
@@ -583,7 +583,7 @@ public class AcaciaManager {
 			 
 			 return result;
 	 
-		}catch(e:UnknownHostException){
+		}catch(e:java.net.UnknownHostException){
 		 	Logger_Java.error("Connecting to host (1) " + host + " got error message : " + e.getMessage());
 		}catch(ec:java.io.IOException){
 			Logger_Java.error("Connecting to host (1) " + host + " got error message : " + ec.getMessage());
@@ -638,7 +638,7 @@ public class AcaciaManager {
 			 
 			 return result;
 			 
-		 }catch(e:UnknownHostException){
+		 }catch(e:java.net.UnknownHostException){
 		 	Logger_Java.error("Connecting to host (1) " + host + " got error message : " + e.getMessage());
 		 }catch(ec:java.io.IOException){
 		 	Logger_Java.error("Connecting to host (1) " + host + " got error message : " + ec.getMessage());
@@ -698,7 +698,7 @@ public class AcaciaManager {
 			 
 			 	return result;
 		 
-		 }catch(e:UnknownHostException){
+		 }catch(e:java.net.UnknownHostException){
 		 	Logger_Java.error("Connecting to host (2) " + host + " got error message : " + e.getMessage());
 		 }catch(ec:java.io.IOException){
 		 	Logger_Java.error("Connecting to host (2) " + host + " got error message : " + ec.getMessage());
@@ -748,7 +748,7 @@ public class AcaciaManager {
 			 
 			 return result;
 		 
-		 }catch(e:UnknownHostException){
+		 }catch(e:java.net.UnknownHostException){
 		 	Logger_Java.error("Connecting to host (2) " + host + " got error message : " + e.getMessage());
 		 }catch(ec:java.io.IOException){
 		 	Logger_Java.error("Connecting to host (2) " + host + " got error message : " + ec.getMessage());
@@ -812,7 +812,7 @@ public class AcaciaManager {
 		 	out.close();
 		 
 		 	return result;			
-	 	}catch(e:UnknownHostException){
+	 	}catch(e:java.net.UnknownHostException){
 	 		Logger_Java.error("Connecting to host (3) " + host + " got error message : " + e.getMessage());
 	 	}catch(ec:java.io.IOException){
 	 		Logger_Java.error("Connecting to host (3) " + host + " got error message : " + ec.getMessage());
@@ -886,7 +886,7 @@ public class AcaciaManager {
 			 out.close();
 			 
 			 return result;			
-		 }catch(e:UnknownHostException){
+		 }catch(e:java.net.UnknownHostException){
 		 	Logger_Java.error("Connecting to host (4) " + host + " got error message : " + e.getMessage());
 		 }catch(ec:java.io.IOException){
 		 	Logger_Java.error("Connecting to host (4) " + host + " got error message : " + ec.getMessage());
@@ -1150,7 +1150,7 @@ public class AcaciaManager {
  			out.close();
  
  			return result;			
- 		}catch(e:UnknownHostException){
+ 		}catch(e:java.net.UnknownHostException){
  			Logger_Java.error("Connecting to host (5) " + host + " got error message : " + e.getMessage());
  		}catch(ec:java.io.IOException){
  			Logger_Java.error("Connecting to host (5) " + host + " got error message : " + ec.getMessage());
@@ -1201,15 +1201,16 @@ public class AcaciaManager {
 	  * @throws IOException 
 	  * @throws UnknownHostException 
 	  */
-	 public static def runSPARQL(host:String, port:Int, graphID:String, partitionID:String, query:String, placeID:long, placesDetails:String) throws UnknownHostException, java.io.IOException:Rail[String]{
+	 public static def runSPARQL(host:String, port:Int, graphID:String, partitionID:String, query:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:Rail[String]{
 		 var result:ArrayList[String] = new ArrayList[String]();
-		 //try{
+		 var arr:Rail[String] = null;
+		 try{
 		 val socket:Socket = new Socket(host, port);
 		 val out:PrintWriter = new PrintWriter(socket.getOutputStream());
 		 val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		 var response:String = "";		
 		 var i:Int=0n;
-		 
+		 		 
 		 out.println(AcaciaInstanceProtocol.HANDSHAKE);
 		 out.flush();
 		 response = reader.readLine();
@@ -1280,17 +1281,122 @@ public class AcaciaManager {
 		 	}
 		 }
 		 reader.close();	
-		 var arr:Rail[String] = null;
+		
 		 if(result != null){
 		 	arr = result.toRail();
 		 }
-		 //}catch(e:java.net.UnknownHostException){
-		 //Logger_Java.error("Connecting to host (6) " + host + " got error message : " + e.getMessage());
-		 //}catch(ec:java.io.IOException){
-		 //Logger_Java.error("Connecting to host (6) " + host + " got error message : " + ec.getMessage());
-		 //}
+		 }catch(e:java.net.UnknownHostException){
+		 	Logger_Java.error("Connecting to host (6) " + host + " got error message : " + e.getMessage());
+		 }catch(ec:java.io.IOException){
+		 	Logger_Java.error("Connecting to host (6) " + host + " got error message : " + ec.getMessage());
+		 }
 		 return arr;
 	 }
+	 
+	 
+	 /**
+	  * Per each worker we have to run K Core Algorithm in parallel.
+	  * @param host
+	  * @param port
+	  * @param graphID
+	  * @param partitionID
+	  * @return
+	  * @throws IOException 
+	  * @throws UnknownHostException 
+	  */
+	 public static def runKCore(host:String, port:Int, graphID:String, partitionID:String, kValue:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:Rail[String]{
+		 
+	 	 var result:ArrayList[String] = new ArrayList[String]();
+		 val socket:Socket = new Socket(host, port);
+		 val out:PrintWriter = new PrintWriter(socket.getOutputStream());
+		 val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		 var response:String = "";		
+		 var i:Int=0n;
+	 
+		 out.println(AcaciaInstanceProtocol.HANDSHAKE);
+		 out.flush();
+		 response = reader.readLine();
+	 
+		 Console.OUT.println("resp1:" + response);
+	 
+		 if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+			 Console.OUT.println("aaa");
+			 out.println(java.net.InetAddress.getLocalHost().getHostName());
+			 out.flush();
+			 
+			 out.println(AcaciaInstanceProtocol.RUN_KCORE);
+			 out.flush();
+			 response = reader.readLine();
+			 Console.OUT.println("RUN_KCORE: "+response);
+			 
+			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_KVALUE))){
+				 Console.OUT.println(kValue);
+				 out.println(kValue);
+				 out.flush();
+				 response = reader.readLine();
+				 Console.OUT.println("SEND_KVALUE: "+response);
+	 
+				 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
+					 Console.OUT.println(graphID);
+					 out.println(graphID);
+					 out.flush();
+					 response = reader.readLine();
+					 Console.OUT.println("SEND_GID "+response);
+					 
+					 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
+						 Console.OUT.println(partitionID);
+						 out.println(partitionID);
+						 out.flush();
+						 response = reader.readLine();
+						 Console.OUT.println("SEND_PARTITION_ID "+response);
+	 
+						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
+						 	 Console.OUT.println(placeID);
+						 	 out.println(placeID);
+							 out.flush();
+							 response = reader.readLine();
+							 Console.OUT.println("SEND_PLACEID: "+response);
+	 
+							 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
+								 out.println(placesDetails);
+								 out.flush();
+								 response = reader.readLine();
+								 Console.OUT.println("SEND_PLACEDETAILS "+response);
+								 
+							 	 if(response.equals("Not empty")){
+	 
+									 out.println("Send");
+									 out.flush();
+									 
+	 								 response = reader.readLine();
+	 
+									 while(!response.equals("Finish")){	
+										 result.add(response);
+										 out.println("Send");
+										 out.flush();
+										 i+=1;
+	 									 response = reader.readLine();
+	 
+	 								 }
+									 
+							 	 }else if(response.equals("Empty")){
+	 								result=null;
+							 	 }
+	 						}
+	 					}
+	 				}
+	 			}
+	 		}
+	 	}
+	 	reader.close();	
+	 	var arr:Rail[String] = null;
+	 	if(result != null){
+	 		arr = result.toRail();
+	 	}
+	 
+	 	return arr;
+	 } 
+	 
  
  	/**
   	 * This method is used to remove the vertices of a particular graph.
@@ -1341,7 +1447,7 @@ public class AcaciaManager {
  
  			return Long.parseLong(response);
  
- 		}catch(e:UnknownHostException){
+ 		}catch(e:java.net.UnknownHostException){
  			Logger_Java.error("Connecting to host (7) " + host + " got error message : " + e.getMessage());
  		}catch(ec:java.io.IOException){
  			Logger_Java.error("Connecting to host (7) " + host + " got error message : " + ec.getMessage());
@@ -1375,7 +1481,7 @@ public class AcaciaManager {
  
  			out.println(AcaciaInstanceProtocol.BATCH_UPLOAD);
  			out.flush();
- 		}catch(e:UnknownHostException){
+ 		}catch(e:java.net.UnknownHostException){
  			Logger_Java.error("Connecting to host (8) " + host + " got error message : " + e.getMessage());
  		}catch(ec:java.io.IOException){
  			Logger_Java.error("Connecting to host (8) " + host + " got error message : " + ec.getMessage());

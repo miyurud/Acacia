@@ -53,6 +53,7 @@ import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 import org.acacia.util.java.Utils_Java;
 import org.acacia.resilience.FaultToleranceScheduler;
+import org.acacia.titandataloader.DataLoadingClient;
 
 /**
  * Class AcaciaRDFPartitioner
@@ -94,6 +95,7 @@ public class AcaciaRDFPartitioner {
     val edgeList = new File(edgeListPath);
     val printer = edgeList.printer();
  
+    var client:DataLoadingClient;
     public def this() {
     	val f = new File(location);
     	if(!f.exists()){
@@ -149,24 +151,63 @@ public class AcaciaRDFPartitioner {
     }
     
     public def readDirectory(val inputDirectory:String):void{
-    try{    
-    	val dir = new File(inputDirectory);
-    	val files = dir.list();
-    Console.OUT.println("creating model inside testing");
-    	for(var i:Int=0n;i<files.size;i++){
-    		readFile(inputDirectory + java.io.File.separator + files(i));
+	    try{    
+	    	val dir = new File(inputDirectory);
+	    	val files = dir.list();
+	    	Console.OUT.println("creating model inside testing");
+	    	for(var i:Int=0n;i<files.size;i++){
+	    		readFile(inputDirectory + java.io.File.separator + files(i));
+	    	}
+	    	//flush the printer
+	    	//printer.flush();
+	    	client = new DataLoadingClient("http://localhost:8182");
+	    
+	    	/*writeStore(nodes,"nodeStore");
+	    	writeStore(predicates,"predicateStore");
+	    	writeMap(attributeMap,"attributeMap");
+	    	writeMap(relationsMap,"relationMap");*/
+	    Console.OUT.println("Loading data to titan :::::::::::::::::::::::::::::::::::::::::::::");
+	    	loadDatatoTitan();
+	    }
+	    catch(e:Exception){
+	    	e.printStackTrace();
+	    }
+    }
+    
+    private def loadDatatoTitan(){
+    	Console.OUT.println("Inside Data Loading method");
+    	client.deleteVertices();
+    	var vertexName:String;
+    	var propertyName:String = null;
+    	val vertexIterator:Iterator[x10.util.Map.Entry[String,Long]] = nodes.entries().iterator();
+    	var vertexEntry:x10.util.Map.Entry[String,Long];
+    	var values:java.util.HashMap;
+    	var count:Long = 0;
+    	val maxSize:Long = nodes.size();
+    	while(vertexIterator.hasNext()){
+    		vertexEntry = vertexIterator.next();
+    		vertexName = vertexEntry.getKey();
+    		val mapItem:HashMap[Long,ArrayList[String]] = attributeMap.get(vertexEntry.getValue());
+    		if(mapItem != null){
+	    		values = new java.util.HashMap();
+	    		val itr2:Iterator[x10.util.Map.Entry[Long,ArrayList[String]]] = mapItem.entries().iterator();
+	    		while(itr2.hasNext()){
+	    			val miniMapItem:x10.util.Map.Entry[Long,ArrayList[String]] = itr2.next();
+	    			
+	    			val itr3:Iterator[x10.util.Map.Entry[String,Long]] = predicates.entries().iterator();
+	    			while(itr3.hasNext()){
+	    				val value = itr3.next();
+	    				if(value.getValue() == miniMapItem.getKey()){
+	    					propertyName = value.getKey();
+	    					break;
+	    				}
+	    			}
+	    			val propertyValue:ArrayList[String] = miniMapItem.getValue();
+	    			values.put(propertyName,propertyValue.getFirst());
+	    		}
+	    		client.createVertexWithProperties(vertexName, values);
+    		}
     	}
-    	//flush the printer
-    	//printer.flush();
-    	
-    	writeStore(nodes,"nodeStore");
-    	writeStore(predicates,"predicateStore");
-    	writeMap(attributeMap,"attributeMap");
-    	writeMap(relationsMap,"relationMap");
-    }
-    catch(e:Exception){
-    	e.printStackTrace();
-    }
     }
        
     public def readFile(val inputFile:String):void{
@@ -751,7 +792,7 @@ public class AcaciaRDFPartitioner {
     			val port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
     			val withinPlaceIndex:Int = ((j - hostID) as Int)/hostCount;
     			val instancePort:Int = port + withinPlaceIndex;
-                        Console.OUT.println("withinPlaceIndex:" + withinPlaceIndex + " instancePort:" + instancePort);
+                Console.OUT.println("withinPlaceIndex:" + withinPlaceIndex + " instancePort:" + instancePort);
     			val fileTransferport:Int = instancePort + (nPlaces/hostCount);
     
     			AcaciaManager.batchUploadFile(hostName, instancePort, Long.parseLong(graphID), filePath+".zip", fileTransferport);
@@ -772,8 +813,11 @@ public class AcaciaRDFPartitioner {
 				    val replicationInstancePort:Int = port + replicationWithinPlaceIndex;
 				    Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
 				    val replicationFileTransferport:Int = instancePort + (nPlaces/hostCount);
-			    	//AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,hostID);
-			    	Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
+				    AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,i);
+				    //val replicationHost:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + replicationHostName + "'")(0);
+				    MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.REPLICATION_STORED_IN(idreplication, stored_partition_id, stored_host_id) VALUES(" + j + "," + i + "," + replicationHostID + ")");
+				    
+				    Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
 			    }
     
 			    //delete local store files in tmp directory

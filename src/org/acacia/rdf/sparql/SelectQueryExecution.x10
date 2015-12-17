@@ -18,13 +18,19 @@ package org.acacia.rdf.sparql;
 
 import x10.util.ArrayList;
 import x10.util.HashMap;
+import x10.util.HashSet;
 
 public class SelectQueryExecution {
-  private var intermediateResults:ArrayList[ArrayList[String]] = null;
+  //private var intermediateResults:HashSet[HashSet[String]] = null;
 
   public def executeSelect(var inputQuery:String, var graphID:String, var partitionID:String, var placeID:String):ArrayList[String]{
   	var result:ArrayList[String] = null;
-  	intermediateResults = new ArrayList[ArrayList[String]]();
+    var nodeStore:HashMap[Long, HashSet[String]] = new HashMap[Long, HashSet[String]]();
+    var ifSingleVariabled:Boolean = false;
+    var ifInferenceHandled:Boolean = false;
+    var intermediateResults:HashSet[HashSet[String]] = new HashSet[HashSet[String]]();
+    var variableName:String = null;
+    var unknowns:ArrayList[String] = new ArrayList[String](); 
 
   	//exract triple from the query
   	var query:Query = new Query();
@@ -43,25 +49,63 @@ public class SelectQueryExecution {
 
     //triples are received as tokens
     var inferenceHandledTriples:ArrayList[Rail[String]] = new ArrayList[Rail[String]]();
-    inferenceHandledTriples=inferenceHandler.getInferenceHnadledTriples(inferenceData, modifiedtriples);
+    //inferenceHandledTriples=inferenceHandler.getInferenceHnadledTriples(inferenceData, modifiedtriples);
 
     dataLoading.loadGraphData(graphID, partitionID ,placeID);
 
-    var graphData:ArrayList[Rail[String]] = dataLoading.getGraphData();
-
+    var graphData:ArrayList[String] = dataLoading.getGraphData();
+    nodeStore = dataLoading.getVertexPropertyMap();
+    
+    inferenceHandledTriples = inferenceHandler.getInferenceHnadledTriples(inferenceData, modifiedtriples, nodeStore);
+    ifInferenceHandled=inferenceHandler.getIfInferenceHandled();
+    
     for(var i:Int = 0n; i < inferenceHandledTriples.size(); i++){
-    	var triplePattern:TriplePattern = new TriplePattern();
-    	triplePattern.match(inferenceHandledTriples.get(i),prefix, graphData);
-    	result = triplePattern.getResult();
-    	intermediateResults.add(result);
+    	// var triplePattern:TriplePattern = new TriplePattern();
+    	// triplePattern.match(inferenceHandledTriples.get(i),prefix, graphData);
+    	// result = triplePattern.getResult();
+    	// intermediateResults.add(result);
+    
+    //	System.out.println(inferenceHandledTriples.get(i)[0]+inferenceHandledTriples.get(i)[1]+inferenceHandledTriples.get(i)[2]);
+    
+	    if(inferenceHandledTriples.get(i)(0n).indexOf("?") > 0n){
+		    variableName=inferenceHandledTriples.get(i)(0n).substring(1n);
+		    
+		    if(!unknowns.contains(variableName)){
+		       unknowns.add(variableName);
+		    }
+	    }
+	    
+	    if(inferenceHandledTriples.get(i)(2).indexOf("?") > 0n){
+	    	variableName=inferenceHandledTriples.get(i)(2).substring(1n);
+	    
+		    if(!unknowns.contains(variableName)){
+		    	unknowns.add(variableName);
+		    }
+	    }
     }
 
+    if(unknowns.size()==1){
+      ifSingleVariabled=true;
+    } else {
+      ifSingleVariabled=false;
+    }
+    
     for(var i:Int = 0n; i < intermediateResults.size(); i++){
-    	Console.OUT.println(intermediateResults.get(i));
+    	//Console.OUT.println(intermediateResults.get(i));
+	    var triplePattern:TriplePattern = new TriplePattern();
+	    triplePattern.match(inferenceHandledTriples.get(i),prefix, graphData);
+	    result=triplePattern.getResult();
+	    intermediateResults.add(result);
     }
 
     var finalResults:FinalResult = new FinalResult();
-    finalResults.joinResults(intermediateResults);
+    
+    if(ifSingleVariabled){
+    	finalResults.joinResults(intermediateResults);
+    }else{
+        finalResults.joinResults(inferenceHandledTriples,intermediateResults, ifInferenceHandled, unknowns);
+    }
+    
     var FinalResults:ArrayList[String] = finalResults.getFinalResults();
 
     for(var i:Int = 0n; i < FinalResults.size(); i++){

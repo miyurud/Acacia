@@ -33,10 +33,11 @@ import org.acacia.util.Utils;
 public class DataLoading {
 	
 	private var graphData:ArrayList[String];
+    private var vertexPropertyMap:HashMap[Long, HashSet[String]];
 	
 	public def loadGraphData(val graphID:String, val partitionID:String,val placeID:String):void{
 		val baseDir:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
-
+        graphData = new ArrayList[String]();
 		// /var/tmp/acad-localstore
 		//native store
 		var nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir, false);
@@ -107,15 +108,15 @@ public class DataLoading {
 				}
 			}
 		}	
-		
-		
-		
-		}
-
+	}
 
 	public def getGraphData():ArrayList[String]{
 		return graphData;
 	}
+
+    public def getVertexPropertyMap():HashMap[Long, HashSet[String]]{
+        return vertexPropertyMap;
+    }
 	
 	public def loadInferenceData():HashMap[String, ArrayList[String]]{
 		val fileName:String = "/home/yasima/Acacia/x10dt/workspace/Acacia/univ-bench.owl";
@@ -162,6 +163,6 @@ public class DataLoading {
         	Console.OUT.println(e.getMessage());
         }
 		
-		return inferenceData; 
+		return inferenceData;
 	}	
 }

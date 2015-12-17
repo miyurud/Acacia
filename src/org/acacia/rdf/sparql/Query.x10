@@ -84,8 +84,12 @@ public class Query {
     				}
     			}
     		}else{
+    
+    if(tokens(0).indexOf("http") < 0){
     			tokens(0) = prefix.get(tokens(0).substring(0n, tokens(0).indexOf(":")).trim()) + tokens(0).substring(tokens(0).indexOf(":") + 1n).trim();
-
+    }else{
+    tokens(2) = tokens(2).substring(1n, tokens(2).length()-1n);
+    }
     			if (tokens(2).indexOf("?") < 0n) {
     				if (!tokens(2).startsWith("<http")) {
     					tokens(2) = prefix.get(tokens(2).substring(0n, tokens(2).indexOf(":")).trim()) + tokens(2).substring(tokens(2).indexOf(":") + 1n).trim();

@@ -85,7 +85,8 @@ public class TriplePattern {
 
 			for (var i:Int = 0n; i < graphData.size(); i++) {
 				if (graphData.get(i).compareTo(tokens(1)) > 0n) {
-					temp.add( graphData.get(i));
+					//temp.add( graphData.get(i).split(",")(0));
+                    temp.add( graphData.get(i));
 				}
 			}
 			return temp;
@@ -121,7 +122,8 @@ public class TriplePattern {
 
 			for (var i:Int = 0n; i < graphData.size(); i++) {
 				if ((graphData.get(i).compareTo(tokens(0)) > 0n) && (graphData.get(i).compareTo(tokens(1)) > 0n) ) {
-					temp.add(graphData.get(i));
+					//temp.add(graphData.get(i));
+                    temp.add(graphData.get(i).split(",")(2));
 				}
 			}
 			return temp;

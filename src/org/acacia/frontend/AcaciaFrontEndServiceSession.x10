@@ -565,13 +565,17 @@ public class AcaciaFrontEndServiceSession {
 		        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
 		        out.flush();				
 	        }else{
-		        out.println("Processing...");
+	        	out.println();
+		        out.println("Processing for K-Core value "+str+" in graph "+graphID);
+		        out.println();
 		        out.flush();
 		        val startTime:Long = java.lang.System.currentTimeMillis();
 		        var kCoreIds:HashSet[String] = runKCore(graphID,str);	
 	
 		        if((kCoreIds == null) || (kCoreIds.isEmpty())){
+		        	out.println();
 			        out.println("No vertices exist for K Core value : "+str);
+			        out.println();
 			        out.flush();
 		        }else{
 				    var itr:Iterator[String]  = kCoreIds.iterator();
@@ -580,6 +584,10 @@ public class AcaciaFrontEndServiceSession {
 			        	vertexID = itr.next();
 			        	out.print(vertexID+" ");//print the result     
 		        	}
+			        out.println();
+			        out.println();
+			        out.println("Number of vertices for K-Core value "+str+" : "+kCoreIds.size());
+			        out.println();
 			        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
 			        Console.OUT.println("K-Core duration(ms) : " + duration);
 			        out.flush();
@@ -674,9 +682,11 @@ public class AcaciaFrontEndServiceSession {
 		    	for(var j:Int=0n; j < intermResult.size; j++){
 		    		result.add(intermResult(j));//result += intermResult;
 	    		}
+		    Console.OUT.println("Result at (" + i + ") : " + intermResult);
 		    }
-    
-    		Console.OUT.println("Result at (" + i + ") : " + intermResult);
+		    if(intermResult == null){
+		    	Console.OUT.println("Result at (" + i + ") : [0 vertices]");
+		    }
     	}
     
     	return result;

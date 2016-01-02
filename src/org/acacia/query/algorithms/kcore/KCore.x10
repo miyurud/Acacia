@@ -51,14 +51,14 @@ public class KCore {
 	    Console.OUT.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 	    try {
 	    	loadGraphData(graphID, partitionID, placeID);
-	    	createFilesLocation();
-	    	resultArrayList.addAll(calculateKCoreness(Long.parse(kValue)));
-	    
+	    	//createFilesLocation();
+	    	resultArrayList = calculateKCoreness(Long.parse(kValue));
+	    	//resultArrayList.addAll(calculateKCoreness(Long.parse(kValue)));
 	    	
 	    }catch(e:Exception){
 	    	e.printStackTrace();
 	    }finally{
-	    Console.OUT.println(resultArrayList.size());
+	    	Console.OUT.println(resultArrayList.size());
 	    }
 	    return resultArrayList;
 	    
@@ -71,12 +71,14 @@ public class KCore {
  		//native store
  		val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(partitionID),baseDir,false);
   		nativeStore.loadGraph();
- 		nativeStoreLocalSubGraphMap = nativeStore.getlocalSubGraphMap();
+ 		//nativeStoreLocalSubGraphMap = nativeStore.getlocalSubGraphMap();
+  		//nativeStoreLocalSubGraphMap = nativeStore.getUnderlyingHashMap();
  
  		//central store
  		val centraleStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(partitionID),baseDir,true,Int.parse(placeID));
  		centraleStore.loadGraph();
- 		centralStoreLocalSubGraphMap = centraleStore.getUnderlyingHashMap();
+ 		//centralStoreLocalSubGraphMap = centraleStore.getlocalSubGraphMap();
+ 		//centralStoreLocalSubGraphMap = centraleStore.getUnderlyingHashMap();
  
 	}
  
@@ -107,73 +109,54 @@ public class KCore {
  		}
  	}
 	
-	// calculate K Coreness value 
-	def calculateKCoreness(kCoreValue:Long):ArrayList[long]{
-	
-	 	var edgesCount:Long = 0n;
-	    var count:Long = 1;
-	    var vertexIds:ArrayList[Long];
-	    var vertexCount:Long = 0;
-	    var endOfArray:Long;
-	    var vertexIdsWriteToFile:ArrayList[Long] = null;
-	    
-	    vertexCount = getVertexCount();
-	    
-	    // algorithm 
-	    while(vertexCount > 0 && kCoreValue >= count){
-	    Console.OUT.println(nativeStoreLocalSubGraphMap.size()+":"+count);
-	    Console.OUT.println(centralStoreLocalSubGraphMap.size()+":"+count);
-	    	vertexIds = getVertexIdsOfSameKCoreness(count,vertexCount);
-	    	vertexIdsWriteToFile = new ArrayList[Long]();
-	    	endOfArray = 0;
-		    while(vertexIds.size() > 0){
-		    
-			    for(var i:Long = 0; i< vertexIds.size(); i++){
-			    	vertexIdsWriteToFile.add(vertexIds(i));
-			        removeVertexAndEdges(vertexIds(i));
-			        //Console.OUT.println("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb "+i+":"+vertexIds.size());
-			    }
-			    vertexCount -= vertexIds.size();
-			    Console.OUT.println("vertexCount : "+vertexCount);
-			    vertexIds = getVertexIdsOfSameKCoreness(count,vertexCount);
-			    endOfArray += vertexIds.size();
-			    Console.OUT.println("cccccccccccccccccccccccccccc");
-		    }
-		    //Console.OUT.println("cccccccccccccccccccccccccccc");
-		    //addVertexToFile(vertexIdsWriteToFile, count);
-		    count++;
-	    }
-	    if(vertexCount == 0 && kCoreValue > count){
-	    	vertexIdsWriteToFile = new ArrayList[Long]();
-	    }
-	    KCorenessOfGraph = --count;
-	    
-	    return vertexIdsWriteToFile;
-	}
-	
-	// from the graph get the vertices which has the same degree 
-	def getVertexIdsOfSameKCoreness(count:Long, vertexCount:Long):ArrayList[Long]{
-	
-  		var countVertexIds:Int = 0n;
-	 	var vertexIds:ArrayList[Long]= new ArrayList[Long]();
-	 	var itr:Iterator[Long]  = nativeStoreLocalSubGraphMap.keySet().iterator();
-	 
-		while(itr.hasNext()){
-		 	vertexID:Long = itr.next();
-		 	k:Long = countEdges(vertexID);
-		 	if(k <= count){
-		 		vertexIds.add(vertexID);
-		 	}
-		 	countVertexIds++;
-		 }
-	    
-	 	// Console.OUT.println("Call countEdges which returns k value of a vertex");
-	  	// Console.OUT.println("Save them to a HashMap");
-	 	// Console.OUT.println("Return vertexIds array which has the same degree "+count);
-	
-	 	return vertexIds;
-	}
-	
+ 	// from the graph get the vertices which has the same degree 
+ 	def calculateKCoreness(kValue:Long):ArrayList[Long]{
+ 
+ 		var count:Long = 0;
+ 
+ 		var vertexCount:Long = getVertexCount();
+ 
+ 		var vertexIds:ArrayList[Long]= new ArrayList[Long]();
+ 		var tempStore:Set[Long] = new HashSet[Long]();
+ 		var keyStore:Set[Long] = new HashSet[Long]();
+ 
+ 		var itr:Iterator[Long]  = nativeStoreLocalSubGraphMap.keySet().iterator();
+ 		while(itr.hasNext()){
+ 			keyStore.add(itr.next());
+ 		}
+ 		itr = tempStore.iterator();
+ 		var i:Long = 1;
+ 		while(i<=kValue && vertexCount>0){
+ 			count = 0;
+ 			while(itr.hasNext()){
+ 				keyStore.remove(itr.next());
+ 			}
+ 			itr = keyStore.iterator();
+ 			tempStore = new HashSet[Long]();
+			while(itr.hasNext()){
+			 	vertexID:Long = itr.next();
+			 	k:Long = countEdges(vertexID);
+			 	if(k <= i){
+			 		if(k == i){
+			 			vertexIds.add(vertexID);
+			 		}
+					//remove vertexID
+			 		tempStore.add(vertexID);
+			 		removeVertexAndEdges(vertexID);
+			 		vertexCount--;
+			 	}
+			}
+ 			if(count==0){
+ 				i = i + 1;
+ 			}
+ 		}
+ 		if(vertexCount == 0 && kValue <= i){
+ 			vertexIds = new ArrayList[Long]();
+ 		}
+
+ 		return vertexIds;
+ 	}
+
 	//get the vertex count of original graph
 	def getVertexCount(){
 
@@ -197,17 +180,12 @@ public class KCore {
  	// get the count in each subGraph
  	def countEdgesInLocalSubGraphs(store:HashMap[Long, HashSet[Long]],vertexId:Long):Long{
  		
- 		var count:Long =0;
- 		var itr:x10.lang.Iterator[HashMap.Entry[Long, HashSet[Long]]] = store.entries().iterator();
- 
- 		while(itr.hasNext()){
- 			var entry: HashMap.Entry[Long,  HashSet[Long]] = itr.next();
- 			var key:Long = entry.getKey();
- 			if(key == vertexId){
- 				var hs: HashSet[Long] = entry.getValue();
- 				count = hs.size();
- 			}
+ 		var count:Long = 0;
+ 		val set:HashSet[Long] = store.get(vertexId);
+ 		if(set != null){
+ 			count = set.size();
  		}
+ 		
  		return count;
  	}
 	
@@ -239,21 +217,25 @@ public class KCore {
  	def removeVertexAndEdgesFromLocalSubGraphs(var store:HashMap[Long, HashSet[Long]],vertexId:Long){
  
  		val valueStore:HashSet[Long] = new HashSet[Long]();
- 		store.delete(vertexId);
- 		var itr:Iterator[HashMap.Entry[Long, HashSet[Long]]] = store.entries().iterator();
- 		while(itr.hasNext()){
- 			var entry: HashMap.Entry[Long, HashSet[Long]] = itr.next();
-	 		var key:Long = entry.getKey();
-	 		var values:HashSet[Long]= entry.getValue();
-	 		if(values.contains(vertexId)){
-	 			valueStore.add(key);
-	 		}
- 		}
+ 		var itr:Iterator[HashMap.Entry[Long, HashSet[Long]]];
  
- 		val itrHS:Iterator[Long] = valueStore.iterator();
- 		while(itrHS.hasNext()){
- 			store.get(itrHS.next()).remove(vertexId);
+		var entry: HashMap.Entry[Long, HashSet[Long]]; 
+		var key:Long = 0;
+		var values:HashSet[Long]= new HashSet[Long]();
+		store.delete(vertexId);
+		itr  = store.entries().iterator();
+		while(itr.hasNext()){
+		 	entry = itr.next();
+		 	key = entry.getKey();
+		 	values = entry.getValue();
+		 	if(values.contains(vertexId)){
+		 		valueStore.add(key);
+			}
+		}
+		val itrHS:Iterator[Long] = valueStore.iterator();
+		while(itrHS.hasNext()){
+			store.get(itrHS.next()).remove(vertexId);
  		}
  	}
- 
  }
+ 

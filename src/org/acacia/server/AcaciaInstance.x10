@@ -43,6 +43,8 @@ import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.server.java.AcaciaInstanceProtocol;
 
+import org.acacia.util.PlaceToNodeMapper;
+
 public class AcaciaInstance{
 	//private GraphDatabaseService graphDB;
 	private var graphDBMap:HashMap[String, AcaciaLocalStore] = new HashMap[String, AcaciaLocalStore]();//This HashMap holds the AcaciaInstance objects. 
@@ -54,7 +56,11 @@ public class AcaciaInstance{
 	
 	public def this(){
 		sessions = new ArrayList[AcaciaInstanceServiceSession]();
-		port = Int.parseInt(java.lang.System.getProperty("ACACIA_INSTANCE_PORT"));
+        //port = 7780n;
+		//port = Int.parseInt(java.lang.System.getProperty("ACACIA_INSTANT_PORT"));
+        
+        port = PlaceToNodeMapper.getInstancePort(here.id);
+        Console.OUT.println("AcaciaInstance here.id:" + here.id + " and the port is : " + port);
 	}
 		
 	public def start_running() : void {	
@@ -79,9 +85,9 @@ public class AcaciaInstance{
 				//session.addShutdownEventListener(new InstanceShutdownEventListener(this));
 			}
 		}catch(val e:BindException){
-			Logger_Java.error("Error : " + e.getMessage());
+			Logger_Java.error("AcaciaInstance Error : " + e.getMessage()+":"+here.id);
 		} catch (val e:IOException) {
-			Logger_Java.error("Error : " + e.getMessage());
+			Logger_Java.error("AcaciaInstance Error : " + e.getMessage()+":"+here.id);
 		}
 		
 		Logger_Java.info("XXXXXXXXXXXXXXXXX> Exitting the AcaciaInstance server at " + org.acacia.util.java.Utils_Java.getHostName() + " port : " + port);

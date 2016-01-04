@@ -91,13 +91,22 @@ public class AcaciaServer {
     /**
      * The main method.
      */
-    public static def main(val args:Rail[String]) {
+    public static def main(val args:Rail[String]):void {
+	/*finish for (p in Place.places()) {
+     	at (p) async {
+		Console.OUT.println(here+" says hellowrw and ");
+		test.acacia.server.x10.TestAcaciaInstance.main(null);
+		while(true);
+	}
+     }*/
     	var server:AcaciaServer = new AcaciaServer();
-        server.run(Boolean.parse(args(0)));
+        //server.run(Boolean.parse(args(0)));
+	server.run();
     }
     
     
-    public def run(val standaloneFlag:Boolean):void{
+    //public def run(val standaloneFlag:Boolean):void{
+    public def run():void{
     	init();
     	
     	Console.OUT.println("Running the server...");   	
@@ -133,36 +142,36 @@ public class AcaciaServer {
         //var partIndexFlags:Rail[Boolean] = new Rail[Boolean](org.acacia.util.java.Utils_Java.getPrivateHostList().length);
         //val href = GlobalRef[HashMap[String, Boolean]](hostHashMap);
     	finish{
-    		if(standaloneFlag){
+    		//if(standaloneFlag){
 			    for (p in Place.places()){
 			            // finish{
-			               if(p.id == 0){
+			              /* if(p.id == 0){
 				               async {
 					               //PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
-					               java.lang.System.setProperty("logFileName", ""+here.id);
-					               java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
+					               //java.lang.System.setProperty("logFileName", ""+here.id);
+					               //java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
 					               //ACACIA_INSTANCE_DATA_PORT
-					               java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
+					               //java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
 					               
-					               Console.OUT.println("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(p.id));
-					               
+					               //Console.OUT.println("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(p.id));
+					               Console.OUT.println(here+" says hellowrw and ");
 					               test.acacia.server.x10.TestAcaciaInstance.main(null);
-			               	   }
-			               }else{
-							   async at(p){
+			               	   	}
+			               }else{*/
+							   at(p) async {
 							    	//PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
-							        java.lang.System.setProperty("logFileName", ""+here.id);
-							        java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
+							        //java.lang.System.setProperty("logFileName", ""+here.id);
+							        //java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
 							        //ACACIA_INSTANCE_DATA_PORT
-							        java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
+							        //java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
 							        
 							        //Console.OUT.println("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(p.id));      
 							         
-							         Logger_Java.info("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(here.id));
-							         
+							         //Logger_Java.info("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(here.id));
+							        Console.OUT.println(here+" says hellowrw and "); 
 							        test.acacia.server.x10.TestAcaciaInstance.main(null);
 							    }
-			               }
+			               //}
 						    val curHost:String = PlaceToNodeMapper.getHost(p.id);
 						    
 						    Console.OUT.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
@@ -170,16 +179,16 @@ public class AcaciaServer {
 						    Console.OUT.println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			    }  
 			    
-			    
-			    for (p in Place.places()){
+			    //}
+			    /*for (p in Place.places()){
 				    val curHost:String = PlaceToNodeMapper.getHost(p.id);
 				    
-				    Console.OUT.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-				    Console.OUT.println("Current host is : " + curHost);
+				    Console.OUT.println("XXXXXXXX Place to node mapper XXXXXXXXXXXXXXXXXXXXXX");
+				    Console.OUT.println("Current host for" +p.id+" is : " + curHost);
 				    Console.OUT.println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
 				     if(hostHashMap.get(curHost) == false){
 				        hostHashMap.put(curHost, true);
-				        if(p.id == 0){
+				        /*if(p.id == 0){
 				        Console.OUT.println("Inside place 0 2nd time");
 				         async {
 				         	Console.OUT.println("TestPartitioner Place 0");
@@ -188,9 +197,10 @@ public class AcaciaServer {
 				        }else{
 				        Console.OUT.println("Inside place other 2nd time");
 				         async{ 
-				         Console.OUT.println("TestPartitioner Place other inside async");
-					         try {
-						         at(p) {
+				         Console.OUT.println("TestPartitioner Place other inside async");*/
+					   /*     try {
+								//at(p)						         
+							at(p) async {
 						         	Console.OUT.println("TestPartitioner Place " + here.id);
 						         	test.acacia.partitioner.index.TestPartitionIndex.main(null);
 						         }
@@ -198,11 +208,11 @@ public class AcaciaServer {
 					         	Console.OUT.println(e.place + " died in 2"); // report failure
 					         }
 					         
-				         }
-				        }
+				       //  }
+				       // }
 				     }
-                }
-    	   }
+                }*/
+    	   
     
            //async{
             // val tw:java.lang.Thread = new java.lang.Thread(){
@@ -218,10 +228,23 @@ public class AcaciaServer {
 		   //  	backend = new AcaciaBackEnd();
 		   //  	backend.run();
 		   // }
-    
-	       frontend = new AcaciaFrontEnd();
-	       frontend.run();
+
+
+           async{
+	         frontend = new AcaciaFrontEnd();
+	         frontend.run();
+           }
     	}
+
+/*finish{
+for (p in Place.places()) {
+     	at (p) async {
+		Console.OUT.println(here+" says hellowrw and ");
+		test.acacia.server.x10.TestAcaciaInstance.main(null);
+		while(true);
+	}
+     }
+}*/
     }
     
     public static def uploadGraphDistributed(val item:String, val pathOnNFS:String):void{
@@ -544,6 +567,7 @@ public class AcaciaServer {
 	    val edgeListPath = rdfPartitioner.getEdgeList();
 	    
 	    val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
+	    Console.OUT.println("XXXXXX---XXXXXXXX--->Place.places().size() : " + Place.places().size());
 	    rdfPartitioner.convert(item, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
 	    rdfPartitioner.distributePartitionedData();
 	    

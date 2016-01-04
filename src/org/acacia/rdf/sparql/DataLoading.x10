@@ -29,22 +29,39 @@ import x10.io.File;
 
 import org.acacia.localstore.AcaciaHashMapNativeStore;
 import org.acacia.util.Utils;
+import org.acacia.localstore.AcaciaLocalStoreFactory;
 
 public class DataLoading {
 	
 	private var graphData:ArrayList[String];
     private var vertexPropertyMap:HashMap[Long, HashSet[String]];
+    private var ontologyFilePath:String = null;
+    private var nativeStore:AcaciaHashMapNativeStore = null;
+    private var centralStore:AcaciaHashMapNativeStore = null;
 	
-	public def loadGraphData(val graphID:String, val partitionID:String,val placeID:String):void{
-		val baseDir:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
-        graphData = new ArrayList[String]();
-		// /var/tmp/acad-localstore
-		//native store
-		var nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir, false);
+    public def this(val graphID:String, val partitionID:String,val placeID:String){
+	    val baseDir:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
+	    graphData = new ArrayList[String]();
+	    // /var/tmp/acad-localstore
+	    //native store
+	    nativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir, false);
+	    nativeStore.loadGraph();
+	    //nativeStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir, false) as AcaciaHashMapNativeStore;
+	    ontologyFilePath = nativeStore.getOntologyFilePath();
+	    centralStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(placeID), baseDir, true, Int.parseInt(placeID));
+    }
+    
+	public def loadGraphData():void{
+		// val baseDir:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
+  //       graphData = new ArrayList[String]();
+		// // /var/tmp/acad-localstore
+		// //native store
+		// var nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir, false);
+  //       ontologyFilePath = nativeStore.getOntologyFilePath();
 		getData(nativeStore, 0n);
 		
 		//central store
-		var centralStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(placeID), baseDir, true, Int.parseInt(placeID));
+		// var centralStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(placeID), baseDir, true, Int.parseInt(placeID));
 		getData(centralStore, 1n);			
 	}
 	
@@ -55,8 +72,8 @@ public class DataLoading {
 		//Vertex Id : HashSet[connected vertex ID]
 		var localSubGraphMap:HashMap[Long, HashSet[Long]] = store.getlocalSubGraphMap();
 		//vertexId : HashSet[Properties_URI]
-		var vertexPropertyMap:HashMap[Long, HashSet[String]] = store.getvertexPropertyMap();
-		//
+		//var vertexPropertyMap:HashMap[Long, HashSet[String]] = store.getvertexPropertyMap();
+ 		vertexPropertyMap=store.getvertexPropertyMap();
 		var relationshipMapWithProperties:Rail[HashMap[Long, HashSet[Long]]] = store.getrelationshipMapWithProperties();
 		//VertexId : HashMap[Attribute Id: HashSet[AttributeValue]]
 		var attributeMap:HashMap[Long, HashMap[Int, HashSet[String]]] = store.getattributeMap();
@@ -122,39 +139,45 @@ public class DataLoading {
 		val fileName:String = "/home/yasima/Acacia/x10dt/workspace/Acacia/univ-bench.owl";
         var value:String = null;
         var key:String = null;
+        var currentKey:ArrayList[String] = null;
         var inferenceData:HashMap[String, ArrayList[String]] = null;
-		        
+		var subClasses:ArrayList[String] = null;
+        
         try {
-        	var fileReader:FileReader = new FileReader(fileName);
+        	var fileReader:FileReader = new FileReader(ontologyFilePath);
         	var bufferedReader:BufferedReader =  new BufferedReader(fileReader);
         	inferenceData=new HashMap[String, ArrayList[String]]();
-        	val input = new File(fileName);
+        	val input = new File(ontologyFilePath);        
+            var itr:Iterator[String] = input.lines().iterator();
         
-            var firstFlag:Boolean = false;
-        	for(nextline in input.lines()){
-		        if(firstFlag){
-		        		if(nextline.compareTo("<owl:Class rdf:ID=") > 0n){
-		        			value=nextline.substring(nextline.indexOf("ID=")+4n,nextline.indexOf(">")-1n);
-		                    firstFlag = true;
-		                    continue;
-		        		}
-		        }else{
-		                if(nextline.compareTo("rdfs:subClassOf rdf:resource=") > 0n){
-		                	key=nextline.substring(nextline.indexOf("=")+3n, nextline.indexOf(">")-2n);
-		                
-		                	var subClasses:ArrayList[String] = inferenceData.get(key);
-		
-		                	if(subClasses == null){	 
-		                		subClasses = new ArrayList[String]();          				
-		                		subClasses.add(value);
-		                		inferenceData.put(key, subClasses);
-		                	}else{
-		                		subClasses.add(value);
-		                		inferenceData.put(key, subClasses);
-		                	}
-		                }
-		        }
-        	}
+            while(itr.hasNext()){
+              var nextline:String = itr.next();
+           
+              if(nextline.indexOf("<owl:Class rdf:ID=") != -1n){
+                value = nextline.substring(nextline.indexOf("ID=")+4n,nextline.indexOf(">")-1n);
+              
+                while(itr.hasNext()){
+                  nextline = itr.next();
+                  
+                  if(nextline.indexOf("rdfs:subClassOf rdf:resource=") != -1n){
+                    key = nextline.substring(nextline.indexOf("=")+3n, nextline.indexOf(">")-3n);
+                    subClasses = new ArrayList[String]();
+                    currentKey = inferenceData.get(key);
+                  
+                    if(currentKey == null){
+                      subClasses.add(value);
+                      inferenceData.put(key, subClasses);
+                    }else{
+                      subClasses = inferenceData.get(key);
+                      subClasses.add(value);
+                      inferenceData.put(key, subClasses);
+                    }
+                  
+                    break;
+                  }
+                }
+              }
+            }
         } catch (val e1:java.io.FileNotFoundException) {
         	Console.OUT.println(e1.getMessage());
         } catch (val e1:java.io.IOException) {
@@ -162,7 +185,7 @@ public class DataLoading {
         }  catch (val e:Exception) {
         	Console.OUT.println(e.getMessage());
         }
-		
+        
 		return inferenceData;
 	}	
 }

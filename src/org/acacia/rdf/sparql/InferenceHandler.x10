@@ -32,26 +32,31 @@ public class InferenceHandler {
 	    var newToken:String = null;
 	    var flag:Int = 0n;
 	    var index:Int = 0n;
-	  
+	    
 	    for(var i:Int = 0n; i < triples.size(); i++){
 	      tokens = new Rail[String](3);
-	      tokens = triples.get(i);
+	      tokens = triples.get(i);    	      
 	  
 	      //type inference 
 	      if(tokens(1).indexOf("type") > 0){
-	        key = tokens(2).substring(tokens(2).indexOf(":")+1n);
+	      
+	        key = tokens(2).substring(tokens(2).indexOf("#")+1n);	        
+	        
 	  
 	        var itr1:Iterator[Map.Entry[Long, HashSet[String]]] = nodeStore.entries().iterator();
 	  
 	        while(itr1.hasNext()){
 	          var entry:Map.Entry[Long, HashSet[String]] = itr1.next();
-	  
-	          if(entry.getValue().toString().indexOf(tokens(2)) > 0){              		
+	          
+	          	  
+	          if(entry.getValue().contains((tokens(2)))){    
+	          
 	            flag = 1n;
+	            
 	            break;
 	          }
 	        }
-	  
+	       // Console.OUT.println("flag"+flag);
 	        if(flag == 0n){
 	          if(inferenceData.containsKey(key.substring(key.indexOf("#")+1n))){
 	            var itr:Iterator[Map.Entry[String, ArrayList[String]]] = inferenceData.entries().iterator();
@@ -65,7 +70,7 @@ public class InferenceHandler {
 	                break;
 	              }
 	            }
-	  
+	           // Console.OUT.println("newTokens.size()"+newTokens.size());
 	            if(newTokens.size() > 0){
 	              ifInferenceHandled = true;
 	              for(var j:Int = 0n; j < newTokens.size(); j++){

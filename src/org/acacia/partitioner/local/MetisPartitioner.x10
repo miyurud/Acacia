@@ -74,6 +74,7 @@ public class MetisPartitioner {
   	public def convertWithoutDistribution(graphName:String, graphID:String, inputFilePath:String, outputFilePath:String, nParts:int, isDistributedCentralPartitions:boolean, nThreads:int, nPlaces:int){
   		this.outputFilePath = outputFilePath;
   		this.nParts = nParts;
+        Console.OUT.println("nParts *****************XXXXXXXXXXXXXX************-->" + nParts);
   		this.graphName = graphName;
   		this.isDistributedCentralPartitions = isDistributedCentralPartitions;
   		this.graphID = graphID;
@@ -90,6 +91,7 @@ public class MetisPartitioner {
   		loadDataSet(inputFilePath);
   		constructMetisFormat(-1n);
   		partitionWithMetis(nParts);
+        Console.OUT.println("nParts *****************XXXAAAAAAAAA************-->");
   	}
   
   	private def distributeEdges(){

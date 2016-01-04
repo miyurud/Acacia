@@ -23,12 +23,12 @@ import x10.util.HashSet;
 public class SelectQueryExecution {
   //private var intermediateResults:HashSet[HashSet[String]] = null;
 
-  public def executeSelect(var inputQuery:String, var graphID:String, var partitionID:String, var placeID:String):ArrayList[String]{
+  public def executeSelect(var inputQuery:String, var graphID:String, var partitionID:String, var placeID:String):HashSet[String]{
   	var result:ArrayList[String] = null;
     var nodeStore:HashMap[Long, HashSet[String]] = new HashMap[Long, HashSet[String]]();
     var ifSingleVariabled:Boolean = false;
     var ifInferenceHandled:Boolean = false;
-    var intermediateResults:HashSet[HashSet[String]] = new HashSet[HashSet[String]]();
+    var intermediateResults:ArrayList[HashSet[String]] = new ArrayList[HashSet[String]]();
     var variableName:String = null;
     var unknowns:ArrayList[String] = new ArrayList[String](); 
 
@@ -39,7 +39,7 @@ public class SelectQueryExecution {
     var modifiedtriples:ArrayList[Rail[String]] = query.modifiedTriples(triples,prefix);
 
     //load inference data
-    var dataLoading:DataLoading = new DataLoading();
+    var dataLoading:DataLoading = new DataLoading(graphID, partitionID ,placeID);
     var inferenceData:HashMap[String, ArrayList[String]] = dataLoading.loadInferenceData();
 
     //should get a plan
@@ -49,11 +49,13 @@ public class SelectQueryExecution {
 
     //triples are received as tokens
     var inferenceHandledTriples:ArrayList[Rail[String]] = new ArrayList[Rail[String]]();
-    //inferenceHandledTriples=inferenceHandler.getInferenceHnadledTriples(inferenceData, modifiedtriples);
-
-    dataLoading.loadGraphData(graphID, partitionID ,placeID);
-
+   // inferenceHandledTriples=inferenceHandler.getInferenceHnadledTriples(inferenceData, modifiedtriples);
+   
+    dataLoading.loadGraphData();
+    
     var graphData:ArrayList[String] = dataLoading.getGraphData();
+    
+    
     nodeStore = dataLoading.getVertexPropertyMap();
     
     inferenceHandledTriples = inferenceHandler.getInferenceHnadledTriples(inferenceData, modifiedtriples, nodeStore);
@@ -67,50 +69,49 @@ public class SelectQueryExecution {
     
     //	System.out.println(inferenceHandledTriples.get(i)[0]+inferenceHandledTriples.get(i)[1]+inferenceHandledTriples.get(i)[2]);
     
-	    if(inferenceHandledTriples.get(i)(0n).indexOf("?") > 0n){
-		    variableName=inferenceHandledTriples.get(i)(0n).substring(1n);
+   
+	    if(inferenceHandledTriples.get(i)(0n).indexOf("?") >= 0n){
+		    variableName=inferenceHandledTriples.get(i)(0n).substring(1n);		    
 		    
 		    if(!unknowns.contains(variableName)){
 		       unknowns.add(variableName);
 		    }
 	    }
 	    
-	    if(inferenceHandledTriples.get(i)(2).indexOf("?") > 0n){
-	    	variableName=inferenceHandledTriples.get(i)(2).substring(1n);
+	    if(inferenceHandledTriples.get(i)(2n).indexOf("?") >= 0n){
+	    	variableName=inferenceHandledTriples.get(i)(2n).substring(1n);
 	    
 		    if(!unknowns.contains(variableName)){
 		    	unknowns.add(variableName);
 		    }
 	    }
     }
-
+    
     if(unknowns.size()==1){
       ifSingleVariabled=true;
     } else {
       ifSingleVariabled=false;
     }
     
-    for(var i:Int = 0n; i < intermediateResults.size(); i++){
-    	//Console.OUT.println(intermediateResults.get(i));
+    for(var i:Int = 0n; i < inferenceHandledTriples.size(); i++){
+    	
 	    var triplePattern:TriplePattern = new TriplePattern();
 	    triplePattern.match(inferenceHandledTriples.get(i),prefix, graphData);
 	    result=triplePattern.getResult();
-	    intermediateResults.add(result);
+	    val tmpSet:HashSet[String] = new HashSet[String]();
+	    tmpSet.addAll(result);
+	    intermediateResults.add(tmpSet);
     }
 
     var finalResults:FinalResult = new FinalResult();
     
     if(ifSingleVariabled){
-    	finalResults.joinResults(intermediateResults);
+    	finalResults.joinResults(modifiedtriples,intermediateResults,ifInferenceHandled);
     }else{
         finalResults.joinResults(inferenceHandledTriples,intermediateResults, ifInferenceHandled, unknowns);
     }
     
-    var FinalResults:ArrayList[String] = finalResults.getFinalResults();
-
-    for(var i:Int = 0n; i < FinalResults.size(); i++){
-    	//Console.OUT.println(FinalResults.get(i));
-    }
+    var FinalResults:HashSet[String] = finalResults.getFinalResults();   
 
     return FinalResults;
   }

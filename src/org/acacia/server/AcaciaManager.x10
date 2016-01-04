@@ -1201,7 +1201,7 @@ public class AcaciaManager {
 	  * @throws IOException 
 	  * @throws UnknownHostException 
 	  */
-	 public static def runSPARQL(host:String, port:Int, graphID:String, partitionID:String, query:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:Rail[String]{
+	 public static def runSPARQL(host:String, port:Int, graphID:String, partitionID:String, query:String, placeID:long, placesDetails:String) :Rail[String]{
 		 var result:ArrayList[String] = new ArrayList[String]();
 		 var arr:Rail[String] = null;
 		 try{

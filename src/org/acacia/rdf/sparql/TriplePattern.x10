@@ -84,7 +84,7 @@ public class TriplePattern {
 			// only predicate should be considered
 
 			for (var i:Int = 0n; i < graphData.size(); i++) {
-				if (graphData.get(i).compareTo(tokens(1)) > 0n) {
+				if (graphData.get(i).compareTo(tokens(1)) >= 0n) {
 					//temp.add( graphData.get(i).split(",")(0));
                     temp.add( graphData.get(i));
 				}
@@ -98,16 +98,21 @@ public class TriplePattern {
 
 			// predicate and object should be considered
 
-			//System.out.println("token1 "+tokens[0]);
-			//System.out.println("token11111111 "+tokens[1]);
-			//System.out.println("token111111111 "+tokens[2]);
+			//Console.OUT.println("token1 "+tokens(0));
+			//Console.OUT.println("token11111111 "+tokens(1));
+			//Console.OUT.println("token111111111 "+tokens(2));
 			
-			for (var i:Int = 0n; i < graphData.size(); i++) {			
+			for (var i:Int = 0n; i < graphData.size(); i++) {	
+
+ 			if(graphData.get(i).indexOf(tokens(1))>=0n){
+ 			//Console.OUT.println(graphData.get(i).compareTo(tokens(1)));
+ 				}
 				
-				if (graphData.get(i).compareTo(tokens(1)) > 0n ){	
+				if (graphData.get(i).indexOf(tokens(1))>=0n){	
 					
-					if(graphData.get(i).compareTo(tokens(2)) > 0n) {
-                        temp.add(graphData.get(i));
+					if(graphData.get(i).indexOf(tokens(2))>=0n) {
+ 					temp.add(graphData.get(i).split(",")(0));
+                        //temp.add(graphData.get(i));
       				}
 				}
 			}

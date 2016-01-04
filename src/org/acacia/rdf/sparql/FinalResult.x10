@@ -46,14 +46,17 @@ public class FinalResult {
         j = j - 1n;
       }
   
-      intermediateResults.addBefore(j+1, element);
+      intermediateResults.addBefore(j+1n, element);
+    }
+    for(var i:Int = 0n; i < intermediateResults.size(); i++){
+    Console.OUT.println(intermediateResults.get(i).size());
     }
     
     //non inference handled
     if(!ifInferenceHandled){
-      if(intermediateResults.get(0).size() != 0){
-        //results = new HashSet[String](intermediateResults.get(0));
-        results = intermediateResults.get(0);
+      if(intermediateResults.get(0n).size() != 0){
+        results = new HashSet[String]();
+        results = intermediateResults.get(0n);
   
         for(var i:Int = 1n; i < intermediateResults.size(); i++){
           size1 = results.size() as Int;
@@ -117,7 +120,7 @@ public class FinalResult {
     }
   }
 
-  public def joinResults(var inferenceHandledTriples:ArrayList[Rail[String]], var intermediateResults:ArrayList[ArrayList[String]], var ifInferenceHandled:Boolean, var unknowns:ArrayList[String]):void{
+  public def joinResults(var inferenceHandledTriples:ArrayList[Rail[String]], var intermediateResults:ArrayList[HashSet[String]], var ifInferenceHandled:Boolean, var unknowns:ArrayList[String]):void{
     var temp:ArrayList[Rail[String]] = new ArrayList[Rail[String]]();
     var temp2:ArrayList[String] = new ArrayList[String]();
   

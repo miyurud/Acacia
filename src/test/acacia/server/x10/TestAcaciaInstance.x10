@@ -27,16 +27,20 @@ import org.acacia.log.java.Logger_Java;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import org.acacia.server.AcaciaInstance;
-import org.acacia.server.java.AcaciaInstanceFileTransferService;
+import org.acacia.server.AcaciaInstanceFileTransferService;
 
 public class TestAcaciaInstance{
 	public static def main(val args:Rail[String]):Int {
+
 		if(java.lang.System.getProperty("logFileName") == null){
-			java.lang.System.setProperty("logFileName",java.lang.System.getenv("HOSTNAME"));
+			Console.OUT.println("Testing 123");
+java.lang.System.setProperty("logFileName","acacia-Vostro-1520");
+//while(true);
+			//java.lang.System.setProperty("logFileName",java.lang.System.getenv("HOSTNAME"));
 		}
 		
 		//We need to check whether the user has specified the instance port number and data port number.
-		if(java.lang.System.getProperty("ACACIA_INSTANCE_PORT") == null){
+		/*if(java.lang.System.getProperty("ACACIA_INSTANCE_PORT") == null){
 			Logger_Java.info("Could not find the port number to run Acacia Instance. Now exitting ");
 			return 0n;
 		}
@@ -44,7 +48,7 @@ public class TestAcaciaInstance{
 		if(java.lang.System.getProperty("ACACIA_INSTANCE_DATA_PORT") == null){
 			Logger_Java.info("Could not find the port number for Acacia Instance's data transfer service. Now exitting ");
 			return 0n;
-		}
+		}*/
 		
 		// Logger_Java.info("---AAAA---");
 		
@@ -66,7 +70,7 @@ public class TestAcaciaInstance{
 // //				}
 // 			}
 // 		};
-    // finish{
+    finish{
         async{
         				val server:AcaciaInstance = new AcaciaInstance();
         				try {
@@ -108,11 +112,11 @@ public class TestAcaciaInstance{
 
         async{
         				val service:AcaciaInstanceFileTransferService = new AcaciaInstanceFileTransferService();
-        				try {
+        				// try {
         					service.start_running();
-        				} catch (val e:UnknownHostException) {
-        					e.printStackTrace();
-        				}
+        				// } catch (val e:UnknownHostException) {
+        				// 	e.printStackTrace();
+        				// }
         				
         //				while(true){
         //					try {
@@ -141,7 +145,7 @@ public class TestAcaciaInstance{
 		// 		e.printStackTrace();
 		// 	}//Sleep this many milliseconds
 		// }
-	//}
+	}
      
      return 0n;
 	}

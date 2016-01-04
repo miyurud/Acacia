@@ -94,13 +94,11 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	private var partitionID:Int = 0n;
 	private var updatedFlagVertex:Boolean = false;
 	private var updatedFlagEdge:Boolean  = false;
+    private var ontologyFileName:String = null;
 	
-	public def getPredicateCount():Int {
-		return predicateCount;
-	}
-
 	private val PREDICATE_COUNT:String = "predcnt";
 	private val PARTITION_ID:String = "partid";
+    private val ONTOLOGY:String = "ontology";
 	private var dataFolder:String;
 	private var graphID:Int;
     private var placeID:Int = 0n;
@@ -124,6 +122,11 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 		initialize();
 	}
 
+    public def this(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean, placeID:Int, ontologyPath:String){
+      this(graphID, partitionID, baseDir, isCentralStore, placeID);
+      ontologyFileName = ontologyPath;
+    }
+
     public def this(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean, placeID:Int){
     	this.partitionID = partitionID;
     	this.placeID = placeID;
@@ -141,6 +144,18 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
     	initialize();
     }
  	
+    public def getPredicateCount():Int {
+        return predicateCount;
+    }
+    
+    public def getOntologyFilePath():String{
+    	return instanceDataFolderLocation + File.separator + ontologyFileName;
+    }
+    
+    public def setOntologyFileName(val file:String){
+        this.ontologyFileName = file;
+    }
+    
 // 	@SuppressWarnings("unchecked")
 	public def loadGraph():Boolean{
 		var result:Boolean = false;
@@ -177,6 +192,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
         predicateCount = Int.parse(metaInfo.get(PREDICATE_COUNT) as String);
         partitionID = Int.parse(metaInfo.get(PARTITION_ID) as String);
+        ontologyFileName = metaInfo.get(ONTOLOGY) as String;
         initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
         
 		edgeStorePath:String = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
@@ -424,6 +440,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         //We need to store the meta info to the meta info map first.
         metaInfo.put(PREDICATE_COUNT, ""+predicateCount);
         metaInfo.put(PARTITION_ID, ""+partitionID);
+        metaInfo.put(ONTOLOGY, ontologyFileName);
         
         if(metaInfo != null){
 	        try {

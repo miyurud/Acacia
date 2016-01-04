@@ -40,6 +40,12 @@ public class AcaciaFrontEnd {
 	private var srv:ServerSocket;
 	private var sessions:ArrayList[AcaciaFrontEndServiceSession] = new ArrayList[AcaciaFrontEndServiceSession]();
 	
+    //public static def main(val args:Rail[String]) {
+    public static def main(val args:Rail[String]):void {
+      var frontend:AcaciaFrontEnd = new AcaciaFrontEnd();
+      frontend.run();
+    } 
+
     public def run(){
     	try{
     		Logger.info("Starting the frontend");

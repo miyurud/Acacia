@@ -67,6 +67,7 @@ import org.acacia.rdf.sparql.java.SparqlParser;
 public class ExecuteQuery {	
 	private var Prefix:HashMap[String, String]= new HashMap[String, String]();	
 	private var graphData:ArrayList[String] = new ArrayList[String]();
+    private var ontologyFilePath:String = null;
 
 	public def executeQuery(var query:String, var graphID:String, var partitionID:String, var placeID:String) : ArrayList[String] {		
 		var stream:ANTLRStringStream = new ANTLRStringStream(query);
@@ -74,8 +75,7 @@ public class ExecuteQuery {
 		var tokenStream:CommonTokenStream = new CommonTokenStream(lexer);
 		var parser:SparqlParser = new SparqlParser(tokenStream);
 		var index:Int = 0n;
-		var result:ArrayList[String] = null;
-				
+		var result:ArrayList[String] = new ArrayList[String]();
 		try {
 			parser.query();
 		
@@ -88,7 +88,8 @@ public class ExecuteQuery {
 
 			if (index >= 0) {
 				// get the results of select query
-				result = selectQuery(graphData, triples);
+ 				var select:SelectQueryExecution=new SelectQueryExecution();
+				result.addAll(select.executeSelect(query, graphID,partitionID,placeID));
 			}
 		}catch (val e:org.antlr.runtime.RecognitionException) {
 			Console.OUT.println("Error in query format"+e);
@@ -136,6 +137,8 @@ public class ExecuteQuery {
 		// /var/tmp/acad-localstore
 		//native store
 		val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir, false);
+        //We will store the ontology on both local store as well as on the central store. But we will access the ontology file from the local store in this case.
+        ontologyFilePath = nativeStore.getOntologyFilePath();
 		getData(nativeStore, 0n);
 		
 		//central store
@@ -273,7 +276,7 @@ public class ExecuteQuery {
 					if(flag == 1n && result.isEmpty()){
 						
 						// read rdf ontology file
-						newToken=readRDFOntologyFile(token.substring(tokens(1).indexOf(":") + 1n));
+						newToken=readRDFOntologyFile(token.substring(tokens(1).indexOf(":") + 1n),ontologyFilePath);
 						
 						for(var j:Int=0n;j<newToken.size();j++){
 							tokens(2) = tokens(2).substring(0n, tokens(2).indexOf("#")+1n)+newToken.get(j);
@@ -294,7 +297,7 @@ public class ExecuteQuery {
 					
 					if(flag == 1n && result.isEmpty()){
 						// read rdf ontology file
-						newToken=readRDFOntologyFile(token.substring(token.indexOf(":")+1n));
+						newToken=readRDFOntologyFile(token.substring(token.indexOf(":")+1n),ontologyFilePath);
 						
 						for(var j:Int=0n; j < newToken.size(); j++){						
 							tokens(2) = tokens(2).substring(0n, tokens(2).indexOf("#")+1n)+newToken.get(j);
@@ -314,7 +317,7 @@ public class ExecuteQuery {
 
 					if(flag == 1n && result.isEmpty()){
 						// read rdf ontology file
-						newToken=readRDFOntologyFile(token.substring(tokens(1).indexOf(":") + 1n));
+						newToken=readRDFOntologyFile(token.substring(tokens(1).indexOf(":") + 1n), ontologyFilePath);
 						
 						for(var j:Int=0n; j < newToken.size(); j++){
 							tokens(2) = tokens(2).substring(0n, tokens(2).indexOf("#") + 1n)+newToken.get(j);
@@ -331,7 +334,7 @@ public class ExecuteQuery {
 
 					if(flag == 1n && result.isEmpty()){					 
 						// read rdf ontology file
-						newToken=readRDFOntologyFile(token.substring(tokens(1).indexOf(":") + 1n));
+						newToken=readRDFOntologyFile(token.substring(tokens(1).indexOf(":") + 1n), ontologyFilePath);
 						
 						for(var j:Int = 0n; j < newToken.size(); j++){
 							tokens(2) = tokens(2).substring(0n, tokens(2).indexOf("#") + 1n)+newToken.get(j);
@@ -347,8 +350,7 @@ public class ExecuteQuery {
 		return intermediateResults;
 	}
 
-	public def readRDFOntologyFile(val token:String) : ArrayList[String]{
-		var fileName:String = "/home/yasima/Acacia/x10dt/workspace/Acacia/univ-bench.owl";
+	public def readRDFOntologyFile(val token:String, val ontologyFilePath:String) : ArrayList[String]{
 		var line:String = null;
         var nextline:String = null;
 		var newtokens:ArrayList[String] =new ArrayList[String]();
@@ -368,7 +370,7 @@ public class ExecuteQuery {
 			}*/
 			
 			
-			var fileReader:FileReader = new FileReader(fileName);
+			var fileReader:FileReader = new FileReader(ontologyFilePath);
 	        var bufferedReader:BufferedReader =  new BufferedReader(fileReader);
 	            
 	        while((line = bufferedReader.readLine()) != null) {    	

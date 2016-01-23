@@ -637,11 +637,7 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 						out.println("Empty");
 						out.flush();
 					}
-				 }else if(msg.equals(AcaciaInstanceProtocol.RUN_KCORE)){
-					out.println(AcaciaInstanceProtocol.SEND_KVALUE);
-					out.flush();
-					msg = buff.readLine().trim();
-					val kValue:String = msg;
+				 }else if(msg.equals(AcaciaInstanceProtocol.RUN_KCORE)){ 
 					
 					out.println(AcaciaInstanceProtocol.SEND_GID);
 					out.flush();
@@ -664,21 +660,21 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 					val placeDetails:String = msg;
 					
  					val kCore:KCore = new KCore();  
-					val result:ArrayList[Long] = kCore.getVertexIdsResults(kValue,gID,pID,placeID);				
+					val result:HashMap[Long,Long] = kCore.getVertexIdsResults(gID,pID,placeID);				
 					
- 					if((result != null) && (!result.isEmpty())){
+ 					if((result != null) && (result.size() != 0)){
  						out.println("Not empty");
  						out.flush();
-
- 						for(var i:Int=0n;i<result.size();i++){
-
+ 						var itr:Iterator[Long]  = result.keySet().iterator();
+ 						while(itr.hasNext()){
+ 							var key:Long = itr.next();
  							msg = buff.readLine().trim();
- 							if(msg.equals("Send")){
- 							out.println(result.get(i));
- 							out.flush();
- 							}
+   							if(msg.equals("Send")){
+	   							out.println(key+" "+result.get(key));
+	   							out.flush();
+   							}
  						}
-						out.println("Finish");
+						out.println("Finish"); 
 						out.flush();
  					}
  					else{

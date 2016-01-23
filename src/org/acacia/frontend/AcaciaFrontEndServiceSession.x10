@@ -539,18 +539,7 @@ public class AcaciaFrontEndServiceSession {
         //}
         
         }else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
-        
-	        out.println(AcaciaFrontEndProtocol.K_VALUE);
-	        out.flush();
-	
-	        // var kcore:String = "";
-	        try{
-	        	str = buff.readLine();
-	        }catch(val e:IOException){
-	        	Logger.error("Error : " + e.getMessage());
-	        }
-
-	        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
 	        out.flush();
 	
 	        var graphID:String = "";
@@ -566,27 +555,32 @@ public class AcaciaFrontEndServiceSession {
 		        out.flush();				
 	        }else{
 	        	out.println();
-		        out.println("Processing for K-Core value "+str+" in graph "+graphID);
+		        out.println("Processing for K-Core in graph "+graphID);
 		        out.println();
 		        out.flush();
 		        val startTime:Long = java.lang.System.currentTimeMillis();
-		        var kCoreIds:HashSet[String] = runKCore(graphID,str);	
+		        var kCoreIds:HashMap[Long,Long] = runKCore(graphID,str);
 	
-		        if((kCoreIds == null) || (kCoreIds.isEmpty())){
+		        if((kCoreIds == null) || (kCoreIds.size() == 0 )){
 		        	out.println();
-			        out.println("No vertices exist for K Core value : "+str);
+			        out.println("No vertices exists in graph "+graphID);
 			        out.println();
 			        out.flush();
 		        }else{
-				    var itr:Iterator[String]  = kCoreIds.iterator();
+				    var itr:Iterator[Long]  = kCoreIds.keySet().iterator();
 				    var vertexID:String;
-			        while(itr.hasNext()){
-			        	vertexID = itr.next();
-			        	out.print(vertexID+" ");//print the result     
-		        	}
+				    var size:Long = kCoreIds.keySet().size();
+				    for(var i:Int=0n;i<size;i++){
+				    	vertexID= kCoreIds.get(i).toString();
+				    	if(!vertexID.trim().equals("0")){
+				    		out.println(i+"  "+""+vertexID);//print the result     
+				    		out.flush();
+				    	}else{
+				    		size++;
+				    	}
+				    }
 			        out.println();
-			        out.println();
-			        out.println("Number of vertices for K-Core value "+str+" : "+kCoreIds.size());
+			        out.println("Number of vertices in the graph : "+kCoreIds.size());
 			        out.println();
 			        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
 			        Console.OUT.println("K-Core duration(ms) : " + duration);
@@ -609,38 +603,31 @@ public class AcaciaFrontEndServiceSession {
         return null;
     }
     
-    // private def runKCore(val graphID:String):ArrayList[String]{
-    //     //To be implemented
-    //     return null;
-    // }
+   
+    private def runKCore(val graphID:String, val kcore:String):HashMap[Long,Long]{
     
-    
-    private def runKCore(val graphID:String, val kcore:String):HashSet[String]{
-    
-	    //Console.OUT.println("It is K Core");
-	    var result:HashSet[String] = new HashSet[String]();
+    	val hostListLen:Int = Place.places().size as Int;
+    	var partialResults:Rail[HashMap[Long,Long]] =  new Rail[HashMap[Long,Long]](hostListLen);
 	    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-	    val hostListLen:Int = Place.places().size as Int;
-	    val intermRes:Rail[Rail[String]] = new Rail[Rail[String]](hostListLen);
+	    val result:HashMap[Long,Long] =  new HashMap[Long,Long]();
+	    var intermResult:HashMap[Long,Long] =  new HashMap[Long,Long]();
 	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-	    //Console.OUT.println(l.size+"&&&&&&&&&&&&&&&&&&&&&&&7777777777777777777777777777777777777777777");
-    
-	    for(var i:long=0; i<l.size; i++){
-	    	Console.OUT.println(l(i));
 	    
+	    for(var i:long=0; i<l.size; i++){
 		    val items:Rail[String] = l(i).split(",");
 		    val pts = mp.get(items(0));
 		    var partitions:ArrayList[String] = null;
 		    
 		    if(pts == null){
 		    	partitions = new ArrayList[String]();
-		    }else{
+		    }
+		    else{
 		    	partitions = pts as ArrayList[String];
 		    }
     
-    		partitions.add(items(1));
-    		mp.put(items(0), partitions);
+		    partitions.add(items(1));
+		    mp.put(items(0), partitions);
 	    }
 	    
 	    var cntr:Int = 0n;
@@ -658,41 +645,41 @@ public class AcaciaFrontEndServiceSession {
 		    val host = PlaceToNodeMapper.getHost(p.id);
 		    val port = PlaceToNodeMapper.getInstancePort(p.id);
 		    var partitionID:String = null;
-		    
 		    var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+		    
 		    if(partitions==null){
-	    
 		    }
-    
 		    if(partitions.size() > 0){
 		    	partitionID = partitions.removeFirst();
 		    }
-    
-	    	val ptID:String = partitionID;
+		    
+		    val ptID:String = partitionID;
+		    //Console.OUT.println("At async method..........");
+		    async{
+	    		partialResults(k) = new HashMap[Long,Long]();
+	    		partialResults(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
+		    }
+		    //Console.OUT.println("After async");
+		    cntr++;
+	    }
 	    
-	    	async{
-	    		intermRes(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
-    		}
-    
-    		cntr++;
-    	}
-    	for(var i:Int=0n; i < hostListLen; i++){
-		    val intermResult = intermRes(i);
-		    if(intermResult != null){
-		    	for(var j:Int=0n; j < intermResult.size; j++){
-		    		result.add(intermResult(j));//result += intermResult;
-	    		}
-		    Console.OUT.println("Result at (" + i + ") : " + intermResult);
+	    for(var i:Int = 0n; i < hostListLen; i++){
+	    	intermResult = partialResults(i);
+		if(partialResults(i) != null){
+ 			var itr:Iterator[Long]  = intermResult.keySet().iterator();
+			while(itr.hasNext()){
+ 				val key = itr.next();
+ 				result.put(key,intermResult.get(key));
+			}
+		    	Console.OUT.println("No. of Results at (" + i + ") : " + intermResult.size()+" vertices");
 		    }
 		    if(intermResult == null){
-		    	Console.OUT.println("Result at (" + i + ") : [0 vertices]");
+		    	Console.OUT.println("No. of Results at (" + i + ") : 0 vertices");
 		    }
     	}
     
     	return result;
     }
-    
-
 
     private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
         var result:ArrayList[String] = new ArrayList[String]();

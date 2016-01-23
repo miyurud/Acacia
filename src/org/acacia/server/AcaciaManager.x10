@@ -1417,15 +1417,17 @@ public class AcaciaManager {
 	  * @throws IOException 
 	  * @throws UnknownHostException 
 	  */
-	 public static def runKCore(host:String, port:Int, graphID:String, partitionID:String, kValue:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:Rail[String]{
+	 public static def runKCore(host:String, port:Int, graphID:String, partitionID:String, kValue:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:HashMap[Long,Long]{
 		 
-	 	 var result:ArrayList[String] = new ArrayList[String]();
+	 	 var arr:HashMap[Long,Long] =  new HashMap[Long,Long]();
 		 val socket:Socket = new Socket(host, port);
 		 val out:PrintWriter = new PrintWriter(socket.getOutputStream());
 		 val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		 var response:String = "";		
 		 var i:Int=0n;
-	 
+	 	 
+		 //Console.OUT.println("At AcaciaManager");
+		 
 		 out.println(AcaciaInstanceProtocol.HANDSHAKE);
 		 out.flush();
 		 response = reader.readLine();
@@ -1441,71 +1443,60 @@ public class AcaciaManager {
 			 out.flush();
 			 response = reader.readLine();
 			 Console.OUT.println("RUN_KCORE: "+response);
-			 
-			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_KVALUE))){
-				 Console.OUT.println(kValue);
-				 out.println(kValue);
-				 out.flush();
-				 response = reader.readLine();
-				 Console.OUT.println("SEND_KVALUE: "+response);
 	 
-				 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
-					 Console.OUT.println(graphID);
-					 out.println(graphID);
-					 out.flush();
-					 response = reader.readLine();
-					 Console.OUT.println("SEND_GID "+response);
+			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
+			 	Console.OUT.println(graphID);
+				out.println(graphID);
+				out.flush();
+				response = reader.readLine();
+				Console.OUT.println("SEND_GID "+response);
 					 
-					 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
-						 Console.OUT.println(partitionID);
-						 out.println(partitionID);
+				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
+					Console.OUT.println(partitionID);
+					out.println(partitionID);
+					out.flush();
+					response = reader.readLine();
+					Console.OUT.println("SEND_PARTITION_ID "+response);
+	 
+					if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
+						Console.OUT.println(placeID);
+						 out.println(placeID);
 						 out.flush();
 						 response = reader.readLine();
-						 Console.OUT.println("SEND_PARTITION_ID "+response);
+						 Console.OUT.println("SEND_PLACEID: "+response);
 	 
-						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
-						 	 Console.OUT.println(placeID);
-						 	 out.println(placeID);
-							 out.flush();
-							 response = reader.readLine();
-							 Console.OUT.println("SEND_PLACEID: "+response);
-	 
-							 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
-								 out.println(placesDetails);
-								 out.flush();
-								 response = reader.readLine();
-								 Console.OUT.println("SEND_PLACEDETAILS "+response);
+						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
+						 	out.println(placesDetails);
+							out.flush();
+							response = reader.readLine();
+							Console.OUT.println("SEND_PLACEDETAILS "+response);
 								 
-							 	 if(response.equals("Not empty")){
-	 
-									 out.println("Send");
-									 out.flush();
+							if(response.equals("Not empty")){
+								out.println("Send");
+								out.flush();
 									 
-	 								 response = reader.readLine();
+	 							response = reader.readLine();
 	 
-									 while(!response.equals("Finish")){	
-										 result.add(response);
-										 out.println("Send");
-										 out.flush();
-										 i+=1;
-	 									 response = reader.readLine();
+								while(!response.equals("Finish")){	
+									val s = response.trim().split(" ");
+									arr.put(Long.parse(s(0)), Long.parse(s(1))); 
+									out.println("Send");
+									out.flush();
+									i+=1;
+	 								response = reader.readLine();
 	 
-	 								 }
-									 
-							 	 }else if(response.equals("Empty")){
-	 								result=null;
-							 	 }
-	 						}
+	 							}	 
+							 }else if(response.equals("Empty")){
+	 							arr = null;
+							 }
 	 					}
 	 				}
 	 			}
-	 		}
+			 }
 	 	}
 	 	reader.close();	
-	 	var arr:Rail[String] = null;
-	 	if(result != null){
-	 		arr = result.toRail();
-	 	}
+	 
+	 	//Console.OUT.println("AcaciaMAnger done.............");
 	 
 	 	return arr;
 	 } 

@@ -138,7 +138,7 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 		//If the directory does not exist we need to create it first.
 		if(!file.isDirectory()){
 			var f:File = new File(dataFolder + "/" + graphID + "_centralstore");
-			if(!file.isDirectory()){
+			if(!f.isDirectory()){
 				f.mkdir();
 			}
 			file.mkdir();
@@ -150,7 +150,8 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 		var record:String = AcaciaLocalStoreCatalogManager.readCatalogRecord(instanceDataFolderLocation, "head");
 		
 		if(record == null){
-			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
+            Console.OUT.println("AAAAAA-->instanceDataFolderLocation:" + instanceDataFolderLocation);
+			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE);
 		}
 	}
 	

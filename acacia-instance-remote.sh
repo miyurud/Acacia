@@ -14,7 +14,7 @@
 # limitations under the License.
 ##
 
-APPDIR=/nfs/home/miyuru/workspace-x10/Acacia
+APPDIR=/opt/Acacia
 
 cd $APPDIR;
 #ACACIA_INSTANCE_PORT=7780

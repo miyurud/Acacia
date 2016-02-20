@@ -630,14 +630,18 @@ public class AcaciaInstanceToManagerAPI {
 				//only within the intersecting global graph. This task will be done separately at the master itself.
 				
 				/*-------- The following code is searching the triangles only */
-				var itr:Iterator[x10.util.Map.Entry[Long, TreeSet]] = degreeMap.entrySet().iterator() as Iterator[x10.util.Map.Entry[Long, TreeSet]];
+				//var itr:Iterator[x10.util.Map.Entry[Long, TreeSet]] = degreeMap.entrySet().iterator() as Iterator[x10.util.Map.Entry[Long, TreeSet]];
+                var itr:java.util.Iterator = degreeMap.keySet().iterator();
+                
 				while(itr.hasNext()){
-					var item:x10.util.Map.Entry[Long, TreeSet] = itr.next();
+                    val kkey:Long = itr.next() as Long;
+					//var item:TreeSet = degreeMap.get(kkey) as TreeSet;
 					// for(Map.Entry<Long, TreeSet<Long>> item: degreeMap.entrySet()){				
-					val vVertices:TreeSet = item.getValue();
-					itr2:Iterator[Long] = vVertices.iterator() as Iterator[Long];
+					val vVertices:TreeSet = degreeMap.get(kkey) as TreeSet;
+					val itr2:java.util.Iterator = vVertices.iterator() as java.util.Iterator;
+
 					while(itr2.hasNext()){
-						v:long = itr2.next();
+						v:Long = itr2.next() as Long;
 				
 						//if(uList != null){ //Because in local subgraph map we may mark only u -> v, but v may not have corresponding record in the map (i.e., v -> u).
 						val uList:HashSet[Long] = localSubGraphMap.get(v);
@@ -668,7 +672,7 @@ public class AcaciaInstanceToManagerAPI {
 											//To do that we use the traingle tree data structure which keeps on track of the triangles we have marked so far.
 											//Note that the traingle tree may not be as efficient as we expect.
 										
-											var tempArr:Rail[Long] = new Rail[Long]();
+											var tempArr:Rail[Long] = new Rail[Long](3);
 											tempArr(0) = v;
 											tempArr(1) = u;
 											tempArr(2) = nu;
@@ -717,7 +721,7 @@ public class AcaciaInstanceToManagerAPI {
 							}
 						}			
 					}
-					degreeListVisited.add(item.getKey());
+					degreeListVisited.add(kkey);
 				}
 			
 				traingleTree = null; //Here we enable the tree object to be garbage collected.

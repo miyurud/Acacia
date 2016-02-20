@@ -405,78 +405,78 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 					out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK);//This is the sign of upload completeion.
 					out.flush();
 				}else if(msg.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_REPLICATION)){
-					out.println(AcaciaInstanceProtocol.OK);
-					out.flush();
+out.println(AcaciaInstanceProtocol.OK);
+out.flush();
 
-					msg = buff.readLine().trim();
+msg = buff.readLine().trim();
 
-					val placeID:String = msg;
+val placeID:String = msg;
 
-					out.println(AcaciaInstanceProtocol.SEND_GID);
-					out.flush();
+out.println(AcaciaInstanceProtocol.SEND_GID);
+out.flush();
 
-					msg = buff.readLine().trim();
-					val graphID:String = msg;
+msg = buff.readLine().trim();
+val graphID:String = msg;
 
-					out.println(AcaciaInstanceProtocol.SEND_FILE_NAME);
-					out.flush();
+out.println(AcaciaInstanceProtocol.SEND_FILE_NAME);
+out.flush();
 
-					msg = buff.readLine().trim();
-					var fileName:String = msg;
+msg = buff.readLine().trim();
+var fileName:String = msg;
 
-					out.println(AcaciaInstanceProtocol.SEND_FILE_LEN);
-					out.flush();
+out.println(AcaciaInstanceProtocol.SEND_FILE_LEN);
+out.flush();
 
-					msg = buff.readLine().trim();
-					val fileLen:Long = Long.parseLong(msg);
+msg = buff.readLine().trim();
+val fileLen:Long = Long.parseLong(msg);
 
-					out.println(AcaciaInstanceProtocol.SEND_FILE_CONT);
-					out.flush();
+out.println(AcaciaInstanceProtocol.SEND_FILE_CONT);
+out.flush();
 
-					//Here we need to get the file size and then check if the file size has been achieved.
-					//Mere file exitance is not enough to continue, because we might have another thread writing data to the file. 
+//Here we need to get the file size and then check if the file size has been achieved.
+//Mere file exitance is not enough to continue, because we might have another thread writing data to the file. 
 
-					val fullFilePath:String = "/tmp/dgr/" + fileName;
-					val f:File = new File(fullFilePath);
+val fullFilePath:String = "/tmp/dgr/" + fileName;
+val f:File = new File(fullFilePath);
 
-					while((!f.exists()) && (f.length() < fileLen)){
-						msg = buff.readLine().trim();
+while((!f.exists()) && (f.length() < fileLen)){
+msg = buff.readLine().trim();
 
-						Logger.info("curlen : " + f.length() + " fileLen : " + fileLen);
+Logger.info("curlen : " + f.length() + " fileLen : " + fileLen);
 
-						if(msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)){
-							out.println(AcaciaInstanceProtocol.FILE_RECV_WAIT);
-							out.flush();
-						}
-					}
+if(msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)){
+out.println(AcaciaInstanceProtocol.FILE_RECV_WAIT);
+out.flush();
+}
+}
 
-					msg = buff.readLine().trim();
+msg = buff.readLine().trim();
 
-					if(msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)){
-						out.println(AcaciaInstanceProtocol.FILE_ACK);
-						out.flush();
-					}
+if(msg.equals(AcaciaInstanceProtocol.FILE_RECV_CHK)){
+out.println(AcaciaInstanceProtocol.FILE_ACK);
+out.flush();
+}
 
-					Logger.info("Got the file : " + fileName);
+Logger.info("Got the file : " + fileName);
 
-					fileName = fileName.substring(fileName.indexOf("_") + 1n, fileName.indexOf("."));
-					Logger.info("Partition ID : " + fileName);
-					//here is where local store is constructed
-					//the fileName contains the graph partitionID. So we do not have to specifiy that again here.
-					unzipAndBatchUploadReplication(graphID, fileName,placeID);
+fileName = fileName.substring(fileName.indexOf("_") + 1n, fileName.indexOf("."));
+Logger.info("Partition ID : " + fileName);
+//here is where local store is constructed
+//the fileName contains the graph partitionID. So we do not have to specifiy that again here.
+unzipAndBatchUploadReplication(graphID, fileName,placeID);
 
-					while(!isUploadCompleted(fullFilePath)){
-						msg = buff.readLine().trim();
+while(!isUploadCompleted(fullFilePath)){
+msg = buff.readLine().trim();
 
-						if(msg.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK)){
-							out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT);
-							out.flush();
-						}
-					}
+if(msg.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK)){
+out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT);
+out.flush();
+}
+}
 
-					out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK);//This is the sign of upload completeion.
-					out.flush();
-				}else if(msg.equals(AcaciaInstanceProtocol.OUT_DEGREE_DIST)){
+out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK);//This is the sign of upload completeion.
+out.flush();
+}else if(msg.equals(AcaciaInstanceProtocol.OUT_DEGREE_DIST)){
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					

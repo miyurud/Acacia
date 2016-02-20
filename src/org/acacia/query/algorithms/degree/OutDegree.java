@@ -30,7 +30,7 @@ import org.acacia.util.java.Conts_Java;
 import x10.lang.Place;
 
 public class OutDegree{
-	public static String run(String host, String port, String graphID) {
+	public static String run(String host, String port, String graphID, String partition) {
 		String result = null;
 		
 		try{
@@ -50,13 +50,18 @@ public class OutDegree{
 			if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
 				out.println(graphID);
 				out.flush();
+				
+				response = reader.readLine();
+				
+				if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+					out.println(partition);
+					out.flush();
+				}
 			}else{
 				return "-1";
 			}
 			
 			result = reader.readLine();
-			
-			//Logger_Java.info("###***### result : " + result + " for host : " + host);
 			
 			out.close();
 			

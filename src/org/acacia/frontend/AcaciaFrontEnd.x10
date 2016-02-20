@@ -40,18 +40,16 @@ public class AcaciaFrontEnd {
 	private var srv:ServerSocket;
 	private var sessions:ArrayList[AcaciaFrontEndServiceSession] = new ArrayList[AcaciaFrontEndServiceSession]();
 	
-    //public static def main(val args:Rail[String]) {
-    public static def main(val args:Rail[String]):void {
-      var frontend:AcaciaFrontEnd = new AcaciaFrontEnd();
-      frontend.run();
-    } 
+public static def main(val args:Rail[String]) {
+		var frontend:AcaciaFrontEnd = new AcaciaFrontEnd();
+		frontend.run();
+	}    
 
     public def run(){
     	try{
     		Logger.info("Starting the frontend");
     		srv = new ServerSocket(Conts.ACACIA_FRONTEND_PORT);
     		Logger.info("Done creating frontend");
-    		Logger.info("Place count : "+Place.places().size);
     		
     		//finish{
 	    		while(runFlag){

@@ -45,11 +45,12 @@
         <mkdir dir="${classes.dir}"/>
         <!-- <scalac srcdir="${scala-src.dir};" destdir="${build.dir}" classpathref="build.classpath">
         </scalac> -->
+        <!--
         <javac includeantruntime="false" srcdir="${src.dir};" destdir="${classes.dir}" deprecation="on" classpathref="build.classpath">
          <compilerarg value="-Xlint:unchecked" />
-         <!--<compilerarg value="-Xlint:none" />-->
         </javac>
-        <!--<exec executable="./compile_java.sh" />-->
+        -->
+        <exec executable="./compile_java.sh" />
 		<exec executable="./compile_x10.sh" />
     </target>
   	
@@ -106,11 +107,13 @@
 				<sequential>
 					<java classname="org.hsqldb.Server" classpath="lib/hsqldb-2.2.9.jar" args="-port ${org.acacia.metadata.db.port} -database.0 file:${org.acacia.server.runtime.location}/metadb -dbname.0 acacia_meta"/>
 				</sequential>
-				    <java classname="org.acacia.vertexcounter.VertexCounter" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
-				    <java classname="org.acacia.backend.AcaciaBackEnd" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
+				    <java classname="org.acacia.vertexcounter.java.VertexCounter" classpath="${classes.dir};${build.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
+				    <!--<java classname="org.acacia.backend.AcaciaBackEnd" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />-->
 					<!--<java classname="test.acacia.partitioner.index.TestPartitionIndex" classpath="build/classes;${toString:build.classpath}"/>-->
-					<exec executable="./acacia-start.sh" />
-			</parallel>
+                    	<exec executable="./acacia-backend.sh" />
+			<exec executable="./acacia-frontend.sh" />
+			<exec executable="./acacia-start.sh" />
+		</parallel>
 	</target>
    	
 	<target name="vertcnt">
@@ -118,7 +121,7 @@
 		<!--<java jar="build/jar/acacia.jar" fork="true"/>-->
 		<parallel>
 				<sequential>
-					<java classname="org.acacia.vertexcounter.VertexCounter" classpath="${build.dir};${classes.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
+					<java classname="org.acacia.vertexcounter.java.VertexCounter" classpath="${classes.dir};${build.dir};${lib.dir};${x10-lib.dir};${toString:build.classpath}" />
 				</sequential>
 			</parallel>
 	</target>

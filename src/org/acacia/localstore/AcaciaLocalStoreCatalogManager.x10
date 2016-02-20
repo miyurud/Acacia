@@ -27,8 +27,14 @@ import java.lang.StringBuilder;
 public class AcaciaLocalStoreCatalogManager{
 
  	private static def loadCatalog(baseDir:String ):File {
- 		file:File = new File(baseDir + File.separator + "catalog");
-		
+        dir:x10.io.File = new x10.io.File(baseDir);
+ 		file:java.io.File = new java.io.File(baseDir + File.separator + "catalog");
+ 		Console.OUT.println(baseDir + File.separator + "catalog");
+ 
+        if(!dir.isDirectory()){
+           dir.mkdir();
+        }
+ 
 		try{
 			if(!file.exists()){
 				file.createNewFile();
@@ -69,7 +75,7 @@ public class AcaciaLocalStoreCatalogManager{
 		
 		var fw:FileWriter;
 		try {
-			fw = new FileWriter(catalogFilePath);
+			fw = new FileWriter(catalogFilePath  + File.separator + "catalog");
 			bw:BufferedWriter = new BufferedWriter(fw);
 			bw.write(sb.toString());
 			bw.close();
@@ -82,20 +88,20 @@ public class AcaciaLocalStoreCatalogManager{
  	}
  
 	public static def readCatalogRecord(catalogFilePath:String , key:String ):String {
-	var result:String  = null;
-	try{
-		reader:BufferedReader  = new BufferedReader(new FileReader(loadCatalog(catalogFilePath)));
-		var line:String  = null;
-		while((line = reader.readLine()) != null){
-		if(line.indexOf(key) >= 0){
-		result = line.split(":")(1n);
-		break;
+		var result:String  = null;
+		try{
+			reader:BufferedReader  = new BufferedReader(new FileReader(loadCatalog(catalogFilePath)));
+			var line:String  = null;
+			while((line = reader.readLine()) != null){
+			if(line.indexOf(key) >= 0){
+			result = line.split(":")(1n);
+			break;
+			}
+			}
+	        reader.close();
+		}catch(ec:IOException){
+			ec.printStackTrace();
 		}
-		}
-	}catch(ec:IOException){
-		ec.printStackTrace();
-	}
-	
-	return result;
+		return result;
 	}
 }

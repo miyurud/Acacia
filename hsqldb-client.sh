@@ -16,8 +16,8 @@
 
 #!/bin/bash
 
-APPDIR=/home/miyurud/software/x10dt/workspace/Acacia
-WORKDIR=/home/miyurud/tmp
+APPDIR=/opt/Acacia
+WORKDIR=/opt/tmp
 
 THISHOST=$(hostname)
 connectionstr='jdbc:hsqldb:hsql://'$THISHOST':3342/acacia_meta;ifexists=true'

@@ -38,9 +38,11 @@ import org.acacia.events.java.ShutdownEvent;
 import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.localstore.AcaciaHashMapLocalStore;
 import org.acacia.localstore.AcaciaLocalStore;
+import org.acacia.rdf.sparql.ResultsCache;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
+import org.acacia.util.Utils;
 import org.acacia.server.java.AcaciaInstanceProtocol;
 
 import org.acacia.util.PlaceToNodeMapper;
@@ -53,6 +55,8 @@ public class AcaciaInstance{
 	private var runFlag:Boolean = true;
 	private var loadedGraphs:ArrayList[String] = new ArrayList[String](); 
 	private var port:Int;
+    private var sparqlQueryCache:ResultsCache = null;	
+    private var nonCached:Boolean = false;
 	
 	public def this(){
 		sessions = new ArrayList[AcaciaInstanceServiceSession]();
@@ -60,6 +64,8 @@ public class AcaciaInstance{
 		//port = Int.parseInt(java.lang.System.getProperty("ACACIA_INSTANT_PORT"));
         
         port = PlaceToNodeMapper.getInstancePort(here.id);
+        sparqlQueryCache = new ResultsCache();
+        nonCached = Boolean.parse(Utils.getAcaciaProperty("org.acacia.rdf.sparql.cached"));
         Console.OUT.println("AcaciaInstance here.id:" + here.id + " and the port is : " + port);
 	}
 		
@@ -74,7 +80,7 @@ public class AcaciaInstance{
 			
 			while(runFlag){
 				var socket:Socket = srv.accept();
-				var session:AcaciaInstanceServiceSession = new AcaciaInstanceServiceSession(socket, graphDBMap, loadedGraphs);
+				var session:AcaciaInstanceServiceSession = new AcaciaInstanceServiceSession(socket, graphDBMap, loadedGraphs, sparqlQueryCache, nonCached);
 				session.addDBTruncateEventListener(new AcaciaDBTruncateEventListener(this));
 				//session.addShutdownEventListener(new AcaciaShutdownEventListener(this));
 				session.start();
@@ -85,9 +91,9 @@ public class AcaciaInstance{
 				//session.addShutdownEventListener(new InstanceShutdownEventListener(this));
 			}
 		}catch(val e:BindException){
-			Logger_Java.error("AcaciaInstance Error : " + e.getMessage()+":"+here.id);
+			Logger_Java.error("Error : " + e.getMessage() + " 1: " + here.id);
 		} catch (val e:IOException) {
-			Logger_Java.error("AcaciaInstance Error : " + e.getMessage()+":"+here.id);
+			Logger_Java.error("Error : " + e.getMessage() + " 2: " + here.id);
 		}
 		
 		Logger_Java.info("XXXXXXXXXXXXXXXXX> Exitting the AcaciaInstance server at " + org.acacia.util.java.Utils_Java.getHostName() + " port : " + port);

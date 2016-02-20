@@ -17,16 +17,49 @@ limitations under the License.
 package org.acacia.rdf.sparql;
 
 public class Triple {
-	
-	/**
-	 * get the tokens of the triples
-	 * @param triple
-	 * @return
-	 */
-	public def extractTokens(var triple:String):Rail[String]{
-		var tokens:Rail[String] = new Rail[String](3);
-		
-		tokens = triple.trim().split(" ");		
-		return tokens;
-	}
+ 	//class variables
+ 	private var subject:String;
+ 	private var predicate:String;
+ 	private var object:String;
+ 	private var pattern:Int;
+ 
+  	//constructor
+ 	public def this(subject:String, predicate:String, object:String, pattern:Int){
+ 		this.subject = subject;
+ 		this.predicate = predicate;
+ 		this.object = object;
+ 		this.pattern = pattern;
+ 	}
+ 
+ 	/*public def setSubject(subject:String):void{
+ 		this.subject = subject;
+ 	}
+ 
+ 	public def setPredicate(predicate:String):void{
+ 		this.predicate = predicate;
+ 	}
+ 
+ 	public def setObject(object:String):void{
+ 		this.object = object;
+ 	}
+ 
+ 	public def setPattern(pattern:Int):void{
+ 		this.pattern = pattern;
+ 	}*/
+ 
+ 	public def getSubject():String{
+ 		return subject;
+ 	}
+ 
+ 	public def getPredicate():String{
+ 		return predicate;
+ 	}
+ 
+ 	public def getObject():String{
+ 		return object;
+ 	}
+ 
+ 	public def getPattern():Int{
+ 		return pattern;
+ 	}
 }

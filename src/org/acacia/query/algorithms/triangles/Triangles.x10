@@ -18,8 +18,8 @@ package org.acacia.query.algorithms.triangles;
 
 import x10.util.Map;
 import x10.util.HashMap;
-import x10.util.TreeMap;
-import x10.util.TreeSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import x10.util.ArrayList;
 import x10.util.Map.Entry;
 import x10.util.HashSet;
@@ -31,7 +31,7 @@ import java.io.IOException;
 import org.acacia.localstore.AcaciaHashMapLocalStore;
 import org.acacia.localstore.AcaciaLocalStore;
 import org.acacia.log.java.Logger_Java;
-import org.acacia.server.java.AcaciaInstanceToManagerAPI;
+import org.acacia.server.AcaciaInstanceToManagerAPI;
 import org.acacia.util.java.Utils_Java;
 
 /**
@@ -50,22 +50,23 @@ public class Triangles {
 		var nEdges:Long = graphDB.getEdgeCount();		
 		//Logger_Java.info("====================>nedges : " + nEdges);		
 		var degreeDist:HashMap[Long, Long] = graphDB.getOutDegreeDistributionHashMap();
-		var degreeMap:TreeMap[Long, TreeSet[Long]] = new TreeMap[Long, TreeSet[Long]](); //<degree><list of vertices>
+		//var degreeMap:TreeMap[Long, TreeSet[Long]] = new TreeMap[Long, TreeSet[Long]](); //<degree><list of vertices>
+        var degreeMap:TreeMap = new TreeMap(); //<degree><list of vertices>
 		var degreeReverseLookupMap:HashMap[Long, Long] = new HashMap[Long, Long]();
-		var degreeSet:TreeSet[Long] = null;
+		var degreeSet:TreeSet = null;
 		var startVid:Long = -1l;
 		var degree:Long = -1l;
 		var itr:Iterator[Long] = degreeDist.keySet().iterator();
-				
+		
 		while(itr.hasNext()){
 			startVid = itr.next();
 			degree = degreeDist.get(startVid);
 			if(degreeMap.containsKey(degree)){
-				degreeSet = degreeMap.get(degree);
+				degreeSet = degreeMap.get(degree) as TreeSet;
 				degreeSet.add(startVid);
 				degreeMap.put(degree, degreeSet);
 			}else{
-				degreeSet = new TreeSet[Long]();
+				degreeSet = new TreeSet();
 				degreeSet.add(startVid);
 				degreeMap.put(degree, degreeSet);
 			}
@@ -84,18 +85,23 @@ public class Triangles {
 		
 		var traingleTree:HashMap[Long, HashMap[Long, ArrayList[Long]]] = new HashMap[Long, HashMap[Long, ArrayList[Long]]](); 
 		var degreeListVisited:ArrayList[Long] = new ArrayList[Long]();
+        val listA:java.util.Set = degreeMap.keySet() as java.util.Set;
+        val itrA:java.util.Iterator = listA.iterator();
 
-		for(var item:Map.Entry[Long, TreeSet[Long]] in degreeMap.entrySet()){
-			var vVertices:TreeSet[Long] = item.getValue();
-
+		while(itrA.hasNext()){
+            val kKey:Long = itrA.next() as Long;
+			var vVertices:TreeSet = degreeMap.get(kKey) as TreeSet;
+            var itrM:java.util.Iterator = vVertices.iterator();
 			//When one of these rounds completes we know that vertex vs has been completely explored for its traingles. Since we treat
 			//a collection of vertices having the same degree at a time, we can do a degree based optimization. That is after this for loop
 			//we can mark the degree as visited. Then for each second and thrid loops can be skipped if the vertices considered there are
 			//having a degree that was marked before. Because we know that we have already visited all the vertices of that degree before.
-			for(var v:Long in vVertices){
+			while(itrM.hasNext()){
+                var v:Long = itrM.next() as Long;
+                // Console.OUT.println("v:"+v);
 				var uList:HashSet[Long] = localSubGraphMap.get(v); //We know for sure that v has not been visited yet
 				if(uList != null){ //Because in local subgraph map we may mark only u -> v, but v may not have corresponding record in the map (i.e., v -> u).
-					for(var u:Long in uList){//second for loop
+					for(u:Long in uList){//second for loop
 //						if(degreeReverseLookupMap.containsKey(u)){
 //							long degree2 = degreeReverseLookupMap.get(u);
 //							if(degreeListVisited.contains(degree2)){
@@ -104,11 +110,11 @@ public class Triangles {
 //								continue;
 //							}
 //						}
-						
+                        // Console.OUT.println("u:"+u);
 						var nuList:HashSet[Long] = localSubGraphMap.get(u);
 						
 						if(nuList != null){
-							for(var nu:Long in nuList){ //Third for loop
+							for(nu:Long in nuList){ //Third for loop
 //								if(degreeReverseLookupMap.containsKey(nu)){
 //									long degree2 = degreeReverseLookupMap.get(nu);
 //									if(degreeListVisited.contains(degree2)){
@@ -117,6 +123,10 @@ public class Triangles {
 //										continue;
 //									}
 //								}
+                                // Console.OUT.println("nu:"+nu);
+                                // if(u == nu){
+                                //     Console.OUT.println("u equals nu");
+                                // }
 								var nwList:HashSet[Long] = localSubGraphMap.get(nu);
 								
 								if((nwList != null) && (nwList.contains(v))){ //We know for sure that v has not been visited yet
@@ -128,12 +138,22 @@ public class Triangles {
 									//Here we have to be careful to first sort the three traingle vertices by their value. Then we do not
 									//get into the trouble of having multiple combinations of the same three vertices.
 									
-									var tempArr:Rail[Long] = new Rail[Long]{v, u, nu};
-									java.util.Arrays.sort(tempArr);
+									//var tempArr:Rail[Long] = new Rail[Long]{v, u, nu};
+                                    var tempArr:Rail[Long] = [v, u, nu];
+									sort(tempArr);
 									
 									v1 = tempArr(0);
 									v2 = tempArr(1);
 									v3 = tempArr(2);
+
+									// var tempArr:Rail[Long] = new Rail[Long](3);
+									// tempArr(0) = v;
+									// tempArr(1) = u;
+									// tempArr(2) = nu;
+									// java.util.Arrays.sort(x10.interop.Java.convert(tempArr));
+									// v1 = tempArr(0);
+									// v2 = tempArr(1);
+									// v3 = tempArr(2);
 									
 									//The top level vertices are represented by v1
 									var itemRes:HashMap[Long, ArrayList[Long]] = traingleTree.get(v1);
@@ -183,7 +203,7 @@ public class Triangles {
 				}
 			}
 			
-			degreeListVisited.add(item.getKey());
+			degreeListVisited.add(kKey);
 		}
 		
 		traingleTree = null; //Here we enable the tree object to be garbage collected.
@@ -214,4 +234,58 @@ public class Triangles {
         }
 		return "" + traingleCount;
 	}
+
+    private static def sort(val tempArr:Rail[Long]):Rail[Long]{
+        var result:Rail[Long] = new Rail[Long](3);
+        
+        var a:Long = tempArr(0);
+        var b:Long = tempArr(1);
+        var c:Long = tempArr(2);
+        var min:Long = 0;
+        var max:Long = 0;
+        var med:Long = 0;
+        
+        if( a > b ){
+        if( a > c ){
+        max = a;
+        if( b > c ){
+        med = b;
+        min = c;
+        }else{
+        med = c;
+        min = b;
+        }
+        }else{
+        med = a;
+        if( b > c ){
+        max = b;
+        min = c;
+        }else{
+        max = c;
+        min = b;
+        }
+        }
+        }else{
+        if( b > c ){
+        max = b;
+        if( a > c ){
+        med = a;
+        min = c;
+        }else{
+        med = c;
+        min = a;
+        }
+        }else{
+        med = b;
+        max = c;
+        min = a;
+        }
+        }
+        
+        result(0) = min;
+        result(1) = med;
+        result(2) = max;
+        
+        return result;
+    }
 }

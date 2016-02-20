@@ -16,6 +16,8 @@ limitations under the License.
 
 package org.acacia.util;
 
+import org.acacia.server.AcaciaManager;
+
 /**
  * Class PlaceToNodeMapper acts as the facade that provides the access to the details of mapping of each
  * place id to host and port
@@ -24,7 +26,7 @@ public class PlaceToNodeMapper {
 
   public static def getHost(val placeID:Long):String{
     var result:String = null;
-    val nPlaces = Place.places().size() as Int;
+    val nPlaces = Int.parse(Utils.getAcaciaProperty("org.acacia.server.nplaces"));//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0)); //Place.places().size() as Int;
     val hostList:Rail[String] = Utils.getPrivateHostList();
     //val placesPerHost = nPlaces/hostList.size;
     val hostID = placeID % hostList.size;
@@ -36,7 +38,7 @@ public class PlaceToNodeMapper {
   
   public static def getInstancePort(val placeID:Long):Int{
     var port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
-    val nPlaces = Place.places().size() as Int;
+    val nPlaces = Int.parse(Utils.getAcaciaProperty("org.acacia.server.nplaces"));//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));//Place.places().size() as Int;
     val hostList:Rail[String] = Utils.getPrivateHostList();
     //val placesPerHost:Int = (nPlaces/hostList.size) as Int;
     val hostCount = hostList.size as Int;
@@ -47,12 +49,12 @@ public class PlaceToNodeMapper {
   }
   
   public static def getFileTransferServicePort(val placeID:Long):Int{
-	  val nPlaces = Place.places().size() as Int;
+	  val nPlaces = Int.parse(Utils.getAcaciaProperty("org.acacia.server.nplaces"));//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));//Place.places().size() as Int;
 	  val hostList:Rail[String] = Utils.getPrivateHostList();
 	  //val placesPerHost:Int = (nPlaces/hostList.size) as Int;
 	  val hostCount = hostList.size as Int;
 	  //We basically need to shift the port range by (nPlaces/hostCount) .
-	  var port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT + (nPlaces/hostCount) ;//This is the starting point for file transfer service
+	  var port:Int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT + (nPlaces/hostCount) + 1n;//This is the starting point for file transfer service
 	  val hostID = placeID % hostCount;
 	  val withinPlaceIndex:Int = ((placeID - hostID) as Int)/hostCount;
 	  

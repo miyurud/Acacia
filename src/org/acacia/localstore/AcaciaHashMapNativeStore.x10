@@ -55,7 +55,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	//The following is just a map of the each vertex with a list of properties.
 	//VERTEX_STORE_NAME
 	private var vertexPropertyMap:HashMap[Long, HashSet[String]];
- 	private var javaVertexPropertyMap:java.util.HashMap;
+ 	//private var javaVertexPropertyMap:java.util.HashMap;
 	//We need to keep the main graph structure as a plain adjacency list since we may want to answer some basic
 	//graph algorithms which just needs the adjacency list structure of the graph.
 	//This will enable fast access to relationships between vertices
@@ -102,6 +102,8 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	private var dataFolder:String;
 	private var graphID:Int;
     private var placeID:Int = 0n;
+    
+    private var isCentralStore:Boolean = false;
  	   
 	public def this(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean ){
 		this.partitionID = partitionID;
@@ -116,8 +118,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 		}else{
 			instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
 		}
-		Console.OUT.println("instanceDataFolderLocation:" + instanceDataFolderLocation);
-		
+		this.isCentralStore = isCentralStore;
 		//Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
@@ -139,8 +140,7 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
     	if(isCentralStore){
     		instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
     	}
-
-    	Console.OUT.println("instanceDataFolderLocation:" + instanceDataFolderLocation);
+        this.isCentralStore = isCentralStore;
     	initialize();
     }
  	
@@ -172,7 +172,6 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
              var stream:FileInputStream = new FileInputStream(metaInoMapPath);
              var input:Input  = new Input(stream);
              toX10MetaInfo(this.kryo.readClassAndObject(input) as java.util.HashMap);
-             Console.OUT.println("complete reading Meta info");
              input.close();//This will close the FileInputStream as well.
              
             if(metaInfo != null){
@@ -188,8 +187,8 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         }
 
         //Need to initialize the variables with the loaded info.
-        Console.OUT.println("metaInfo.size():"+metaInfo.size());
-        Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+        //Console.OUT.println("metaInfo.size():"+metaInfo.size());
+        //Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
         predicateCount = Int.parse(metaInfo.get(PREDICATE_COUNT) as String);
         partitionID = Int.parse(metaInfo.get(PARTITION_ID) as String);
         ontologyFileName = metaInfo.get(ONTOLOGY) as String;
@@ -238,10 +237,10 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
             toX10VertexPropertyMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
             input.close();//This will close the FileInputStream as well.
             
-            if(javaVertexPropertyMap != null){
+            if(vertexPropertyMap != null){
             	result = true;
             }else{
-            	javaVertexPropertyMap = new java.util.HashMap();
+            	vertexPropertyMap = new HashMap[Long,HashSet[String]]();
             }
             
             result = true;
@@ -321,7 +320,6 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
         try {
             var stream:FileInputStream = new FileInputStream(predicateMapPath);
             var input:Input = new Input(stream);
-            Console.OUT.println("Load PredicateStore 3333333333333333333333333333333333333333333");
             toX10PredicateStore(this.kryo.readClassAndObject(input) as java.util.HashMap);
             input.close();//This will close the FileInputStream as well.
             
@@ -424,7 +422,6 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            //Console.OUT.println("Writing predicates-------------------------------------------");
 	            this.kryo.writeClassAndObject(output, toJavaHashMap(predicateStore));
 	            stream.flush();
 	            output.close();
@@ -446,7 +443,6 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 	        try {
 	            var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + METADATA_STORE_NAME);
 	            var output:Output = new Output(stream);
-	            //Console.OUT.println("Writing metaInfo-------------------------------------------");
 	            this.kryo.writeClassAndObject(output,toJavaHashMap(metaInfo));
 	            stream.flush();
 	            output.close();
@@ -777,13 +773,27 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
  		//If the directory does not exist we need to create it first.
  		if(!file.isDirectory()){
  			var f:File = new File(dataFolder + "/" + graphID + "_centralstore");
-			if(!file.isDirectory()){
+			if(!f.isDirectory()){
 				f.mkdir();
 			}
 			file.mkdir();
  		}
 		
 		updatedFlagVertex = true;
+
+        if(!isCentralStore){
+            val record:String = AcaciaLocalStoreCatalogManager.readCatalogRecord(instanceDataFolderLocation, "head");
+
+            if(record == null){
+              AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE);
+            }
+        }else{
+            val record:String = AcaciaLocalStoreCatalogManager.readCatalogRecord(Utils.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore", "head");
+
+            if(record == null){
+              AcaciaLocalStoreCatalogManager.writeCatalogRecord(Utils.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore" + File.separator + graphID + "_" + partitionID, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE);
+            }
+        }
 	}
 	
 	public def initializeRelationshipMapWithProperties(predicateSize:Int):void{
@@ -818,34 +828,202 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
     public def getrelationshipMapWithProperties():Rail[HashMap[Long, HashSet[Long]]] {
     	return relationshipMapWithProperties;
     }
+    
+    public def getrelationshipMapWithProperties(val i:Int):HashMap[Long, HashSet[Long]] {
+    	return relationshipMapWithProperties(i);
+    }
 	
     public def getattributeMap():HashMap[Long, HashMap[Int, HashSet[String]]]{
     	return attributeMap;
     }
 
-    public def getpredicateStore():HashMap[Int, String] {
+    public def getPredicateStore():HashMap[Int, String] {
     	return predicateStore;
     }
     
-    /*public def getJavaLocalSubGraphMap():java.util.HashMap{
-    	return javaLocalSubGraphMap;
+    public def getLocalSubGraphMap():HashMap[Long,HashSet[Long]]{
+    	return localSubGraphMap;
     }
     
-    public def getJavaVertexPropertyMap():java.util.HashMap {
-    	return javaVertexPropertyMap;
+    public def getVertexPropertyMap():HashMap[Long,HashSet[String]] {
+    	return vertexPropertyMap;
     }
     
-    public def getJavaRelationshipMapWithProperties():Rail[java.util.HashMap] {
-    	return javaRelationshipMapWithProperties;
+    public def getRelationshipMapWithProperties(val i:Int):HashMap[Long,HashSet[Long]] {
+    	return relationshipMapWithProperties(i);
     }
     
-    public def getJavaAattributeMap():java.util.HashMap{
-    	return javaAttributeMap;
+    public def getAattributeMap():HashMap[Long, HashMap[Int, HashSet[String]]]{
+    	return attributeMap;
     }
 
-    public def getJavaPredicateStore():java.util.HashMap {
-    	return javaPredicateStore;
-    }*/
+    public def getJavaPredicateStore():HashMap[Int,String] {
+    	return predicateStore;
+    }
+    
+    public def loadMetaInfo():void{
+	    var metaInoMapPath:String = instanceDataFolderLocation + File.separator + METADATA_STORE_NAME;
+	    var f:File  = new File(metaInoMapPath);
+	    
+	    if(!f.exists()) {
+	    	metaInfo = new HashMap[String, String]();	    
+	    }
+	
+	    try {
+	    	var stream:FileInputStream = new FileInputStream(metaInoMapPath);
+	    	var input:Input  = new Input(stream);
+	    	toX10MetaInfo(this.kryo.readClassAndObject(input) as java.util.HashMap);
+	    	input.close();//This will close the FileInputStream as well.
+	    
+	    	if(metaInfo != null){
+	    
+	    	}else{
+	    		metaInfo = new HashMap[String,String]();
+	    	}
+	    }catch(e:java.io.IOException){
+	    	e.printStackTrace(); 
+	    }
+	    catch (e:Exception) {
+	    	e.printStackTrace();            
+	    }
+	
+	    //Need to initialize the variables with the loaded info.
+	    //Console.OUT.println("metaInfo.size():"+metaInfo.size());
+	    //Console.OUT.println("metaInfo.get(PREDICATE_COUNT):"+metaInfo.get(PREDICATE_COUNT));
+	    predicateCount = Int.parse(metaInfo.get(PREDICATE_COUNT) as String);
+	    partitionID = Int.parse(metaInfo.get(PARTITION_ID) as String);
+	    initializeRelationshipMapWithProperties(predicateCount); //Must initialize the array
+    }
+    
+    public def loadLocalSubGraphMap():void{
+	    edgeStorePath:String = instanceDataFolderLocation + File.separator + EDGE_STORE_NAME;
+	    val f:File = new File(edgeStorePath);
+	    
+	    if(!f.exists()) {
+	    	localSubGraphMap = new HashMap[Long, HashSet[Long]]();
+	    }
+	    
+	    try {
+		    stream:FileInputStream = new FileInputStream(edgeStorePath);
+		    input:Input  = new Input(stream);
+	    	    toX10LocalSubgraphMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
+		    input.close();//This will close the FileInputStream as well.
+		    
+		    if(localSubGraphMap != null){
+		    }else{
+		    	localSubGraphMap = new HashMap[Long,HashSet[Long]]();
+		    }
+	    
+	    }catch(e:java.io.IOException){
+	    	e.printStackTrace(); 
+	    }
+	    catch (e:Exception) {
+	    	e.printStackTrace();            
+	    }
+    }
+    
+    public def loadVertexPropertyMap():void{
+	    var vertexPropertyMapPath:String = instanceDataFolderLocation + File.separator + VERTEX_STORE_NAME;
+	    val f:File = new File(vertexPropertyMapPath);
+	    
+	    if(!f.exists()) {
+		    vertexPropertyMap = new HashMap[Long, HashSet[String]]();
+	    }
+	    
+	    try {
+		    var stream:FileInputStream = new FileInputStream(vertexPropertyMapPath);
+		    var input:Input = new Input(stream);
+		    toX10VertexPropertyMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
+		    input.close();//This will close the FileInputStream as well.
+		    if(vertexPropertyMap != null){
+		    }else{
+		    	vertexPropertyMap = new HashMap[Long, HashSet[String]]();
+		    }
+	    }catch(e:java.io.IOException){
+	    	e.printStackTrace(); 
+	    } catch (e:Exception) {
+	    	e.printStackTrace();            
+	    }
+    }
+    
+    public def loadRelationshipMapWithProperties(val i:Int):void {
+	    var relationshipMapWithPropertiesPath:String  = instanceDataFolderLocation + File.separator + RELATIONSHIP_STORE_NAME + "" + i + ".db";
+	    val f:File = new File(relationshipMapWithPropertiesPath);
+	    
+	    if(!f.exists()) {
+	    	relationshipMapWithProperties(i) = new HashMap[Long, HashSet[Long]]();
+	    	return;
+	    }
+	    
+	    try {
+		    var stream:FileInputStream = new FileInputStream(relationshipMapWithPropertiesPath);
+		    var input:Input  = new Input(stream);
+		    toX10RelationshipMapWithProperties(this.kryo.readClassAndObject(input) as java.util.HashMap,i);
+		    input.close();//This will close the FileInputStream as well.
+		    
+		    if(relationshipMapWithProperties(i) != null){
+		    }else{
+		    	//In this case the deserialization did not work as expected.
+		    	relationshipMapWithProperties(i) = new HashMap[Long,HashSet[Long]]();
+		    }
+	    }catch(e:java.io.IOException){
+	    	e.printStackTrace(); 
+	    } catch (e:Exception) {
+	    	e.printStackTrace();            
+	    }
+    }
+    
+    public def loadAttributeMap():void{
+	    var attributeMapPath:String = instanceDataFolderLocation + File.separator + ATTRIBUTE_STORE_NAME;
+	    val f:File = new File(attributeMapPath);
+	    
+	    if(!f.exists()) {
+	    	attributeMap = new HashMap[Long, HashMap[Int,HashSet[String]]]();
+	    }
+	    
+	    try {
+		    var stream:FileInputStream = new FileInputStream(attributeMapPath);
+		    var input:Input  = new Input(stream);
+		    toX10AttributeMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
+		    input.close();//This will close the FileInputStream as well.
+		    
+		    if(attributeMap != null){
+		    }else{
+		    	attributeMap = new HashMap[Long,HashMap[Int,HashSet[String]]]();
+		    }
+	    }catch(e:java.io.IOException){
+	    	e.printStackTrace();
+	    }
+	    catch (e:Exception) {
+	    	e.printStackTrace();            
+	    }
+    }
+
+    public def loadPredicateStore():void{
+	    var predicateMapPath:String  = instanceDataFolderLocation + File.separator + PREDICATE_STORE_NAME;
+	    val f:File = new File(predicateMapPath);
+	    
+	    if(!f.exists()) {
+	    	predicateStore = new HashMap[Int, String]();
+	    }
+	    
+	    try {
+		    var stream:FileInputStream = new FileInputStream(predicateMapPath);
+		    var input:Input = new Input(stream);
+		    toX10PredicateStore(this.kryo.readClassAndObject(input) as java.util.HashMap);
+		    input.close();//This will close the FileInputStream as well.
+		    
+		    if(predicateStore != null){
+		    }else{
+		    	predicateStore = new HashMap[Int,String]();
+		    }
+	    }catch(e:java.io.IOException){
+	    	e.printStackTrace();
+	    } 
+	    catch (e:Exception) {
+	    	e.printStackTrace();            
+	    }
+    }
     
     public def getVertexCount():Long{
     	if(updatedFlagVertex){

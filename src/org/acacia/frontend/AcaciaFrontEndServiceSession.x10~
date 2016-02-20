@@ -696,6 +696,8 @@ public class AcaciaFrontEndServiceSession {
     	return result;
     }
 
+    
+
 
     private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
         var result:ArrayList[String] = new ArrayList[String]();

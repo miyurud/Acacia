@@ -34,7 +34,8 @@ public class TestAcaciaInstance{
 
 		if(java.lang.System.getProperty("logFileName") == null){
 			Console.OUT.println("Testing 123");
-java.lang.System.setProperty("logFileName","acacia-Vostro-1520");
+            java.lang.System.setProperty("logFileName","acacia-" + here.id);
+//java.lang.System.setProperty("logFileName","acacia-Vostro-1520");
 //while(true);
 			//java.lang.System.setProperty("logFileName",java.lang.System.getenv("HOSTNAME"));
 		}
@@ -112,11 +113,11 @@ java.lang.System.setProperty("logFileName","acacia-Vostro-1520");
 
         async{
         				val service:AcaciaInstanceFileTransferService = new AcaciaInstanceFileTransferService();
-        				// try {
+        				//try {
         					service.start_running();
-        				// } catch (val e:UnknownHostException) {
-        				// 	e.printStackTrace();
-        				// }
+        				//} catch (val e:UnknownHostException) {
+        				//	//e.printStackTrace();
+        				//}
         				
         //				while(true){
         //					try {

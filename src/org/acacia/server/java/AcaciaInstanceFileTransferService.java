@@ -23,17 +23,17 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import org.acacia.log.java.Logger_Java;
-import org.acacia.util.PlaceToNodeMapper;
+import org.acacia.server.java.AcaciaInstanceFileTransferServiceSession;
 
 public class AcaciaInstanceFileTransferService{
 	private ServerSocket srv;
 	private boolean runFlag = true;
 	private int port;
 	
-	public AcaciaInstanceFileTransferService(){
-		port = 7781;
+	public AcaciaInstanceFileTransferService(int p){
+		//port = 7781;
 		//port = Integer.parseInt(java.lang.System.getProperty("ACACIA_INSTANT_DATA_PORT"));
-		//port = PlaceToNodeMapper.getInstancePort(here.id);
+        port = p;
 	}
 	
 	public void start_running() throws UnknownHostException{

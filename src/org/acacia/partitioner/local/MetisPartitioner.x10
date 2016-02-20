@@ -74,7 +74,6 @@ public class MetisPartitioner {
   	public def convertWithoutDistribution(graphName:String, graphID:String, inputFilePath:String, outputFilePath:String, nParts:int, isDistributedCentralPartitions:boolean, nThreads:int, nPlaces:int){
   		this.outputFilePath = outputFilePath;
   		this.nParts = nParts;
-        Console.OUT.println("nParts *****************XXXXXXXXXXXXXX************-->" + nParts);
   		this.graphName = graphName;
   		this.isDistributedCentralPartitions = isDistributedCentralPartitions;
   		this.graphID = graphID;
@@ -91,7 +90,6 @@ public class MetisPartitioner {
   		loadDataSet(inputFilePath);
   		constructMetisFormat(-1n);
   		partitionWithMetis(nParts);
-        Console.OUT.println("nParts *****************XXXAAAAAAAAA************-->");
   	}
   
   	private def distributeEdges(){
@@ -159,43 +157,47 @@ public class MetisPartitioner {
 
    		tArray:Rail[CustomThread] = new Rail[CustomThread](nThreads);
    
- 		for(var i:int = 0n; i < nThreads; i++){
+        
+ 		finish for(var k:int = 0n; k < nThreads; k++){
+                   val i:Int = k;
+                   
+                   async{
+                   tArray(i) = new CustomThread(i, numberOfPartitions);
+ 					//val itr:java.util.Iterator[Map.Entry[Int,java.util.HashSet[Int]]] = graphStorage(i).entrySet().iterator() as java.util.Iterator[Map.Entry[Int,java.util.HashSet[Int]]];
+                    val itrN:java.util.Iterator = graphStorage(i).keySet().iterator() as java.util.Iterator;
+   					var toVertexPartition2:Int = 0n;
+   					var toVertex2:Int = 0n;
    
- 			tArray(i) = new CustomThread(i, numberOfPartitions){
- 				public def run(){
- 					var i:int = getI();
- 					val itr:Iterator[Entry[Int,Set[Int]]] = graphStorage(i).entrySet().iterator() as Iterator[Entry[Int,Set[Int]]];
-   					var toVertexPartition:int = 0n;
-   					var toVertex:int = 0n;
+   					while(itrN.hasNext()){
+   						//val entry:java.util.Map.Entry[Int, HashSet[Int]] = itrN.next();
+   						//var fromVertex2:Int = entry.getKey();
+                        var fromVertex2:Int = itrN.next() as Int;
+   						var fromVertexPartition2:Int = partitionIndex(fromVertex2);
+   						var hs:x10.util.HashSet[Int]  = graphStorage(i).get(fromVertex2) as x10.util.HashSet[Int];
    
-   					while(itr.hasNext()){
-   						val entry:Entry[Int, Set[Int]] = itr.next();
-   						var fromVertex:int = entry.getKey();
-   						var fromVertexPartition:int = partitionIndex(fromVertex);
-   						var hs:x10.util.Set[Int]  = entry.getValue();
    						if(hs != null){
-   							val itr2:Iterator[Int] = hs.iterator();
+   							val itr2:x10.lang.Iterator[Int] = hs.iterator() as x10.lang.Iterator[Int];
+   
    							while(itr2.hasNext()){
-   								toVertex = itr2.next();
-   								toVertexPartition = partitionIndex(toVertex);
+   								toVertex2 = itr2.next() as Int;
+   								toVertexPartition2 = partitionIndex(toVertex2);
   
-   								if(fromVertexPartition != toVertexPartition){
-   									this.different++;
+   								if(fromVertexPartition2 != toVertexPartition2){
+                                    tArray(i).different++;
    								}else{
-   									this.same++;
-   									this.numVertesPrivate(fromVertexPartition)++;
+                                    tArray(i).same++;
+                                    tArray(i).numVertesPrivate(fromVertexPartition2)++;
    								}
    							}
    						}else{
    							continue;
    						}
    					}
-   					setDone();
- 				}
- 			};
- 			tArray(i).start();
+                    tArray(i).setDone();
+                   }
  		}
- 
+        
+        
  		while(true){
  			var flag:boolean = true;
  			for(var x:int = 0n; x < nThreads; x++){
@@ -253,11 +255,11 @@ public class MetisPartitioner {
 
   
    		for(var u:int = 0n; u < nThreads; u++){	
-   			val itrN:Iterator[Int] = graphStorage(u).keySet().iterator() as Iterator[Int];
+   			val itrN:java.util.Iterator = graphStorage(u).keySet().iterator() as java.util.Iterator;
   
    			for(var i:int = 0n; i < numberOfCentralPartitions; i++){								
    				while(itrN.hasNext()){
-   					fromVertex = itrN.next();
+   					fromVertex = itrN.next() as Int;
    					valItem:Set[Int] = graphStorage(u).get(fromVertex) as Set[Int];
    					fromVertexPartition = partitionIndex(fromVertex);
    
@@ -317,7 +319,7 @@ public class MetisPartitioner {
   
   			var hostID:int=0n,hostCount:int = 0n,nPlaces:int=0n;
   			for(var j:Long=0;j<n;j++){		             
-  				nPlaces = Place.places().size() as int;
+  				nPlaces = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
 
   				var hostList:ArrayList[String] = new ArrayList[String]();
   				val f:File = new File("machines.txt");
@@ -347,25 +349,27 @@ public class MetisPartitioner {
   				val process:Process = r.exec("zip -rj "+filePath+"_trf.zip "+filePath);
   				val itemHost:Entry[Long, String] = itr2.next();
   				if(itemHost==null){
-  					return;
+  					break;
   				}
   				val port:int = org.acacia.util.java.Conts_Java.ACACIA_INSTANCE_PORT;//This is the starting point
   				hostID = (itemHost.getKey() % hostCount) as int;
   				val withinPlaceIndex:int = ((itemHost.getKey() - hostID) as int)/hostCount;
   
   				val instancePort:int = port + withinPlaceIndex;
-  				val fileTransferport:int = instancePort + (nPlaces/hostCount);
-  
-  				tArray(i) = new CustomThread(i){
-  					public def run(){
+  				val fileTransferport:int = instancePort + (nPlaces/hostCount) + 1n;
+                //async{
+                tArray(i) = new CustomThread(i);
+  				// tArray(i) = new CustomThread(i){
+  				// 	public def run(){
   						AcaciaManager.batchUploadCentralStore(itemHost.getValue(), instancePort, Long.parseLong(graphID), filePath+"_trf.zip", fileTransferport);
-  						hostDI:String = MetaDataDBInterface.runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + itemHost.getValue() + "'").value as String;
-  						MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_CPARTITION(HOST_IDHOST, CPARTITION_IDCPARTITION, CPARTITION_GRAPH_IDCGRAPH) VALUES(" + hostDI + "," + getI() + "," + graphID + ")");
-  						setDone();
-  					}
-  				};
-  
-  				tArray(i).start();
+  						hostDI:String = org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + itemHost.getValue() + "'").getObjectArray()(0n) as String;
+                        //hostDI:String = org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + itemHost.getValue() + "'")(0).value;
+  						MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.HOST_HAS_CPARTITION(HOST_IDHOST, CPARTITION_IDCPARTITION, CPARTITION_GRAPH_IDCGRAPH) VALUES(" + hostDI + "," + i + "," + graphID + ")");
+                        tArray(i).setDone();
+  				// 	}
+  				// };
+                //}
+  				//tArray(i).start();
   				i = i + 1n;
   			}
   

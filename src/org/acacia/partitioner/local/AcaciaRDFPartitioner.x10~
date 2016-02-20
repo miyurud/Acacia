@@ -807,7 +807,7 @@ printer = edgeList.printer();
 				     val replicationInstancePort:Int = PlaceToNodeMapper.getInstancePort(i);
 				   //  Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
 				     val replicationFileTransferport:Int = PlaceToNodeMapper.getFileTransferServicePort(i);
-				   AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,j);
+				   AcaciaManager.batchUploadReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+".zip", replicationFileTransferport,i);
 				   //  //val replicationHost:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + replicationHostName + "'")(0);
 				     MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.REPLICATION_STORED_IN(idreplication, stored_partition_id, stored_host_id) VALUES(" + j + "," + i + "," + replicationHostID + ")");
 				   //  

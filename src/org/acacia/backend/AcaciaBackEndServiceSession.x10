@@ -41,7 +41,7 @@ import org.acacia.localstore.AcaciaLocalStoreFactory;
 import org.acacia.server.java.AcaciaInstanceProtocol;
 
 
-public class AcaciaBackEndServiceSession extends Thread {
+public class AcaciaBackEndServiceSession extends java.lang.Thread {
 //public class AcaciaFrontEndServiceSession extends java.lang.Thread{
 	var sessionSkt:Socket = null;
 	
@@ -331,7 +331,7 @@ public class AcaciaBackEndServiceSession extends Thread {
             			out.println("-1");
             			out.flush();
             			
-            		    val centralPartionCount:int = Int.parseInt((org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String])(0));
+            		    val centralPartionCount:int = Int.parseInt(org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).getObjectArray()(0n) as String);
             		    var fromID:long = -1;
             		    var toID:long = -1;
             		    val hmp:HashMap[Long, HashSet[Long]] = new HashMap[Long, HashSet[Long]]();
@@ -355,7 +355,7 @@ public class AcaciaBackEndServiceSession extends Thread {
             		    	
             		    	val centralStoreBaseDir:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
             		    	//AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
-            		    	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore", true);
+            		    	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), true);
             		    	store.loadGraph();
             		    	
             		    	val edgeList:HashMap[Long, HashSet[Long]] = store.getUnderlyingHashMap();
@@ -549,7 +549,8 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    var fromID:long = -1;
 	    var fromDegree:long = -1;
 	    
-	    val centralPartionCount:int = Int.parse((org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String])(0n));
+	    /*
+	    val centralPartionCount:int = Int.parse(org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).getObjectArray()(0n) as String);
 	    //System.out.println("centralPartionCount : " + centralPartionCount);
 	    for(var i:int = 0n; i < centralPartionCount; i++){
 	 		val c:java.sql.Connection = org.acacia.centralstore.java.HSQLDBInterface.getConnectionReadOnly(graphID, ""+i);
@@ -576,7 +577,8 @@ public class AcaciaBackEndServiceSession extends Thread {
 	 		}catch(e:java.sql.SQLException){
 	 			e.printStackTrace();
 	 		}
-	    }	
+	    }
+	     * */
  		//System.out.println("Result is : " + result);
  		
  		return result;
@@ -986,7 +988,7 @@ public class AcaciaBackEndServiceSession extends Thread {
 		var result:long = -1;
 		var fromID:long = -1;
 		var toID:long = -1;
-	    val centralPartionCount:int = Int.parseInt((org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String])(0));
+	    val centralPartionCount:int = Int.parseInt(org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).getObjectArray()(0n) as String);
 	    val edgeList:HashMap[Long, Long] = new HashMap[Long, Long]();
 	    var globalSize:long = 0;
 	    
@@ -996,13 +998,13 @@ public class AcaciaBackEndServiceSession extends Thread {
 	    	//AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
 	    	//store.loadGraph();
 	    	
-	    	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator + graphID + "_centralstore", true);
+	    	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), true);
 	    	store.loadGraph();
 	    	
 	    	globalSize += store.getEdgeCount();
 	    }
 
-	    val localSize:long = Int.parseInt((org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select EDGECOUNT from ACACIA_META.PARTITION where GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID).value as Rail[String])(0));
+	    val localSize:long = Int.parseInt(org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select EDGECOUNT from ACACIA_META.PARTITION where GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + partitionID).getObjectArray()(0n) as String);
 
 	    if(localSize > globalSize){
 	    	result = -1;

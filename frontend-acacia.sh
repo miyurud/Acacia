@@ -16,6 +16,6 @@
 
 #!/bin/bash
 
-APPDIR=/nfs/home/miyuru/workspace-x10/Acacia
+APPDIR=/opt/Acacia
 
-x10 -classpath .:$APPDIR:$APPDIR/build:$APPDIR/build/classes org.acacia.frontend.AcaciaFrontEnd
+x10 -mx4096m -classpath .:$APPDIR:$APPDIR/build:$APPDIR/build/classes org.acacia.frontend.AcaciaFrontEnd

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+APPDIR=/opt/Acacia
+
+#export X10_HOSTFILE=$1
+#export X10_NPLACES=$2
+#export X10_NTHREADS=$3
+#export X10_STATIC_THREADS=true
+
+X10_HOSTFILE=$APPDIR'/'machines.txt
+X10_NPLACES=1
+X10_NTHREADS=1
+X10_STATIC_THREADS=true
+X10_RESILIENT_MODE=1
+#The following line is used to enable/disable the standalone execution of Acacia.
+STANDALONE_FLAG=true
+
+
+#ssh st04 $APPDIR/shutdown-instance.sh &
+#ssh st05 $APPDIR/shutdown-instance.sh &
+#ssh st06 $APPDIR/shutdown-instance.sh &
+#ssh st07 $APPDIR/shutdown-instance.sh &
+
+#sleep 10
+
+#python remove_instances.py
+
+#clean-neo4js.sh &
+
+#sleep 2
+
+#ssh st04 $APPDIR/acacia-instance.sh &
+#ssh st05 $APPDIR/acacia-instance.sh &
+#ssh st06 $APPDIR/acacia-instance.sh &
+#ssh st07 $APPDIR/acacia-instance.sh &
+
+X10_NPLACES=$X10_NPLACES x10 -J-XX:+UnlockCommercialFeatures -J-XX:+FlightRecorder -mx16384m -XX:MaxPermSize=32768m -classpath .:$APPDIR/bin/acacia.jar:$APPDIR/log4j.properties:$APPDIR/build:$APPDIR/build/classes:$APPDIR/lib/j2ee-1.4.jar:$APPDIR/lib/inject-api-1.0.0-PRD.jar:$APPDIR/lib/cdi-api-1.0.jar:$APPDIR/lib/commons-httpclient-3.1.jar:$APPDIR/lib/commons-codec-1.4.jar:$APPDIR/lib/commons-daemon-1.0.11.jar:$APPDIR/lib/jackson-core-asl-1.9.7.jar:$APPDIR/lib/jackson-mapper-asl-1.8.8.jar:$APPDIR/lib/jamon-runtime-2.3.1.jar:$APPDIR/lib/libthrift-0.8.0.jar:$APPDIR/lib/geronimo-jta.jar:$APPDIR/lib/metrics-core-2.1.2.jar:$APPDIR/lib/jersey-server-1.9.jar:$APPDIR/lib/jersey-core-1.9.jar:$APPDIR/lib/asm-3.2.jar:$APPDIR/lib/servlet-api-2.5-20081211.jar:$APPDIR/lib/guava-11.0.2.jar:$APPDIR/lib/jetty-6.1.25.jar:$APPDIR/lib/jetty-util-6.1.25.jar:$APPDIR/lib/jettison-1.3.jar:$APPDIR/lib/slf4j-log4j12-1.7.2.jar:$APPDIR/lib/slf4j-api-1.7.2.jar:$APPDIR/lib/log4j-1.2.16.jar:$APPDIR/lib/protobuf-java-2.4.0a.jar:$APPDIR/lib/kryo-3.0.2-SNAPSHOT.jar:$APPDIR/lib/minlog-1.3.1-SNAPSHOT.jar:$APPDIR/lib/objenesis-2.2-SNAPSHOT.jar:$APPDIR/lib/commons-collections-3.2.1.jar:$APPDIR/lib/zookeeper-3.4.5.jar:$APPDIR/lib/hsqldb-2.2.9.jar:$APPDIR/lib/hadoop-core-1.0.4.jar:$APPDIR/lib/hbase-0.94.4.jar:$APPDIR/lib/commons-configuration-1.6.jar:$APPDIR/lib/commons-cli-1.2.jar:$APPDIR/lib/commons-io-1.4.jar:$APPDIR/lib/commons-lang-2.5.jar:$APPDIR/lib/commons-logging-1.1.1.jar:$APPDIR/neo4j-lib/geronimo-jta_1.1_spec-1.1.1.jar:$APPDIR/neo4j-lib/lucene-core-3.5.0.jar:$APPDIR/neo4j-lib/neo4j-cypher-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-graph-algo-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-graph-matching-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-jmx-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-kernel-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-lucene-index-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-shell-1.8.1.jar:$APPDIR/neo4j-lib/neo4j-udc-1.8.1.jar:$APPDIR/neo4j-lib/org.apache.servicemix.bundles.jline-0.9.94_1.jar:$APPDIR/neo4j-lib/scala-library-2.9.1-1.jar:$APPDIR/neo4j-lib/server-api-1.8.1.jar::$APPDIR/neo4j-lib/batch-import-jar-with-dependencies.jar:$APPDIR/lib-gremlin-groovy/groovy-1.8.9.jar:$APPDIR/lib-gremlin-groovy/gremlin-java-2.4.0.jar:$APPDIR/lib-gremlin-groovy/gremlin-groovy-2.4.0.jar:$APPDIR/lib-gremlin-groovy/pipes-2.4.0.jar:$APPDIR/lib-gremlin-groovy/antlr-2.7.7.jar:$APPDIR/lib-gremlin-groovy/blueprints-core-2.4.0.jar:$APPDIR/lib/concurrentlinkedhashmap-lru-1.4.jar:$APPDIR/lib/kryo-shaded-3.0.2-SNAPSHOT.jar:$APPDIR/lib/jena-core-2.13.0.jar:$APPDIR/lib/xml-apis-1.4.01.jar:$APPDIR/lib/xercesImpl-2.11.0.jar:$APPDIR/lib/slf4j-api-1.7.6.jar:$APPDIR/lib/slf4j-log4j12-1.7.6.jar:$APPDIR/lib/jena-iri-1.1.2.jar:$APPDIR/lib/antlr-runtime-3.5-sources.jar:$APPDIR/lib/antlr-complete-3.5.2.jar org.acacia.frontend.AcaciaFrontEnd $STANDALONE_FLAG

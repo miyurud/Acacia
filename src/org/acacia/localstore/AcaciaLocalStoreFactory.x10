@@ -34,7 +34,13 @@ public class AcaciaLocalStoreFactory{
  	public static def load(graphID:Int, partitionID:Int, baseDir:String , isCentralStore:Boolean):AcaciaLocalStore{
   		var result:AcaciaLocalStore  = null;
  		//We need to read the catalog and determine the type
- 		storeType:Int = Int.parse(AcaciaLocalStoreCatalogManager.readCatalogRecord(baseDir + File.separator + graphID + "_" + partitionID, "head"));
+        var storeType:Int = -1n;
+        
+        if(!isCentralStore){
+          storeType = Int.parse(AcaciaLocalStoreCatalogManager.readCatalogRecord(baseDir + File.separator + graphID + "_" + partitionID, "head"));
+        }else{
+          storeType = Int.parse(AcaciaLocalStoreCatalogManager.readCatalogRecord(baseDir + File.separator + graphID + "_centralstore" + File.separator + graphID + "_" + partitionID, "head"));
+        }
 
  		if(storeType == AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE){
  			result = new AcaciaHashMapLocalStore(graphID, partitionID);

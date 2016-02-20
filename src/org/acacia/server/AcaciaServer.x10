@@ -229,11 +229,12 @@ public class AcaciaServer {
 		   //  	backend.run();
 		   // }
 
-
-           async{
-	         frontend = new AcaciaFrontEnd();
-	         frontend.run();
-           }
+		/*async
+		{
+			frontend = new AcaciaFrontEnd();
+	       		frontend.run();
+		}*/
+	       
     	}
 
 /*finish{
@@ -492,7 +493,9 @@ for (p in Place.places()) {
     //org.acacia.server.runtime.location
     //org.acacia.partitioner.local.threads
     val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
-    converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
+    val nPlaces:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+    Console.OUT.println("NNNNNNNNNNNNN--->nPlaces:" + nPlaces);
+    converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), nPlaces, isDistrbutedCentralPartitions, nThreads, nPlaces);
     val initialPartID:Int = converter.getInitlaPartitionID();
     //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
     var batchUploadFileList:Rail[String] = converter.getPartitionFileList();
@@ -504,14 +507,14 @@ for (p in Place.places()) {
         val itr:Iterator[Place] = Place.places().iterator();
         val placeToHostMap:HashMap[Long, String] = new HashMap[Long, String]();
          
-        while(itr.hasNext()){
-             val p:Place = itr.next();
-             Console.OUT.println("+++++++++++++++++K p.id " + p.id);
+        //while(itr.hasNext()){
+        for(var p:Int = 0n; p < nPlaces; p++){
+             Console.OUT.println("+++++++++++++++++K p.id " + p);
              
-             val hostName:String = PlaceToNodeMapper.getHost(p.id);
+             val hostName:String = PlaceToNodeMapper.getHost(p);
 
-             Console.OUT.println("+++++++++++++++++K p.id " + p.id + " hostName : " + hostName);
-             placeToHostMap.put(p.id, hostName);
+             Console.OUT.println("+++++++++++++++++K p.id " + p + " hostName : " + hostName);
+             placeToHostMap.put(p, hostName);
             Console.OUT.println("+++++++++++++++++B");
         }
         Console.OUT.println("+++++++++++++++++C");
@@ -567,8 +570,10 @@ for (p in Place.places()) {
 	    val edgeListPath = rdfPartitioner.getEdgeList();
 	    
 	    val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
-	    Console.OUT.println("XXXXXX---XXXXXXXX--->Place.places().size() : " + Place.places().size());
-	    rdfPartitioner.convert(item, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), Place.places().size() as Int, isDistrbutedCentralPartitions, nThreads, Place.places().size() as Int);
+
+	    val nPlaces:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+	    Console.OUT.println("MMMMMMMMMMMMMMMMMMMMMM--->nPlaces:" + nPlaces);
+	    rdfPartitioner.convert(item, graphID, edgeListPath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), nPlaces, isDistrbutedCentralPartitions, nThreads, nPlaces);
 	    rdfPartitioner.distributePartitionedData();
 	    
 	    // val initialPartID:Int = rdfPartitioner.getInitlaPartitionID();

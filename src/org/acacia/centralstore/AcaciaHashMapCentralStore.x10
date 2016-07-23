@@ -150,8 +150,7 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 		var record:String = AcaciaLocalStoreCatalogManager.readCatalogRecord(instanceDataFolderLocation, "head");
 		
 		if(record == null){
-            Console.OUT.println("AAAAAA-->instanceDataFolderLocation:" + instanceDataFolderLocation);
-			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE);
+			AcaciaLocalStoreCatalogManager.writeCatalogRecord(instanceDataFolderLocation, "head", ""+AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE);
 		}
 	}
 	

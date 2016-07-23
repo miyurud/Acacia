@@ -31,8 +31,6 @@ public class AcaciaInstanceFileTransferService{
 	private int port;
 	
 	public AcaciaInstanceFileTransferService(int p){
-		//port = 7781;
-		//port = Integer.parseInt(java.lang.System.getProperty("ACACIA_INSTANT_DATA_PORT"));
         port = p;
 	}
 	

@@ -43,6 +43,8 @@ import x10.util.HashMap;
 import x10.util.ArrayList;
 import x10.util.HashSet;
 
+import org.acacia.partitioner.stream.LDGPartitioner; 
+
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
@@ -53,6 +55,7 @@ import org.acacia.rdf.sparql.java.SparqlParser;
 import org.acacia.rdf.sparql.InterimResult;
 import org.acacia.rdf.sparql.Tokenizer;
 import org.acacia.rdf.sparql.AnswerSet;
+import org.acacia.util.java.KafkaConsumer;
 
 /**
  * Class AcaciaFrontEndServiceSession
@@ -61,9 +64,11 @@ public class AcaciaFrontEndServiceSession {
 	private var sessionSkt:Socket = null;
     //private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
     private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
+    private var placeGroup:PlaceGroup = null;
     
-	public def this(val socket:Socket){
+	public def this(val socket:Socket,val pg:PlaceGroup){
 		sessionSkt = socket;
+ 		placeGroup = pg;
 	}
 	
 	public def run():void{
@@ -601,48 +606,92 @@ public class AcaciaFrontEndServiceSession {
         	
         }else if(msg.equals(AcaciaFrontEndProtocol.K_NN)){
             
-        } else {
-			//This is the default response
-			out.println(AcaciaFrontEndProtocol.SEND);
-			out.flush();
-		}
-	}
+        }else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM)){
+            //Read a stream into Acacia
+            var p:LDGPartitioner = new LDGPartitioner();
+            Console.OUT.println(p.selectLDGHost());
+        
+            var host:String="localhost";
+            //port =k
+            var port:Int=4231n;
+        
+            try {
+               var skt:Socket = new Socket(host, port);
+           
+               var outWriter:PrintWriter = new PrintWriter(skt.getOutputStream());
+               var inReader:BufferedReader = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+        
+               var line:String = null; 
+        
+               while (!skt.isClosed()){
+                  line = buff.readLine();
+       
+                  Console.OUT.println("request -" + line);
+                  outWriter.println(line);
+                  outWriter.flush();
+        
+                  line = inReader.readLine();
+        
+        		  if (line != null){
+        			Console.OUT.println("response -" + line);
+                  }
+        
+         		  if (line.equals("close-ok")){
+         			break;
+         		  }else if(line.equals("shtdn-ok")){
+         			break;
+        		  }
+        		}
+        	} catch (var e:java.net.UnknownHostException ) {
+        		e.printStackTrace();
+         	} catch (var e:java.io.IOException ) {
+         		e.printStackTrace();
+         	}
+        
+        	out.flush();
+        } else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM_KAFKA)){
+            val kafkaSocket:KafkaConsumer = new KafkaConsumer();
+            var line:String = null;
+            var p:LDGPartitioner = new LDGPartitioner();
+            
+            while((line=kafkaSocket.getNext())!=null){
+                Console.OUT.println(line);
+                Console.OUT.println(p.selectLDGHost());
+            }
+            out.flush();
+        }
+    }
 
     private def runKNN(val graphID:String):ArrayList[String]{
         //To be implemented
         return null;
     }
     
-    // private def runKCore(val graphID:String):ArrayList[String]{
-    //     //To be implemented
-    //     return null;
-    // }
+    private def runKCore(val graphID:String, val kcore:String):HashSet[String]{
     
-    
-    private def runKCore(val graphID:String, val kcore:String):HashMap[Long,Long]{
-    
-    	val hostListLen:Int = Place.places().size as Int;
-    	var partialResults:Rail[HashMap[Long,Long]] =  new Rail[HashMap[Long,Long]](hostListLen);
+	    //Console.OUT.println("It is K Core");
+	    var result:HashSet[String] = new HashSet[String]();
 	    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-	    val result:HashMap[Long,Long] =  new HashMap[Long,Long]();
-	    var intermResult:HashMap[Long,Long] =  new HashMap[Long,Long]();
+	    val hostListLen:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+	    val intermRes:Rail[Rail[String]] = new Rail[Rail[String]](hostListLen);
 	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
 	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-	    
+
 	    for(var i:long=0; i<l.size; i++){
+	    	Console.OUT.println(l(i));
+	    
 		    val items:Rail[String] = l(i).split(",");
 		    val pts = mp.get(items(0));
 		    var partitions:ArrayList[String] = null;
 		    
 		    if(pts == null){
 		    	partitions = new ArrayList[String]();
-		    }
-		    else{
+		    }else{
 		    	partitions = pts as ArrayList[String];
 		    }
     
-		    partitions.add(items(1));
-		    mp.put(items(0), partitions);
+    		partitions.add(items(1));
+    		mp.put(items(0), partitions);
 	    }
 	    
 	    var cntr:Int = 0n;
@@ -661,46 +710,44 @@ public class AcaciaFrontEndServiceSession {
 		    val port = PlaceToNodeMapper.getInstancePort(p.id);
 		    var partitionID:String = null;
 		    var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-		    
 		    if(partitions==null){
+	    
 		    }
+    
 		    if(partitions.size() > 0){
 		    	partitionID = partitions.removeFirst();
 		    }
-		    
-		    val ptID:String = partitionID;
-		    //Console.OUT.println("At async method..........");
-		    async{
-	    		partialResults(k) = new HashMap[Long,Long]();
-	    		partialResults(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
-		    }
-		    //Console.OUT.println("After async");
-		    cntr++;
-	    }
+    
+	    	val ptID:String = partitionID;
 	    
-	    for(var i:Int = 0n; i < hostListLen; i++){
-	    	intermResult = partialResults(i);
-		if(partialResults(i) != null){
- 			var itr:Iterator[Long]  = intermResult.keySet().iterator();
-			while(itr.hasNext()){
- 				val key = itr.next();
- 				result.put(key,intermResult.get(key));
-			}
-		    	Console.OUT.println("No. of Results at (" + i + ") : " + intermResult.size()+" vertices");
+	    	async{
+	    		intermRes(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
+    		}
+    
+    		cntr++;
+    	}
+    	for(var i:Int=0n; i < hostListLen; i++){
+		    val intermResult = intermRes(i);
+		    if(intermResult != null){
+		    	for(var j:Int=0n; j < intermResult.size; j++){
+		    		result.add(intermResult(j));//result += intermResult;
+	    		}
+		    Console.OUT.println("Result at (" + i + ") : " + intermResult);
 		    }
 		    if(intermResult == null){
-		    	Console.OUT.println("No. of Results at (" + i + ") : 0 vertices");
+		    	Console.OUT.println("Result at (" + i + ") : [0 vertices]");
 		    }
     	}
     
     	return result;
     }
+    
 
 
     private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
         var result:ArrayList[String] = new ArrayList[String]();
         val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-        val hostListLen:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+        val hostListLen:Int = Place.numPlaces() as Int;
         var intermRes:Rail[ArrayList[InterimResult]] = new Rail[ArrayList[InterimResult]](hostListLen);
         var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
         var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
@@ -731,39 +778,84 @@ public class AcaciaFrontEndServiceSession {
         finish for (var i:Int = 0n; i < nPlaces; i++){
 	        placeDetails= placeDetails + i + "/"+PlaceToNodeMapper.getHost(i)+"/"+ PlaceToNodeMapper.getInstancePort(i)+",";             
         }
-
-        finish for (var i:Int = 0n; i < nPlaces; i++){
-            val k:Int = cntr;
-            val host = PlaceToNodeMapper.getHost(i);
-            val port = PlaceToNodeMapper.getInstancePort(i);
-            var partitionID:String = null;
-            
-            var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-            if(partitions==null){
-            	
-            }
-            
-            if(partitions.size() > 0){
-               partitionID = partitions.removeFirst();
-            }
-       
-            val ptID:String = partitionID;
-            val n:Int = i;
-            async{
-                intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query, n, placeDetails);
-            }
-        
-            cntr++;
-
-	                
-  //           async{
-		// placeDetails = placeDetails+"0"+"/"+"acacia-Vostro-1520"+"/"+ "7780"+",";
-		// placeDetails = placeDetails+"1"+"/"+"sameera-Inspiron-N5110"+"/"+ "7780"+",";
-  //               intermRes(0) = call_runSPARQL(host0, port0, graphID, ptID0, query,placeID0,placeDetails);
-		// intermRes(1) = call_runSPARQL(host1, port1, graphID, ptID1, query,placeID1,placeDetails);
-  //           }
-        }
-	    
+	        finish for (p in placeGroup){
+	        	val k:Int = cntr;
+	        	var temp:Int = p.id as Int;
+	        	if(p.isDead()){
+	        		val pID = p.id;
+	        		var done:Boolean = false; 
+	        		val host = PlaceToNodeMapper.getHost(pID);
+	        		for(pl in Place.places()){
+	        			if(!pl.isDead()){
+	        				if(pl.id != pID){
+	        					val newHost = PlaceToNodeMapper.getHost(pl.id);
+	        					if(host.equals(newHost)){
+	        						temp = pl.id as Int;
+	        						done = true;
+	        						break;
+	        					}
+	        				}
+	        			}
+	        		}
+	        		if(!done){
+	        			//go for replication
+	        			var partitionID:String = null;
+	        			var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+	        			if(partitions==null){
+	        
+	        			}
+	        
+	        			if(partitions.size() > 0){
+	        				partitionID = partitions.removeFirst();
+	        			}
+	        			val ptID:String = partitionID;
+	        			val storedHosts:Rail[String] = call_runSelect("SELECT STORED_HOST_ID FROM ACACIA_META.REPLICATION_STORED_IN WHERE STORED_PARTITION_ID=" + graphID + "_" + partitionID + ";");
+	        			for(storedHost in storedHosts){
+	        				for(pl in Place.places()){
+	                				if(!pl.isDead()){
+	        						temp = pl.id as Int;
+	        						val port = PlaceToNodeMapper.getInstancePort(temp);
+	        						val n:Int = p.id as Int;
+	        						async{
+	        							intermRes(k) = call_runSPARQLWithReplications(host, port, graphID, ptID, query, n, placeDetails,p.id as Int);
+	        						}	
+	        						done = true;
+	        						break;
+	        					} 
+	        				}
+	        				if(done){
+	        					break;
+	        				}
+	        			}
+	        			if(!done){
+	        				intermRes(k) = null;
+	        			}
+	        			cntr++;
+	        			continue;
+	        		}
+	        	}
+	            val host = PlaceToNodeMapper.getHost(temp);
+	            val port = PlaceToNodeMapper.getInstancePort(temp);
+	            var partitionID:String = null;
+	            
+	            var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+	            if(partitions==null){
+	            	
+	            }
+	            
+	            if(partitions.size() > 0){
+	               partitionID = partitions.removeFirst();
+	            }
+	       
+	            val ptID:String = partitionID;
+	            val n:Int = p.id as Int;
+	            async{
+	                intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query, n, placeDetails);
+	            }
+	        
+	            cntr++;
+	        }
+	        
 
        // }
         val tokenizer = new Tokenizer(query);
@@ -776,11 +868,13 @@ public class AcaciaFrontEndServiceSession {
         	val tempResult = new HashSet[String]();
         	var key:String = null;
         	for(var k:Int=0n; k < hostListLen; k++){
-        		val intermResult = intermRes(k).get(i);
-        		key = intermResult.resultMapLocal.keySet().iterator().next();
-        		tempResult.addAll(intermResult.resultMapLocal.get(key));
-        		tempResult.addAll(intermResult.resultMapCentral.get(key));
-        		intermRes(k).set(null,i);
+        		if(intermRes(k) != null){
+        			val intermResult = intermRes(k).get(i);
+        			key = intermResult.resultMapLocal.keySet().iterator().next();
+        			tempResult.addAll(intermResult.resultMapLocal.get(key));
+        			tempResult.addAll(intermResult.resultMapCentral.get(key));
+        			intermRes(k).set(null,i);
+        		}
         	}
         	allResults.put(key,tempResult);
         }
@@ -1360,7 +1454,9 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 
     @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5, #6, #7)")
     static native def call_runSPARQL(String, Int, String, String, String, Long, String):ArrayList[InterimResult];
-	
+    
+    @Native("java", "org.acacia.server.AcaciaManager.runSPARQLWithReplications(#1, #2, #3, #4, #5, #6, #7,#8)")
+    static native def call_runSPARQLWithReplications(String, Int, String, String, String, Long, String,Int):ArrayList[InterimResult];
     // @Native("java", "org.acacia.server.AcaciaManager.runKCore(#1, #2, #3, #4, #5, #6, #7)")
     // static native def call_runKCore(String, Int, String, String, String, Long, String):Rail[String];
     // 

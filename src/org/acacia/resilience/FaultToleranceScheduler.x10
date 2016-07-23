@@ -44,7 +44,7 @@ public class FaultToleranceScheduler {
 	 */
 public static def mapReplicationstoPlaces(): HashMap[Int, String]{
 //val converter:MetisPartitioner = new MetisPartitioner();	
-var resilienceLevel:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.FaultToleranceScheduler.resilienceLevel"));
+var resilienceLevel:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.resilience.resilienceLevel"));
 
 if(resilienceLevel != 0n) {
 val nPlaces:Int = Int.parse(Utils.getAcaciaProperty("org.acacia.server.nplaces"));
@@ -69,43 +69,44 @@ val hostLst:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
 val hostIDMap:HashMap[String, String] = AcaciaServer.getLiveHostIDList();
 //var hostList:HashSet[String] = new HashSet[String]();			
 
-for(var i:Int=0n;i<nPlaces;i++){
-	Console.OUT.println("resilience p.id " + i);
+while(itr.hasNext()){
+val p:Place = itr.next();
+Console.OUT.println("resilience p.id " + p.id);
 
-	val hostName:String = PlaceToNodeMapper.getHost(i);	
-	if(hostPlaceCounter.containsKey(hostName))
-	{
-		var PlaceConterMap:HashMap[Int,Int] = counterForPlacesByHost.get(hostName);
-		PlaceConterMap.put(i,0n);
-		counterForPlacesByHost.put(hostName,PlaceConterMap);
-		hostPlaceCounter.put(hostName,hostPlaceCounter.get(hostName) + 1n);
-		var temp:ArrayList[Int] = hostToPlaceMap.get(hostName);
-		temp.add(i);
-		hostToPlaceMap.put(hostName, temp);
-	}
-	else
-	{
-		hostPlaceCounter.put(hostName,1n);
-		counterForHoasts.put(hostName,0n);
-		var PlaceConterMap:HashMap[Int,Int] = new HashMap[Int,Int]();
-		//usedHostsCounter is the counter of hosts that exceeded the reference number.
-		PlaceConterMap.put(-1n,0n);
-		//ReferenceForHosts is the reference number for the counter values. 
-		PlaceConterMap.put(-2n,0n);
-		//nextLevel is a counter of Hosts that exceeded the reference number+1. Only used in one case
-		PlaceConterMap.put(-3n,0n);
+val hostName:String = PlaceToNodeMapper.getHost(p.id);	
+if(hostPlaceCounter.containsKey(hostName))
+{
+var PlaceConterMap:HashMap[Int,Int] = counterForPlacesByHost.get(hostName);
+PlaceConterMap.put(p.id as Int,0n);
+counterForPlacesByHost.put(hostName,PlaceConterMap);
+hostPlaceCounter.put(hostName,hostPlaceCounter.get(hostName) + 1n);
+var temp:ArrayList[Int] = hostToPlaceMap.get(hostName);
+temp.add(p.id as Int);
+hostToPlaceMap.put(hostName, temp);
+}
+else
+{
+hostPlaceCounter.put(hostName,1n);
+counterForHoasts.put(hostName,0n);
+var PlaceConterMap:HashMap[Int,Int] = new HashMap[Int,Int]();
+//usedHostsCounter is the counter of hosts that exceeded the reference number.
+PlaceConterMap.put(-1n,0n);
+//ReferenceForHosts is the reference number for the counter values. 
+PlaceConterMap.put(-2n,0n);
+//nextLevel is a counter of Hosts that exceeded the reference number+1. Only used in one case
+PlaceConterMap.put(-3n,0n);
 
-		PlaceConterMap.put(i,0n);
-		counterForPlacesByHost.put(hostName,PlaceConterMap);
-		var temp:ArrayList[Int] = new ArrayList[Int]();
-		temp.add(i);
-		hostToPlaceMap.put(hostName, temp);
-	}
-	//hostList.add(hostName);
-	Console.OUT.println("resilience p.id " + i + " hostName : " + hostName);
+PlaceConterMap.put(p.id as Int,0n);
+counterForPlacesByHost.put(hostName,PlaceConterMap);
+var temp:ArrayList[Int] = new ArrayList[Int]();
+temp.add(p.id as Int);
+hostToPlaceMap.put(hostName, temp);
+}
+//hostList.add(hostName);
+Console.OUT.println("resilience p.id " + p.id + " hostName : " + hostName);
 
-	placeToHostMap.put(i, hostName);
-	Console.OUT.println("placeToHostMap entry for place" + i);
+placeToHostMap.put(p.id, hostName);
+Console.OUT.println("placeToHostMap entry for place" + p.id);
 }
 Console.OUT.println("placeToHostMap Created");
 

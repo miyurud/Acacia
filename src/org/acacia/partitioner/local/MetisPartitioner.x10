@@ -171,7 +171,7 @@ public class MetisPartitioner {
    					while(itrN.hasNext()){
    						//val entry:java.util.Map.Entry[Int, HashSet[Int]] = itrN.next();
    						//var fromVertex2:Int = entry.getKey();
-                        var fromVertex2:Int = itrN.next() as Int;
+                                                var fromVertex2:Int = itrN.next() as Int;
    						var fromVertexPartition2:Int = partitionIndex(fromVertex2);
    						var hs:x10.util.HashSet[Int]  = graphStorage(i).get(fromVertex2) as x10.util.HashSet[Int];
    
@@ -211,7 +211,7 @@ public class MetisPartitioner {
  			}
 
  			try {
- 				Thread.currentThread().sleep(100);
+                System.sleep(100);
  			} catch (e:Exception) {
  				e.printStackTrace();
  			}

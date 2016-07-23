@@ -32,23 +32,14 @@ public class InferenceHandler {
 	    var newToken:String = null;
 	    var flag:Int = 0n;
 	    var index:Int = 0n;
-	  
-	    Console.OUT.println("hhhhhhhhhhhhhhhhhhhhhhhhhh");
-	    
 	    
 	    for(var i:Int = 0n; i < triples.size(); i++){
 	      tokens = new Rail[String](3);
 	      tokens = triples.get(i);
-	      
-	      
-	      Console.OUT.println("hhhhhhhhhhhhhhhhhhhhhhhhhhkkkkkkkkkkkkk");
 	  
 	      //type inference 
 	      if(tokens(1).indexOf("type") > 0){
-	      Console.OUT.println("hhhhhhhhhhhhhhhhhhhhhhhhhh"+tokens(2));
 	        key = tokens(2).substring(tokens(2).indexOf(":")+1n);
-	        
-	        Console.OUT.println("ffffffffffffffffffffff"+key);
 	  
 	        var itr1:Iterator[Map.Entry[Long, HashSet[String]]] = nodeStore.entries().iterator();
 	  

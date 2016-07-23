@@ -30,23 +30,7 @@ public class Triple {
  		this.object = object;
  		this.pattern = pattern;
  	}
- 
- 	/*public def setSubject(subject:String):void{
- 		this.subject = subject;
- 	}
- 
- 	public def setPredicate(predicate:String):void{
- 		this.predicate = predicate;
- 	}
- 
- 	public def setObject(object:String):void{
- 		this.object = object;
- 	}
- 
- 	public def setPattern(pattern:Int):void{
- 		this.pattern = pattern;
- 	}*/
- 
+  
  	public def getSubject():String{
  		return subject;
  	}

@@ -116,7 +116,7 @@ public class AcaciaHSQLDBComm {
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.host(idhost INT NOT NULL IDENTITY, name VARCHAR(45), ip VARCHAR(45));");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.host_has_partition(host_idhost INT, partition_idpartition INT, partition_graph_idgraph INT);");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.edgemap(idfrom INT NOT NULL, idto INT NOT NULL);");
-			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.replication_stored_in(idreplication INT NOT NULL,stored_partition_id INT NOT NULL,stored_host_id INT,PRIMARY KEY (idreplication, stored_partition_id));");			
+			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.replication_stored_in(idreplication INT NOT NULL,stored_partition_id VARCHAR(45) NOT NULL,stored_host_id INT,PRIMARY KEY (idreplication, stored_partition_id));");			
 			//
 			System.out.println("Done creating tables");
 			dbCon.commit();

@@ -47,6 +47,7 @@ public class ExecuteQuery {
  	private var graphID:String;
  	private var partitionID:String;
  	private var placeID:String;
+ 	private var replicatingId:String;
     private val baseDir:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
     private var triplePatternLocal:TriplePattern = null;
     private var triplePatternCentral:TriplePattern = null;
@@ -107,7 +108,7 @@ public class ExecuteQuery {
  
  	public def execute(val triples:ArrayList[Triple]){
  		var intermediateResults:ArrayList[ArrayList[String]] = new ArrayList[ArrayList[String]]();
- 
+  		
 		 store = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), baseDir,false);
 		 val triplePatternLocal = new TriplePattern(store);
 		 
@@ -148,7 +149,6 @@ public class ExecuteQuery {
 	 this.graphID		= graphID;
 	 this.partitionID	= partitionID;
 	 this.placeID		= placeID;
- 
 	 try {
 		 val qType = tokenizer.getQueryType();
 		 var triples:ArrayList[Triple] = tokenizer.getTriples();
@@ -188,6 +188,57 @@ public class ExecuteQuery {
 	 }
 	 
 	 return results;
+ }
+ 
+ public def executeWithoutMerge(var query:String, var graphID:String, var partitionID:String, var placeID:String,var replicatingID:String):ArrayList[InterimResult]{
+ var results:ArrayList[InterimResult] = new ArrayList[InterimResult]();
+ tokenizer		= new Tokenizer(query);
+ variableCount	= tokenizer.getVariableCount();
+ answerSet		= new AnswerSet(variableCount);
+ 
+ this.graphID		= graphID;
+ this.partitionID	= partitionID;
+ this.placeID		= placeID;
+ 
+ try {
+ val qType = tokenizer.getQueryType();
+ var triples:ArrayList[Triple] = tokenizer.getTriples();
+ 
+ switch(qType){
+ case 0n:
+ var intermediateResults:ArrayList[ArrayList[String]] = new ArrayList[ArrayList[String]]();
+ val dataFolder = baseDir + "/" + "replication" + "/" + replicatingID;
+ store = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), dataFolder,false);
+ val triplePatternLocal = new TriplePattern(store);
+ 
+ store = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parseInt(partitionID), dataFolder, true, Int.parseInt(placeID));
+ val triplePatternCentral = new TriplePattern(store);
+ val variableMap = tokenizer.getVariableMap();
+ 
+ for (var i:Int = 0n; i < triples.size(); i++) {
+ var triple:Triple = triples.get(i);
+ Console.OUT.println(triple.getSubject()+":"+triple.getPredicate()+":"+triple.getObject());
+ var result:HashSet[String] = new HashSet[String]();
+ //val resultMapLocal = triplePatternLocal.execute(triple);
+ val resultMapCentral = triplePatternCentral.execute(triple);
+ // val keySet = resultMapLocal.keySet();
+ // val key = keySet.iterator().next();
+ // val str = key.split(",");
+ // val size = str.size;
+ var item:InterimResult = new InterimResult();
+ item.resultMapLocal = triplePatternLocal.execute(triple);
+ item.resultMapCentral = triplePatternCentral.execute(triple);
+ 
+ results.add(item);
+ 
+ }
+ break;
+ }
+ }catch (val e:Exception) {
+ Console.OUT.println("Error in query format"+e);
+ }
+ 
+ return results;
  }
  
  

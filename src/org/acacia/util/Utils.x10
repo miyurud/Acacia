@@ -121,19 +121,7 @@ public class Utils {
 	    return result.toRail();
     }
 
-	public static def getBatchUploadFileList():HashMap[String, String]{
-	//public static def getBatchUploadFileList():String{
-		// var reader: FileReader = new FileReader(new File("" + Conts.BATCH_UPLOAD_FILE_LIST));
-		// var line:String = null;
-		// 
-		// while(true){
-		// 	try{
-		// 		line = reader.readLine();
-		// 	}catch(IOException){
-		// 		break;
-		// 	}
-		// }
-		
+	public static def getBatchUploadFileList():HashMap[String, String]{	
 		val result:HashMap[String, String] = new HashMap[String, String]();
 
 		try{

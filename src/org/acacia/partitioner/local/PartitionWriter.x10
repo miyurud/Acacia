@@ -16,7 +16,7 @@ limitations under the License.
 
 package org.acacia.partitioner.local;
 
-import org.acacia.localstore.AcaciaHashMapNativeStore;
+import org.acacia.localstore.AcaciaHashMapLocalStore;
 import org.acacia.util.Utils;
 
 import java.io.File;
@@ -34,8 +34,7 @@ public class PartitionWriter {
  	private var bw:BufferedWriter;
  	private var fw:FileWriter;
  	private var partitionFilePath:String;
- 	//private var store:AcaciaHashMapLocalStore;
-    private var store:AcaciaHashMapNativeStore;
+ 	private var store:AcaciaHashMapLocalStore;
  
  	public def this(fileFullPath:String){
  		this.partitionFilePath = fileFullPath;
@@ -46,7 +45,7 @@ public class PartitionWriter {
 			try{
 				file.createNewFile();
 			}catch(e:java.io.IOException){
-
+                 e.printStackTrace();
 			}
 			
 		}
@@ -61,8 +60,7 @@ public class PartitionWriter {
 	
 	public def this(graphID:Int, partitionID:Int, fileFullPath:String){
 		this.partitionFilePath = fileFullPath;
-        //(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean )
-		store = new AcaciaHashMapNativeStore(graphID, partitionID, Utils.getAcaciaProperty("org.acacia.server.runtime.location"), false);
+		store = new AcaciaHashMapLocalStore(graphID, partitionID);
 	}
  
  	public def compress(){    

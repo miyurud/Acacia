@@ -82,4 +82,7 @@ public class AcaciaInstanceProtocol{
 	public static final String BATCH_UPLOAD_REPLICATION="batch-replication";
 	public static final String SEND_KVALUE = "kvalue";
 	public static final String RUN_KCORE = "run-kcore";
+	public static final String REPLICATING_ID = "replicating-id";
+	public static final String EXECUTE_QUERY_WITH_REPLICATION = "execute-query-with-replication";
+	public static final String BATCH_UPLOAD_REPLICATION_CENTRAL="batch-replication-central";
 }

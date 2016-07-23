@@ -50,12 +50,12 @@ public static def main(val args:Rail[String]) {
     		Logger.info("Starting the frontend");
     		srv = new ServerSocket(Conts.ACACIA_FRONTEND_PORT);
     		Logger.info("Done creating frontend");
-    		
+    		val pg = Place.places();
     		//finish{
 	    		while(runFlag){
 	    			var socket:Socket = srv.accept();
 	    			val skt = socket;
-	                val session:AcaciaFrontEndServiceSession = new AcaciaFrontEndServiceSession(skt);
+	                val session:AcaciaFrontEndServiceSession = new AcaciaFrontEndServiceSession(skt,pg);
 	                sessions.add(session);
 	    			//async{
 	                    //Console.OUT.println("CCCCC");

@@ -43,20 +43,24 @@ public class KCore {
  	private var nativeStoreLocalSubGraphMap:HashMap[Long, HashSet[Long]];
  	private var centralStoreLocalSubGraphMap:HashMap[Long, HashSet[Long]];
     private var KCorenessOfGraph:Long = 0;
-    private var vertexIds:HashMap[Long,Long]= new HashMap[Long,Long]();
  
-    public def getVertexIdsResults(graphID:String,partitionID:String,placeID:String):HashMap[Long,Long]{
+    public def getVertexIdsResults(kValue:String,graphID:String,partitionID:String,placeID:String):ArrayList[Long]{
     
+	    var result:Rail[Long]= null;
+	    var resultArrayList:ArrayList[Long] = new ArrayList[Long]();
+	    Console.OUT.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 	    try {
 	    	loadGraphData(graphID, partitionID, placeID);
 	    	//createFilesLocation();
-	    	calculateKCoreness();
+	    	resultArrayList = calculateKCoreness(Long.parse(kValue));
+	    	//resultArrayList.addAll(calculateKCoreness(Long.parse(kValue)));
+	    	
 	    }catch(e:Exception){
 	    	e.printStackTrace();
 	    }finally{
-	    	Console.OUT.println(vertexIds.size());
+	    	Console.OUT.println(resultArrayList.size());
 	    }
-	    return vertexIds;
+	    return resultArrayList;
 	    
     }
 
@@ -67,11 +71,13 @@ public class KCore {
  		//native store
  		val nativeStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(partitionID),baseDir,false);
   		nativeStore.loadGraph();
- 		nativeStoreLocalSubGraphMap = nativeStore.getUnderlyingHashMap();
+ 		//nativeStoreLocalSubGraphMap = nativeStore.getlocalSubGraphMap();
+  		nativeStoreLocalSubGraphMap = nativeStore.getUnderlyingHashMap();
  
  		//central store
  		val centraleStore:AcaciaHashMapNativeStore = new AcaciaHashMapNativeStore(Int.parse(graphID), Int.parse(partitionID),baseDir,true,Int.parse(placeID));
  		centraleStore.loadGraph();
+ 		//centralStoreLocalSubGraphMap = centraleStore.getlocalSubGraphMap();
  		centralStoreLocalSubGraphMap = centraleStore.getUnderlyingHashMap();
  
 	}
@@ -103,43 +109,51 @@ public class KCore {
  		}
  	}
 	
- 	// calculate kcore value
- 	def calculateKCoreness():HashMap[Long,Long]{
+ 	// from the graph get the vertices which has the same degree 
+ 	def calculateKCoreness(kValue:Long):ArrayList[Long]{
  
  		var count:Long = 0;
- 		var kValue:Long = 1;
- 		var vertexCount:Long;
  
- 		vertexIds = new HashMap[Long,Long]();
+ 		var vertexCount:Long = getVertexCount();
+ 
+ 		var vertexIds:ArrayList[Long]= new ArrayList[Long]();
  		var tempStore:Set[Long] = new HashSet[Long]();
  		var keyStore:Set[Long] = new HashSet[Long]();
  
- 		var itr:Iterator[Long];
- 		keyStore.addAll(nativeStoreLocalSubGraphMap.keySet());
- 		keyStore.addAll(centralStoreLocalSubGraphMap.keySet());
- 
- 		vertexCount = keyStore.size();
- 		var i:Long = 0;
- 
-		while(vertexCount > 0){
-			itr = tempStore.iterator();
+ 		var itr:Iterator[Long]  = nativeStoreLocalSubGraphMap.keySet().iterator();
+ 		while(itr.hasNext()){
+ 			keyStore.add(itr.next());
+ 		}
+ 		itr = tempStore.iterator();
+ 		var i:Long = 1;
+ 		while(i<=kValue && vertexCount>0){
+ 			count = 0;
  			while(itr.hasNext()){
  				keyStore.remove(itr.next());
  			}
  			itr = keyStore.iterator();
  			tempStore = new HashSet[Long]();
-  				while(itr.hasNext()){
- 				var vertexID:Long = itr.next();
- 				var k:Long = countEdges(vertexID);
- 				if(k <= kValue){
- 					vertexIds.put(vertexID,kValue);
- 					tempStore.add(vertexID);
- 					removeVertexAndEdges(vertexID);
- 					vertexCount--;
- 				}
+			while(itr.hasNext()){
+			 	vertexID:Long = itr.next();
+			 	k:Long = countEdges(vertexID);
+			 	if(k <= i){
+			 		if(k == i){
+			 			vertexIds.add(vertexID);
+			 		}
+					//remove vertexID
+			 		tempStore.add(vertexID);
+			 		removeVertexAndEdges(vertexID);
+			 		vertexCount--;
+			 	}
+			}
+ 			if(count==0){
+ 				i = i + 1;
  			}
- 			kValue = kValue + 1;
  		}
+ 		if(vertexCount == 0 && kValue <= i){
+ 			vertexIds = new ArrayList[Long]();
+ 		}
+
  		return vertexIds;
  	}
 
@@ -224,4 +238,3 @@ public class KCore {
  		}
  	}
  }
- 

@@ -141,23 +141,13 @@ public class AcaciaServer {
         
         //var partIndexFlags:Rail[Boolean] = new Rail[Boolean](org.acacia.util.java.Utils_Java.getPrivateHostList().length);
         //val href = GlobalRef[HashMap[String, Boolean]](hostHashMap);
+        
+     
     	finish{
     		//if(standaloneFlag){
 			    for (p in Place.places()){
 			            // finish{
-			              /* if(p.id == 0){
-				               async {
-					               //PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
-					               //java.lang.System.setProperty("logFileName", ""+here.id);
-					               //java.lang.System.setProperty("ACACIA_INSTANCE_PORT", "" + PlaceToNodeMapper.getInstancePort(p.id));
-					               //ACACIA_INSTANCE_DATA_PORT
-					               //java.lang.System.setProperty("ACACIA_INSTANCE_DATA_PORT", "" + PlaceToNodeMapper.getFileTransferServicePort(p.id));
-					               
-					               //Console.OUT.println("logFileName : " + java.lang.System.getProperty("logFileName") + " ACACIA_INSTANCE_PORT : " + PlaceToNodeMapper.getInstancePort(p.id) + " ACACIA_INSTANCE_DATA_PORT : " + PlaceToNodeMapper.getFileTransferServicePort(p.id));
-					               Console.OUT.println(here+" says hellowrw and ");
-					               test.acacia.server.x10.TestAcaciaInstance.main(null);
-			               	   	}
-			               }else{*/
+				               /*   }else{*/
 							   at(p) async {
 							    	//PlaceToNodeMapper.getHost(p.id) + " port : " + PlaceToNodeMapper.getInstancePort(p.id)
 							        //java.lang.System.setProperty("logFileName", ""+here.id);
@@ -177,7 +167,27 @@ public class AcaciaServer {
 						    Console.OUT.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 						    Console.OUT.println("Current host is : " + curHost);
 						    Console.OUT.println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
-			    }  
+						    if(p.id == 0){
+						    	async {
+						    		frontend = new AcaciaFrontEnd();
+						    		frontend.run();
+						    	}
+						    }
+			    }
+			    
+			  /* val pg:PlaceGroup = Place.places();
+			    
+			    while (true){
+				    for (p in pg){
+				       if(p.isDead()){
+				            Console.OUT.println("--->Place ID: " + p.id + " is dead.");
+				       }else{
+				       		Console.OUT.println("Place ID: " + p.id + " is alive.");
+				       }
+				    }
+				    
+				    System.sleep(1000);
+			    }*/
 			    
 			    //}
 			    /*for (p in Place.places()){
@@ -236,6 +246,7 @@ public class AcaciaServer {
 		}*/
 	       
     	}
+        
 
 /*finish{
 for (p in Place.places()) {

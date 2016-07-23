@@ -57,7 +57,7 @@ public class AcaciaManager {
  		// var t:Thread = new Thread(){
   	// 		public def run(){
   				try{
-                    Console.OUT.println("Connectin to : " + host + ":" + port);
+                    Console.OUT.println("Connecting to : " + host + ":" + port);
 	  				val socket:Socket = new Socket(host,port);
 	  				val out:OutputStream = socket.getOutputStream();
 	  				val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -88,118 +88,118 @@ public class AcaciaManager {
  		// t.start();
  	}
  
-	 public static def batchUploadReplication(host:String, port:Int, graphID:long, filePath:String, dataPort:Int, placeID:Int):boolean{
-		 var result:boolean = true;
-		 
-		 try{
-			 val socket:Socket  = new Socket(host, port);
-			 val out:PrintWriter = new PrintWriter(socket.getOutputStream());
-			 val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			 var response:String = "";
-			 
-			 //First we need to Handshake
-			 out.println(AcaciaInstanceProtocol.HANDSHAKE);
-			 out.flush();
-			 response = reader.readLine();
-			 
-			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
-				 out.println(java.net.InetAddress.getLocalHost().getHostName());
-				 out.flush();
-			 }
-			 
-			 out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_REPLICATION);
-			 out.flush();
-			 
-			 response = reader.readLine();
+ public static def batchUploadReplication(host:String, port:Int, graphID:long, filePath:String, dataPort:Int, placeID:Int):boolean{
+ var result:boolean = true;
+ 
+ try{
+ val socket:Socket  = new Socket(host, port);
+ val out:PrintWriter = new PrintWriter(socket.getOutputStream());
+ val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+ var response:String = "";
+ 
+ //First we need to Handshake
+ out.println(AcaciaInstanceProtocol.HANDSHAKE);
+ out.flush();
+ response = reader.readLine();
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+ out.println(java.net.InetAddress.getLocalHost().getHostName());
+ out.flush();
+ }
+ 
+ out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_REPLICATION);
+ out.flush();
+ 
+ response = reader.readLine();
 
-			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
-				 out.println(placeID);
-				 out.flush();
-				 response = reader.readLine();
-				 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){				
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+ out.println(placeID);
+ out.flush();
+ response = reader.readLine();
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){				
 
-					 out.println(graphID);
-					 out.flush();
-					 response = reader.readLine();
-					 
-					 
-					 
-					 val fileName:String = filePath.substring(filePath.lastIndexOf("/")+1n);
-					 
-					 Console.OUT.println("filePath : " + filePath);
-					 Console.OUT.println("fileName : " + fileName);
-				 
-				 	if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_NAME))){
-						 out.println(fileName);
-						 out.flush();
-						 
-						 response = reader.readLine();
-					 
-					 	if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
-							 Console.OUT.println("File len : " + new File(filePath).length());
-							 out.println(new File(filePath).length());//File length in bytes
-							 out.flush();
-							 
-							 response = reader.readLine();
-							 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_CONT))){
-							 	sendFileThroughService(host, dataPort, fileName, filePath);
-							 }							
-						 }			
-					 }
-				 
-					 var counter:Int = 0n;
-					 
-					 while(true){
-						 out.println(AcaciaInstanceProtocol.FILE_RECV_CHK);
-						 out.flush();
-						 response = reader.readLine();
+ out.println(graphID);
+ out.flush();
+ response = reader.readLine();
+ 
+ 
+ 
+ val fileName:String = filePath.substring(filePath.lastIndexOf("/")+1n);
+ 
+ Console.OUT.println("filePath : " + filePath);
+ Console.OUT.println("fileName : " + fileName);
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_NAME))){
+ out.println(fileName);
+ out.flush();
+ 
+ response = reader.readLine();
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
+ Console.OUT.println("File len : " + new File(filePath).length());
+ out.println(new File(filePath).length());//File length in bytes
+ out.flush();
+ 
+ response = reader.readLine();
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_CONT))){
+ sendFileThroughService(host, dataPort, fileName, filePath);
+ }							
+ }			
+ }
+ 
+ var counter:Int = 0n;
+ 
+ while(true){
+ out.println(AcaciaInstanceProtocol.FILE_RECV_CHK);
+ out.flush();
+ response = reader.readLine();
 
-						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.FILE_RECV_WAIT))){
-							 Console.OUT.println("Checking file status : " + counter);
-							 counter++;
-							 
-							 Thread.currentThread().sleep(1000);
-							 //sleep for 1 second, and try again.
-							 continue;
-						 }else{
-						 	break;
-						 }
-					 }
-					 Console.OUT.println("File transfer complete...");
-					 
-					 //wait till the batch upload completes
-					 while(true){
-						 out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK);
-						 out.flush();
-						 
-						 response = reader.readLine();
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.FILE_RECV_WAIT))){
+ Console.OUT.println("Checking file status : " + counter);
+ counter++;
+ 
+ Thread.currentThread().sleep(1000);
+ //We sleep for 1 second, and try again.
+ continue;
+ }else{
+ break;
+ }
+ }
+ Console.OUT.println("File transfer complete...");
+ 
+ //Next we wait till the batch upload completes
+ while(true){
+ out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK);
+ out.flush();
+ 
+ response = reader.readLine();
 
-						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT))){
-							 Thread.currentThread().sleep(1000);
-							 //We sleep for 1 second, and try again.
-							 continue;
-						 }else{
-						 	break;
-						 }
-					 }
-				 
-					 if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK))){
-					 	Console.OUT.println("Batch upload completed...");	
-					 }else{
-					 	Console.OUT.println("There was an error in the upload parocess.");
-					 }
-				 }
-			 }
-		 }catch(e:java.net.UnknownHostException ){
-			 Logger_Java.error(e.getMessage());
-			 result = false;
-		 }catch(ec:java.io.IOException ){
-			 Logger_Java.error(ec.getMessage());
-			 result = false;
-		 }	
-		 
-		 return result;
-	 }
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT))){
+ Thread.currentThread().sleep(1000);
+ //We sleep for 1 second, and try again.
+ continue;
+ }else{
+ break;
+ }
+ }
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK))){
+ Console.OUT.println("Batch upload completed...");	
+ }else{
+ Console.OUT.println("There was an error in the upload parocess.");
+ }
+ }
+ }
+ }catch(e:java.net.UnknownHostException ){
+ Logger_Java.error(e.getMessage());
+ result = false;
+ }catch(ec:java.io.IOException ){
+ Logger_Java.error(ec.getMessage());
+ result = false;
+ }	
+ 
+ return result;
+ }
  
 	 /**
 	  * The following communication happens with the designated AcaciaInstance which is identified the host and the port.
@@ -434,6 +434,119 @@ public class AcaciaManager {
  
  		return result;
  	}
+ 
+ public static def batchUploadCentralReplication(host:String,port:Int,graphID:long,filePath:String,dataPort:int,placeID:Int):boolean{
+ var result:boolean = true;
+ 
+ try{
+ val socket:Socket  = new Socket(host, port);
+ val out:PrintWriter = new PrintWriter(socket.getOutputStream());
+ val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+ var response:String = "";
+ 
+ //First we need to Handshake
+ out.println(AcaciaInstanceProtocol.HANDSHAKE);
+ out.flush();
+ response = reader.readLine();
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+ out.println(java.net.InetAddress.getLocalHost().getHostName());
+ out.flush();
+ }
+ 
+ out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_REPLICATION_CENTRAL);
+ out.flush();
+ 
+ response = reader.readLine();
+
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.OK))){
+ out.println(placeID);
+ out.flush();
+ response = reader.readLine();
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){				
+
+ out.println(graphID);
+ out.flush();
+ response = reader.readLine();
+ 
+ 
+ 
+ val fileName:String = filePath.substring(filePath.lastIndexOf("/")+1n);
+ 
+ Console.OUT.println("filePath : " + filePath);
+ Console.OUT.println("fileName : " + fileName);
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_NAME))){
+ out.println(fileName);
+ out.flush();
+ 
+ response = reader.readLine();
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_LEN))){
+ Console.OUT.println("File len : " + new File(filePath).length());
+ out.println(new File(filePath).length());//File length in bytes
+ out.flush();
+ 
+ response = reader.readLine();
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_FILE_CONT))){
+ sendFileThroughService(host, dataPort, fileName, filePath);
+ }							
+ }			
+ }
+ 
+ var counter:Int = 0n;
+ 
+ while(true){
+ out.println(AcaciaInstanceProtocol.FILE_RECV_CHK);
+ out.flush();
+ response = reader.readLine();
+
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.FILE_RECV_WAIT))){
+ Console.OUT.println("Checking file status : " + counter);
+ counter++;
+ 
+ Thread.currentThread().sleep(1000);
+ //We sleep for 1 second, and try again.
+ continue;
+ }else{
+ break;
+ }
+ }
+ Console.OUT.println("File transfer complete...");
+ 
+ //Next we wait till the batch upload completes
+ while(true){
+ out.println(AcaciaInstanceProtocol.BATCH_UPLOAD_CHK);
+ out.flush();
+ 
+ response = reader.readLine();
+
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_WAIT))){
+ Thread.currentThread().sleep(1000);
+ //We sleep for 1 second, and try again.
+ continue;
+ }else{
+ break;
+ }
+ }
+ 
+ if((response != null)&&(response.equals(AcaciaInstanceProtocol.BATCH_UPLOAD_ACK))){
+ Console.OUT.println("Batch upload completed...");	
+ }else{
+ Console.OUT.println("There was an error in the upload parocess.");
+ }
+ }
+ }
+ }catch(e:java.net.UnknownHostException ){
+ Logger_Java.error(e.getMessage());
+ result = false;
+ }catch(ec:java.io.IOException ){
+ Logger_Java.error(ec.getMessage());
+ result = false;
+ }	
+ 
+ return result;
+ }
  
  	public static def batchUploadRDFStore(host:String, port:Int, graphID:long, filePath:String, dataPort:Int):boolean{
  		var result:boolean = true;
@@ -1422,12 +1535,12 @@ public class AcaciaManager {
 									 
 									 //Jan24, 2016: At this point we should find the Tripples available in our query and then
 									 //send tripple object by tripple object to workers and get their results. 
-									 try{
+									 //try{
 									 	val ois = new ObjectInputStream(socket.getInputStream());
 									 	data = ois.readObject() as ArrayList[InterimResult];
-									 }catch(e:java.lang.ClassNotFoundException){
-									 	Console.OUT.println(e.getMessage());
-									 }
+									 //}catch(e:java.lang.ClassNotFoundException){
+									 	//Console.OUT.println(e.getMessage());
+									 //}
 									 
 									 response = reader.readLine();
 				 
@@ -1457,8 +1570,121 @@ public class AcaciaManager {
 		 	Logger_Java.error("Connecting to host (6) " + host + " got error message : " + e.getMessage());
 		 }catch(ec:java.io.IOException){
 		 	Logger_Java.error("Connecting to host (6) " + host + " got error message : " + ec.getMessage());
+		 }catch(e:java.lang.ClassNotFoundException){
+		 	Logger_Java.error("Connecting to host (6) " + host + " got error message : " + e.getMessage());
 		 }
 		 return data;
+	 }
+	 
+	 public static def runSPARQLWithReplications(host:String, port:Int, graphID:String, partitionID:String, query:String, placeID:long, placesDetails:String, replicatingID:Int) :ArrayList[InterimResult]{
+	 var result:ArrayList[String] = new ArrayList[String]();
+	 var arr:Rail[String] = null;
+	 var data:ArrayList[InterimResult] = null;
+	 try{
+	 val socket:Socket = new Socket(host, port);
+	 val out:PrintWriter = new PrintWriter(socket.getOutputStream());
+	 val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	 var response:String = "";		
+	 var i:Int=0n;
+	 
+	 out.println(AcaciaInstanceProtocol.HANDSHAKE);
+	 out.flush();
+	 response = reader.readLine();
+	 
+	 Console.OUT.println("resp1:" + response);
+	 
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+	 Console.OUT.println("ccc");
+	 out.println(java.net.InetAddress.getLocalHost().getHostName());
+	 out.flush();
+	 
+	 out.println(AcaciaInstanceProtocol.EXECUTE_QUERY_WITH_REPLICATION);
+	 out.flush();
+	 response = reader.readLine();
+	 Console.OUT.println("ccc:"+response);
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_QUERY))){
+	 Console.OUT.println("|" + query + "|");
+	 out.println(query);
+	 out.flush();
+	 response = reader.readLine();
+	 Console.OUT.println("dddd:"+response);
+	 
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
+	 Console.OUT.println("dend-gid:"+graphID);
+	 out.println(graphID);
+	 out.flush();
+	 response = reader.readLine();
+	 Console.OUT.println("eee:"+response);
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
+	 Console.OUT.println("partID:"+partitionID);
+	 out.println(partitionID);
+	 out.flush();
+	 response = reader.readLine();
+	 
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
+	 out.println(placeID);
+	 out.flush();
+	 response = reader.readLine();
+	 Console.OUT.println("bbbbb1:"+response);
+	 
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.REPLICATING_ID))){		
+	 out.println(replicatingID);
+	 out.flush();
+	 response = reader.readLine();
+	 Console.OUT.println("bbbbb1:"+response);
+	 
+	 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
+	 out.println(placesDetails);
+	 out.flush();
+	 response = reader.readLine();
+	 Console.OUT.println("bbbbb2:"+response);
+	 if(response.equals("Not empty")){
+	 
+	 out.println("Send");
+	 out.flush();
+	 
+	 //Jan24, 2016: At this point we should find the Tripples available in our query and then
+	 //send tripple object by tripple object to workers and get their results. 
+	 //try{
+	 val ois = new ObjectInputStream(socket.getInputStream());
+	 data = ois.readObject() as ArrayList[InterimResult];
+	 //}catch(e:java.lang.ClassNotFoundException){
+	 //Console.OUT.println(e.getMessage());
+	 //}
+	 
+	 response = reader.readLine();
+	 
+	 while(!response.equals("Finish")){
+	 result.add(response);
+	 out.println("Send");
+	 out.flush();
+	 i+=1;
+	 response = reader.readLine();
+	 
+	 }
+	 }else if(response.equals("Empty")){
+	 data = null;
+	 }
+	 }
+	 }
+	 }
+	 }
+	 }
+	 }
+	 }
+	 reader.close();	
+	 
+	 /*if(result != null){
+	  * arr = result.toRail();
+	  * }*/
+	 }catch(e:java.net.UnknownHostException){
+	 Logger_Java.error("Connecting to host (6) " + host + " got error message : " + e.getMessage());
+	 }catch(ec:java.io.IOException){
+	 Logger_Java.error("Connecting to host (6) " + host + " got error message : " + ec.getMessage());
+	 }catch(e:java.lang.ClassNotFoundException){
+	 Logger_Java.error("Connecting to host (6) " + host + " got error message : " + e.getMessage());
+	 }
+	 return data;
 	 }
 	 
 	 
@@ -1472,17 +1698,15 @@ public class AcaciaManager {
 	  * @throws IOException 
 	  * @throws UnknownHostException 
 	  */
-	 public static def runKCore(host:String, port:Int, graphID:String, partitionID:String, kValue:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:HashMap[Long,Long]{
+	 public static def runKCore(host:String, port:Int, graphID:String, partitionID:String, kValue:String, placeID:long, placesDetails:String) throws java.net.UnknownHostException, java.io.IOException:Rail[String]{
 		 
-	 	 var arr:HashMap[Long,Long] =  new HashMap[Long,Long]();
+	 	 var result:ArrayList[String] = new ArrayList[String]();
 		 val socket:Socket = new Socket(host, port);
 		 val out:PrintWriter = new PrintWriter(socket.getOutputStream());
 		 val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		 var response:String = "";		
 		 var i:Int=0n;
-	 	 
-		 //Console.OUT.println("At AcaciaManager");
-		 
+	 
 		 out.println(AcaciaInstanceProtocol.HANDSHAKE);
 		 out.flush();
 		 response = reader.readLine();
@@ -1498,60 +1722,71 @@ public class AcaciaManager {
 			 out.flush();
 			 response = reader.readLine();
 			 Console.OUT.println("RUN_KCORE: "+response);
+			 
+			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_KVALUE))){
+				 Console.OUT.println(kValue);
+				 out.println(kValue);
+				 out.flush();
+				 response = reader.readLine();
+				 Console.OUT.println("SEND_KVALUE: "+response);
 	 
-			 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
-			 	Console.OUT.println(graphID);
-				out.println(graphID);
-				out.flush();
-				response = reader.readLine();
-				Console.OUT.println("SEND_GID "+response);
+				 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_GID))){
+					 Console.OUT.println(graphID);
+					 out.println(graphID);
+					 out.flush();
+					 response = reader.readLine();
+					 Console.OUT.println("SEND_GID "+response);
 					 
-				if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
-					Console.OUT.println(partitionID);
-					out.println(partitionID);
-					out.flush();
-					response = reader.readLine();
-					Console.OUT.println("SEND_PARTITION_ID "+response);
-	 
-					if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
-						Console.OUT.println(placeID);
-						 out.println(placeID);
+					 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PARTITION_ID))){							
+						 Console.OUT.println(partitionID);
+						 out.println(partitionID);
 						 out.flush();
 						 response = reader.readLine();
-						 Console.OUT.println("SEND_PLACEID: "+response);
+						 Console.OUT.println("SEND_PARTITION_ID "+response);
 	 
-						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
-						 	out.println(placesDetails);
-							out.flush();
-							response = reader.readLine();
-							Console.OUT.println("SEND_PLACEDETAILS "+response);
+						 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEID))){		
+						 	 Console.OUT.println(placeID);
+						 	 out.println(placeID);
+							 out.flush();
+							 response = reader.readLine();
+							 Console.OUT.println("SEND_PLACEID: "+response);
+	 
+							 if((response != null)&&(response.equals(AcaciaInstanceProtocol.SEND_PLACEDETAILS))){		
+								 out.println(placesDetails);
+								 out.flush();
+								 response = reader.readLine();
+								 Console.OUT.println("SEND_PLACEDETAILS "+response);
 								 
-							if(response.equals("Not empty")){
-								out.println("Send");
-								out.flush();
+							 	 if(response.equals("Not empty")){
+	 
+									 out.println("Send");
+									 out.flush();
 									 
-	 							response = reader.readLine();
+	 								 response = reader.readLine();
 	 
-								while(!response.equals("Finish")){	
-									val s = response.trim().split(" ");
-									arr.put(Long.parse(s(0)), Long.parse(s(1))); 
-									out.println("Send");
-									out.flush();
-									i+=1;
-	 								response = reader.readLine();
+									 while(!response.equals("Finish")){	
+										 result.add(response);
+										 out.println("Send");
+										 out.flush();
+										 i+=1;
+	 									 response = reader.readLine();
 	 
-	 							}	 
-							 }else if(response.equals("Empty")){
-	 							arr = null;
-							 }
+	 								 }
+									 
+							 	 }else if(response.equals("Empty")){
+	 								result=null;
+							 	 }
+	 						}
 	 					}
 	 				}
 	 			}
-			 }
+	 		}
 	 	}
 	 	reader.close();	
-	 
-	 	//Console.OUT.println("AcaciaMAnger done.............");
+	 	var arr:Rail[String] = null;
+	 	if(result != null){
+	 		arr = result.toRail();
+	 	}
 	 
 	 	return arr;
 	 } 

@@ -1070,6 +1070,7 @@ out.flush();
 	        		break;
 	        	}
 	        }
+	        reader.close();
         }catch(val e:UnknownHostException){
 			Logger.error("Connecting to localhost got error message (11) : " + e.getMessage());
 		}catch(val ec:IOException){
@@ -1206,10 +1207,10 @@ out.flush();
 					var r:Runtime = Runtime.getRuntime();
 					
 					//Next, we unzip the file
-val f:File = new File(Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator+"replication"+File.separator+placeID+File.separator);
-if(!f.exists()){
-f.mkdirs();
-}
+                                        val f:File = new File(Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator+"replication"+File.separator+placeID+File.separator);
+                                        if(!f.exists()){
+                                            f.mkdirs();
+                                        }
 					var p:Process = r.exec("unzip /tmp/dgr/" + graphID + "_" +  partitionID + ".zip -d " + Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder") + File.separator +"replication"+File.separator +placeID+File.separator + graphID + "_" + partitionID);
 					p.waitFor();
 					
@@ -1221,7 +1222,7 @@ f.mkdirs();
 					while((line=b.readLine())!= null){
 						Console.OUT.println(line);
 					}
-}
+
 					Console.OUT.println("Check 3| replication");
 					
 					Console.OUT.println("Deleting|" + "rm /tmp/dgr/" + graphID + "_" + partitionID + ".zip|");
@@ -1232,12 +1233,12 @@ f.mkdirs();
 					writeCatalogRecord("" + graphID + ":" + partitionID);
 					
 				}catch(val e1:java.io.IOException){
-                    Logger.error("Error : " + e1.getMessage());
+                                    Logger.error("Error : " + e1.getMessage());
 				}catch(val e2:java.lang.InterruptedException){
-                    Logger.error("Error : " + e2.getMessage());
+                                    Logger.error("Error : " + e2.getMessage());
 	            }catch(val e:Exception){
-                    Logger.error("Error : " + e.getMessage());
-				}
+                        Logger.error("Error : " + e.getMessage());
+		    }
 	}
 
 public def unzipAndBatchUploadReplicationCentral(val graphID:String, val partitionID:String,val placeID:String) : void {

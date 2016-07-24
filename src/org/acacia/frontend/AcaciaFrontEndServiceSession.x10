@@ -18,6 +18,11 @@ package org.acacia.frontend;
 
 import x10.compiler.Native;
 import x10.io.File;
+import x10.util.StringBuilder;
+import x10.regionarray.Array;
+import x10.util.HashMap;
+import x10.util.ArrayList;
+import x10.util.HashSet;
 
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -28,34 +33,27 @@ import java.io.PrintWriter;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
-import org.acacia.log.Logger;
-import org.acacia.metadata.db.java.MetaDataDBInterface;
-
-import org.acacia.util.PlaceToNodeMapper;
-import org.acacia.util.Utils;
-import org.acacia.util.java.Utils_Java;
-
-import org.acacia.server.AcaciaServer;
-import org.acacia.server.AcaciaManager;
-import x10.util.StringBuilder;
-import x10.regionarray.Array;
-import x10.util.HashMap;
-import x10.util.ArrayList;
-import x10.util.HashSet;
-
-import org.acacia.partitioner.stream.LDGPartitioner; 
-
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.NoViableAltException;
 import org.antlr.runtime.MismatchedTokenException;
+
+import org.acacia.util.PlaceToNodeMapper;
+import org.acacia.util.Utils;
+import org.acacia.util.java.Utils_Java;
+import org.acacia.server.AcaciaServer;
+import org.acacia.server.AcaciaManager;
+import org.acacia.server.GraphStatus;
+import org.acacia.partitioner.stream.LDGPartitioner;
 import org.acacia.rdf.sparql.java.SparqlLexer;
 import org.acacia.rdf.sparql.java.SparqlParser;
 import org.acacia.rdf.sparql.InterimResult;
 import org.acacia.rdf.sparql.Tokenizer;
 import org.acacia.rdf.sparql.AnswerSet;
 import org.acacia.util.java.KafkaConsumer;
+import org.acacia.log.Logger;
+import org.acacia.metadata.db.java.MetaDataDBInterface;
 
 /**
  * Class AcaciaFrontEndServiceSession
@@ -520,33 +518,9 @@ public class AcaciaFrontEndServiceSession {
 		        }catch(val e:IOException){
 		        	Logger.error("Error : " + e.getMessage());
 		        }
-			        
-		        //}
-		        
-        		// }catch (val e:NoViableAltException) {  
-	        	// 	out.println("Error in query");
-	        	// }catch (val e:RecognitionException) { 
-			       //  out.println("Error in query");
-	        	// }catch (val e:MismatchedTokenException) { 
-	        	// 	out.println("Error in query");
-		        // }catch(val e:IOException){
-		        // 	Logger.error("Error : " + e.getMessage());
-		        // }
         	}
-        	// }else{
-        	// 	out.println("Error");
-        	// 	out.flush();
-        	// }
-        		//Console.OUT.println("SPARQL end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
             val duration:Long = java.lang.System.currentTimeMillis() - startTime;
-            Console.OUT.println("SPARQL query duration(ms) : " + duration);
-        // }
-        // catch(val e:IOException){
-        // 	Console.OUT.println("Error : "+e.getMessage());
-        // }
-       			
-        //}
-        
+            Console.OUT.println("SPARQL query duration(ms) : " + duration);        
         }else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
         
 	        out.println(AcaciaFrontEndProtocol.K_VALUE);
@@ -650,13 +624,27 @@ public class AcaciaFrontEndServiceSession {
         
         	out.flush();
         } else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM_KAFKA)){
+            out.println(AcaciaFrontEndProtocol.SEND);
+            out.flush();
+            var name:String = "";
+
+            try{
+                name = buff.readLine();
+            }catch(val e:IOException){
+                Logger.error("Error : " + e.getMessage());
+            }
+            out.println(AcaciaFrontEndProtocol.STRM_ACK);
+            out.flush();
+            
             val kafkaSocket:KafkaConsumer = new KafkaConsumer();
             var line:String = null;
             var p:LDGPartitioner = new LDGPartitioner();
+            val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + name + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
             
             while((line=kafkaSocket.getNext())!=null){
                 Console.OUT.println(line);
-                Console.OUT.println(p.selectLDGHost());
+                //val vertsArr:Rail[String] = line.split(" ");
+                //AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
             }
             out.flush();
         }
@@ -1451,6 +1439,9 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 	
 	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
 	static native def call_runSelect(String):Rail[String];
+
+    @Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runInsert(#1)")
+    static native def call_runInsert(String):String;
 
     @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5, #6, #7)")
     static native def call_runSPARQL(String, Int, String, String, String, Long, String):ArrayList[InterimResult];

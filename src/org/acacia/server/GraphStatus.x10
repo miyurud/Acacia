@@ -24,4 +24,5 @@ public class GraphStatus {
 	public static val LOADING:Int = 1n;
 	public static val OPERATIONAL:Int = 2n;
 	public static val DELETED:Int = 3n;
+    public static val STREAMING:Int = 4n;
 }

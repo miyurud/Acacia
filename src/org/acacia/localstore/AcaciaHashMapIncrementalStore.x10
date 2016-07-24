@@ -1,5 +1,5 @@
 /**
-Copyright 2015 Acacia Team
+Copyright 2016 Acacia Team
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ public class AcaciaHashMapIncrementalStore implements AcaciaLocalStore{
     }
     
     public def addVertex(attributes:Rail[Any]):void{
-        
+        //Do not do anything here.
     }
     
     public def addEdge(startVid:Long, endVid:Long):void{

@@ -63,4 +63,5 @@ public class AcaciaFrontEndProtocol {
     	public static val OUTPUT_FILE_PATH= "outputFile-path-send"; 	//This command requets the file path
     	public static val ADD_STREAM="adstrm" ;// This command reads a stream into Acacia
     	public static val ADD_STREAM_KAFKA="adstrmk" ;// This command reads a Kafka stream into Acacia
+        public static val STRM_ACK:String = "strm-ack"; //Acknowledgement for starting of streaming session.
 }

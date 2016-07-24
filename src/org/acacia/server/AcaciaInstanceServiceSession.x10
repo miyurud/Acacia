@@ -17,6 +17,11 @@ limitations under the License.
 package org.acacia.server;
 
 import x10.util.HashMap;
+import x10.util.Map;
+import x10.util.ArrayList;
+import x10.lang.Iterator;
+import x10.util.StringBuilder;
+import x10.interop.Java;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -29,6 +34,7 @@ import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -36,11 +42,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.Process;
 import java.lang.Runtime;
-
-import x10.util.Map;
-import x10.util.ArrayList;
-import x10.lang.Iterator;
-import x10.util.StringBuilder;
 
 import com.google.common.base.Splitter;
 
@@ -56,7 +57,6 @@ import org.acacia.localstore.AcaciaLocalStoreFactory;
 import org.acacia.localstore.AcaciaLocalStoreTypes;
 import org.acacia.log.Logger;
 import org.acacia.util.Utils;
-
 import org.acacia.util.java.Utils_Java;
 import org.acacia.centralstore.AcaciaHashMapCentralStore;
 import org.acacia.events.java.ShutdownEvent;
@@ -70,8 +70,6 @@ import org.acacia.rdf.sparql.ResultsCache;
 import org.acacia.rdf.sparql.InterimResult;
 import org.acacia.query.algorithms.kcore.KCore;
 import org.acacia.server.java.AcaciaInstanceProtocol;
-import x10.interop.Java;
-import java.io.ObjectOutputStream;
 
 /**
  * Note that one AcaciaInstanceServiceSession will be run by only one place.
@@ -80,19 +78,19 @@ import java.io.ObjectOutputStream;
  * 
  */
 public class AcaciaInstanceServiceSession extends java.lang.Thread{	
-	private var sessionSkt:Socket;
-	//private GraphDatabaseService graphDB;//This is a reference to the original DB
-	private var listener:DBTruncateEventListener;
-	private var listenerShtdn:ShutdownEventListener;
-	//private HashMap<Integer, GraphDatabaseService> graphDBMap = null;
-	//Note : Feb 4 2015 - Since we need to deal with the <praphID>_<partitionID> scenario,
-	//the key of the graph db map was changed to String
-	private var graphDBMap:HashMap[String, AcaciaLocalStore] = null;
-	private var loadedGraphs:ArrayList[String];
-	private var defaultGraph:AcaciaLocalStore = null;
-	private var defaultGraphID:String = null;
-	private var dataFolder:String;
-	private var serverHostName:String;
+    private var sessionSkt:Socket;
+    //private GraphDatabaseService graphDB;//This is a reference to the original DB
+    private var listener:DBTruncateEventListener;
+    private var listenerShtdn:ShutdownEventListener;
+    //private HashMap<Integer, GraphDatabaseService> graphDBMap = null;
+    //Note : Feb 4 2015 - Since we need to deal with the <praphID>_<partitionID> scenario,
+    //the key of the graph db map was changed to String
+    private var graphDBMap:HashMap[String, AcaciaLocalStore] = null;
+    private var loadedGraphs:ArrayList[String];
+    private var defaultGraph:AcaciaLocalStore = null;
+    private var defaultGraphID:String = null;
+    private var dataFolder:String;
+    private var serverHostName:String;
     private var sparqlQueryCache:ResultsCache = null;
     private var nonCached:Boolean = false;
     private var execute_query:ExecuteQuery = null;
@@ -170,44 +168,44 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 				}else if(msg.equals(AcaciaInstanceProtocol.INSERT_EDGES)){
-//					out.println(AcaciaInstanceProtocol.OK);
-//					out.flush();
-//					
-//					//From here onwards we should receive a collection of edges
-//					msg = buff.readLine();
-//					
-//					String graphID = msg;
-//					
-//					Logger.info("graph id is : " + msg);
-//					
-//					out.println(AcaciaInstanceProtocol.OK);
-//					out.flush();
-//					
-//					//This is the partition ID
-//					msg = buff.readLine();
-//					
-//					setDefaultGraph(graphID, msg);
-//					
-//					//Just return an acknowledgement.
-//					out.println(AcaciaInstanceProtocol.OK);
-//					out.flush();
-//					
-//					msg = buff.readLine();
-//					
-//					while(!msg.equals(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE)){
-//						Logger.info("Adding Edge : " + msg);
-//						String[] vertsArr = msg.split(" ");//We expect the edge to be split by a space.
-//						try{
-//							insertEdgeUsingIndex(Long.parseLong(vertsArr[0]), Long.parseLong(vertsArr[1]));
-//						}catch(NumberFormatException ex){
-//							//Just ignore. Expect the messages only in the for <long> <long> <long>
-//							Logger.error("Error : " + ex.getMessage());
-//						}
-//						msg = buff.readLine();
-//					}
-//					
-//					out.println(AcaciaInstanceProtocol.INSERT_EDGES_ACK);
-//					out.flush();
+					out.println(AcaciaInstanceProtocol.OK);
+					out.flush();
+					
+					//From here onwards we should receive a collection of edges
+					msg = buff.readLine();
+					
+					var graphID:String = msg;
+					
+					Logger.info("graph id is : " + msg);
+					
+					out.println(AcaciaInstanceProtocol.OK);
+					out.flush();
+					
+					//This is the partition ID
+					msg = buff.readLine();
+					
+					setDefaultGraph(graphID, msg);
+					
+					//Just return an acknowledgement.
+					out.println(AcaciaInstanceProtocol.OK);
+					out.flush();
+					
+					msg = buff.readLine();
+					
+					while(!msg.equals(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE)){
+						Logger.info("Adding Edge : " + msg);
+						val vertsArr:Rail[String] = msg.split(" ");//We expect the edge to be split by a space.
+						try{
+							insertEdge(Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+						}catch(val ex:NumberFormatException){
+							//Just ignore. Expect the messages only in the for <long> <long> <long>
+							Logger.error("Error : " + ex.getMessage());
+						}
+						msg = buff.readLine();
+					}
+					
+					out.println(AcaciaInstanceProtocol.INSERT_EDGES_ACK);
+					out.flush();
 				}else if (msg.equals(AcaciaInstanceProtocol.TRUNCATE)){					
 					fireDBTruncateEvent(new DBTruncateEvent("Truncating Acacia Instance"));
 					out.println(AcaciaInstanceProtocol.TRUNCATE_ACK);
@@ -1421,8 +1419,12 @@ Logger.error("Error : " + e.getMessage());
 	public def setDefaultGraph(val graphID:String, val partitionID:String):void{
 		val gid:String = graphID + "_" + partitionID;
 		defaultGraph = graphDBMap.get(gid);
-		defaultGraphID = gid;
-		Console.OUT.println("The default graph is set to : " + gid);
+                if(defaultGraph == null){
+                    Console.OUT.println("Default graph is null");
+                }else{
+			defaultGraphID = gid;
+			Console.OUT.println("The default graph is set to : " + gid);
+                }
 	}
 	
 	public def unSetDefaultGraph(val graphID:String, val partitionID:String):void{
@@ -1502,13 +1504,11 @@ Logger.error("Error : " + e.getMessage());
 			if(graphDB == null){
 				Logger.error("Error : The graph database instance is NULL.");
 			}
+                        graphDB.addEdge(startVertexID, endVertexID);
 		}else{
 			graphDB = defaultGraph;
+                        graphDB.addEdge(startVertexID, endVertexID);
 		}
-		
-		graphDB.addEdge(startVertexID, endVertexID);
-
-		Console.OUT.println("Done adding edge : " + startVertexID + " " + endVertexID);
 	}
 	
 	/**

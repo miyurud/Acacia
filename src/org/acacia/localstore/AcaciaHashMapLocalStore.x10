@@ -71,7 +71,6 @@ public class AcaciaHashMapLocalStore implements AcaciaLocalStore{
         dataFolder = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");
         var gid:String = graphID + "_" + partitionID;
         instanceDataFolderLocation = dataFolder + File.separator + gid;
-        Logger.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
         initialize();
     }
     

@@ -66,7 +66,6 @@ public class AcaciaInstanceFileTransferServiceSession extends Thread{
 		try{			
 			Logger_Java.info("Started writing to file.");
 			
-			//try{
 				InputStream inpStrm = sessionSkt.getInputStream();			
 				PrintWriter out = new PrintWriter(sessionSkt.getOutputStream());
 
@@ -98,14 +97,8 @@ public class AcaciaInstanceFileTransferServiceSession extends Thread{
 				}else{
 					Logger_Java.info("The file cannot be written to...");
 				}
-			//}catch(IOException e){
-				//Logger_Java.error("Error : " + e.getMessage());
-			//}
 				
 			sessionSkt.close();
-			
-			Logger_Java.info("Done writing.");
-			
 		}catch(IOException e){
 			Logger_Java.error("Error : " + e.getMessage());
 		}

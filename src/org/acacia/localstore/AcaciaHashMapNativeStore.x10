@@ -119,7 +119,6 @@ public class AcaciaHashMapNativeStore implements AcaciaLocalStore{
 			instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
 		}
 		this.isCentralStore = isCentralStore;
-		//Logger_Java.info("instanceDataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
 

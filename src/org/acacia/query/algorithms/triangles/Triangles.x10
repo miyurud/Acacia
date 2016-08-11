@@ -140,11 +140,11 @@ public class Triangles {
 									
 									//var tempArr:Rail[Long] = new Rail[Long]{v, u, nu};
                                     var tempArr:Rail[Long] = [v, u, nu];
-									sort(tempArr);
+									var result: Rail[Long] = sort(tempArr);
 									
-									v1 = tempArr(0);
-									v2 = tempArr(1);
-									v3 = tempArr(2);
+									v1 = result(0);
+									v2 = result(1);
+									v3 = result(2);
 
 									// var tempArr:Rail[Long] = new Rail[Long](3);
 									// tempArr(0) = v;

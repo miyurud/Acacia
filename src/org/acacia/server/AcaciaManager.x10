@@ -1149,7 +1149,7 @@ public class AcaciaManager {
 		 	//val store:AcaciaHashMapCentralStore = new AcaciaHashMapCentralStore(Int.parse(graphID), i);
 		 	//	    	store.loadGraph();
 		 
-		 	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parse(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), true);
+		 	val store:AcaciaHashMapCentralStore = new AcaciaHashMapCentralStore(Int.parse(graphID), i);
 		 	store.loadGraph();
 		 
 		 	val edgeList2:HashMap[Long, HashSet[Long]] = store.getUnderlyingHashMap() as HashMap[Long,HashSet[Long]];
@@ -1200,7 +1200,7 @@ public class AcaciaManager {
 		 		degreeMap.put(degree, degreeSet);
 		 	}
 		 
-		 	degreeReverseLookupMap.put(startVid, degree);
+		 	//degreeReverseLookupMap.put(startVid, degree);
 		 }
 		 
 		 Console.OUT.println("Completed degree reverse lookup map construction");
@@ -1277,15 +1277,13 @@ public class AcaciaManager {
 									 //Here we have to be careful to first sort the three triangle vertices by their value. Then we do not
 									 //get into the trouble of having multiple combinations of the same three vertices.
 									 
-		 							var tempArr:Rail[long]  = new Rail[long]();
-		 							tempArr(0n) = v;
-		 							tempArr(1n) = u;
-		 							tempArr(2n) = nu;
+		                            				var tempArr:Rail[Long] = [v, u, nu];
+
 		 							java.util.Arrays.sort(x10.interop.Java.convert(tempArr));
 		 
-		 							v1 = tempArr(0n);
-									v2 = tempArr(1n);
-									v3 = tempArr(2n);
+		 							v1 = tempArr(0);
+									v2 = tempArr(1);
+									v3 = tempArr(2);
 		 
 		 							//The top level vertices are represented by v1
 		 							var itemRes:HashMap[Long, ArrayList[Long]] = traingleTree.get(v1);

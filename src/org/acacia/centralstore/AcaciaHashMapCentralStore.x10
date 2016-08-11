@@ -33,6 +33,8 @@ import org.acacia.localstore.AcaciaLocalStoreCatalogManager;
 import org.acacia.localstore.AcaciaLocalStoreTypes;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Utils_Java;
+import org.acacia.util.Utils;
+
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -49,6 +51,7 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 	private var graphID:Int = -1n;
 	private var partitionID:Int = -1n; //This is the central store partition
 	private var instanceDataFolderLocation:String = null;
+    private var centralStoreLocation:String = null;
 	private var localSubGraphMap:HashMap[Long, HashSet[Long]] = null;
 	private var kryo:Kryo = null;
 	private val typeMap :java.util.HashMap = new java.util.HashMap();
@@ -63,9 +66,10 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 		kryo = new Kryo();
 		kryo.register(Java.getClass(typeMap), new MapSerializer());
 		var dataFolder:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");//We should create the central store on the working directory. 
-		                                                                                       //After that we will transfer that to the instance local directory.
+        var centralStoreFolder:String = Utils.getAcaciaProperty("org.acacia.server.instance.datafolder");                                                                                       //After that we will transfer that to the instance local directory.
 		var gid:String = graphID + "_" + partitionID;
 		instanceDataFolderLocation= dataFolder + "/" + graphID + "_centralstore/" + gid;
+                centralStoreLocation = centralStoreFolder + "/" +graphID + "_centralstore/" + gid;
 		//Logger_Java.info("central store DataFolderLocation : " + instanceDataFolderLocation);
 		initialize();
 	}
@@ -76,7 +80,7 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
         try {
             var stream:FileOutputStream = new FileOutputStream(instanceDataFolderLocation + File.separator + "acacia.centralstore.db");
             var output:Output = new Output(stream);
-            this.kryo.writeObject(output, localSubGraphMap);
+            this.kryo.writeClassAndObject(output, toJavaHashMap(localSubGraphMap));
             stream.flush();
             output.close();
             result = true;
@@ -89,8 +93,8 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 	public def loadGraph():Boolean{
 		var result:Boolean = false;
 
-		var edgeStorePath:String = instanceDataFolderLocation + File.separator + "acacia.centralstore.db";
-		var f:File = new File(edgeStorePath);
+		var edgeStorePath:String = centralStoreLocation + File.separator + "acacia.centralstore.db";
+        var f:File = new File(edgeStorePath);
 		
 		if(!f.exists()) {
 			localSubGraphMap = new HashMap[Long, HashSet[Long]]();
@@ -100,7 +104,8 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
         try {
             var stream:FileInputStream = new FileInputStream(edgeStorePath);
             var input:Input = new Input(stream);
-            localSubGraphMap = this.kryo.readObject(input, Java.getClass(typeMap)) as HashMap[Long, HashSet[Long]];
+            toX10LocalSubgraphMap(this.kryo.readClassAndObject(input) as java.util.HashMap);
+
             input.close();//This will close the FileInputStream as well.
             
             if(localSubGraphMap != null){
@@ -204,4 +209,43 @@ public class AcaciaHashMapCentralStore  implements AcaciaLocalStore {
 	public def addVertex(var attributes:Rail[Any]) : void {
 		
 	}
+
+
+//convert Long,HashSet[Long] HashMap to java.util.HashMap
+private def toJavaHashMap(val hMap:HashMap[Long,HashSet[Long]]):java.util.HashMap{
+val jMap:java.util.HashMap = new java.util.HashMap();
+val itr:Iterator[x10.util.Map.Entry[Long,HashSet[Long]]] = hMap.entries().iterator();
+var entry:x10.util.Map.Entry[Long,HashSet[Long]] = null;
+
+while(itr.hasNext()){
+entry = itr.next();
+val itr1:Iterator[Long] = entry.getValue().iterator();
+val jSet:java.util.HashSet = new java.util.HashSet();
+
+while(itr1.hasNext()){
+jSet.add(Java.convert(itr1.next()));
+}
+jMap.put(Java.convert(entry.getKey()),jSet);
+}
+return jMap;
+}
+
+public def toX10LocalSubgraphMap(val jMap:java.util.HashMap){
+localSubGraphMap = new HashMap[Long,HashSet[Long]]();
+val itr:java.util.Iterator = jMap.entrySet().iterator();
+var entry:java.util.Map.Entry = null;
+
+while(itr.hasNext()){
+entry = itr.next() as java.util.Map.Entry;
+val jSet:java.util.HashSet = entry.getValue() as java.util.HashSet;
+val itr1:java.util.Iterator = jSet.iterator();
+val hSet:HashSet[Long] = new HashSet[Long]();
+
+while(itr1.hasNext()){
+hSet.add(itr1.next() as Long);
+}
+localSubGraphMap.put(entry.getKey() as Long,hSet);
+}
+}
+
 }

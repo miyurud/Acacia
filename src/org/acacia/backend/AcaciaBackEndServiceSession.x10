@@ -355,7 +355,7 @@ public class AcaciaBackEndServiceSession extends java.lang.Thread {
             		    	
             		    	val centralStoreBaseDir:String = Utils_Java.getAcaciaProperty("org.acacia.server.runtime.location");
             		    	//AcaciaHashMapNativeStore store = new AcaciaHashMapNativeStore(Integer.parseInt(graphID), i, centralStoreBaseDir, true);
-            		    	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), true);
+            		    	val store:AcaciaHashMapCentralStore = new AcaciaHashMapCentralStore(Int.parseInt(graphID), i);
             		    	store.loadGraph();
             		    	
             		    	val edgeList:HashMap[Long, HashSet[Long]] = store.getUnderlyingHashMap();
@@ -998,7 +998,7 @@ public class AcaciaBackEndServiceSession extends java.lang.Thread {
 	    	//AcaciaHashMapCentralStore store = new AcaciaHashMapCentralStore(Integer.parseInt(graphID), i);
 	    	//store.loadGraph();
 	    	
-	    	val store:AcaciaLocalStore = AcaciaLocalStoreFactory.load(Int.parseInt(graphID), i, Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), true);
+	    	val store:AcaciaHashMapCentralStore = new AcaciaHashMapCentralStore(Int.parseInt(graphID), i);
 	    	store.loadGraph();
 	    	
 	    	globalSize += store.getEdgeCount();

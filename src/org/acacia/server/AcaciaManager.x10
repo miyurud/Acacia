@@ -1277,7 +1277,7 @@ public class AcaciaManager {
 									 //Here we have to be careful to first sort the three triangle vertices by their value. Then we do not
 									 //get into the trouble of having multiple combinations of the same three vertices.
 									 
-		                            var tempArr:Rail[Long] = [v, u, nu];
+		                            				var tempArr:Rail[Long] = [v, u, nu];
 
 		 							java.util.Arrays.sort(x10.interop.Java.convert(tempArr));
 		 

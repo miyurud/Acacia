@@ -46,6 +46,7 @@ import org.acacia.server.AcaciaServer;
 import org.acacia.server.AcaciaManager;
 import org.acacia.server.GraphStatus;
 import org.acacia.partitioner.stream.LDGPartitioner;
+import org.acacia.partitioner.stream.StreamingLDGPartitioner;
 import org.acacia.rdf.sparql.java.SparqlLexer;
 import org.acacia.rdf.sparql.java.SparqlParser;
 import org.acacia.rdf.sparql.InterimResult;
@@ -579,7 +580,7 @@ public class AcaciaFrontEndServiceSession {
      
         	
         }else if(msg.equals(AcaciaFrontEndProtocol.K_NN)){
-            
+            Console.OUT.println("KNN");
         }else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM)){
             //Read a stream into Acacia
             var p:LDGPartitioner = new LDGPartitioner();
@@ -624,29 +625,125 @@ public class AcaciaFrontEndServiceSession {
         
         	out.flush();
         } else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM_KAFKA)){
-            out.println(AcaciaFrontEndProtocol.SEND);
-            out.flush();
-            var name:String = "";
-
-            try{
-                name = buff.readLine();
+            
+        	Console.OUT.println("Executing Restreaming LDG");           
+        	out.println(AcaciaFrontEndProtocol.SEND);
+        	out.flush();
+        	var graphName:String = "";
+            var fileName:String="";
+            //get graph name
+        	try{
+            	graphName = buff.readLine();
             }catch(val e:IOException){
                 Logger.error("Error : " + e.getMessage());
             }
             out.println(AcaciaFrontEndProtocol.STRM_ACK);
             out.flush();
-            
-            val kafkaSocket:KafkaConsumer = new KafkaConsumer();
-            var line:String = null;
-            var p:LDGPartitioner = new LDGPartitioner();
-            val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + name + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
-            
-            while((line=kafkaSocket.getNext())!=null){
-                Console.OUT.println(line);
-                //val vertsArr:Rail[String] = line.split(" ");
-                //AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+            //get file location
+            try{
+            	fileName = buff.readLine();
+            }catch(val e:IOException){
+            	Logger.error("Error : " + e.getMessage());
             }
+            out.println(AcaciaFrontEndProtocol.STRM_ACK);
             out.flush();
+            
+            var streamLdgPartitioner:StreamingLDGPartitioner = new StreamingLDGPartitioner();
+            var partition_count:Int = 4n; 
+            var partitions:Rail[Int] = null;
+        	var edges:ArrayList[String]= new ArrayList[String]();
+        
+        	try{
+        	
+        		val input = new File(fileName);
+        		val inp = input.openRead();
+        		var count:Int = 0n;
+        
+            	val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + graphName + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
+        
+            	var start_time:long = System.currentTimeMillis();
+           
+        		for(line in inp.lines()){
+        			partitions=null;
+        			edges.add(line);
+        			count++;
+        
+        			if(count%1000n==0n ){
+                        
+        	    		Console.OUT.println();
+        	    		var original_edges:ArrayList[String]=edges.clone();
+                		edges = streamLdgPartitioner.generateDirectedGraph(edges);
+        
+        	    		for(var counter:Int=1n; counter<=10n; counter++){
+                
+        		    		Console.OUT.println("");
+        		    		Console.OUT.print(counter);
+        		    		partitions = streamLdgPartitioner.StreamingLDG(edges,partition_count,partitions);
+          
+        	    		}
+        	            partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
+        	    		StreamingLDGPartitioner.saveEdgesToDisk(partitions,original_edges,graphID);
+        	    		edges.clear();
+             		}
+       
+        		}
+        
+               if(edges.size()>0){
+        			//Console.OUT.println("Remaining edges size " + edges.size());
+        			//Console.OUT.println("Iteration \t Node distribution \t #Edges within partitions \t #Crossing edges \t Cut ratio \t Time(ms)" );
+        			var original_edges:ArrayList[String]=edges.clone();
+        			edges = streamLdgPartitioner.generateDirectedGraph(edges);
+        			for(var counter:Int=1n; counter<=10n; counter++){
+                     
+        				Console.OUT.println("");
+        				Console.OUT.print(counter);
+              			partitions =streamLdgPartitioner.StreamingLDG(edges,partition_count,partitions);
+
+        			}
+        			partitions=streamLdgPartitioner.getPartitionWithMinimumCutRatio();
+        			StreamingLDGPartitioner.saveEdgesToDisk(partitions,original_edges,graphID);
+        			edges.clear();
+               }
+               var end_time:long = System.currentTimeMillis();
+               Console.OUT.println("\t"+(end_time - start_time) + " ms");
+               out.println("Done");
+               out.flush();
+       
+        	}
+        	catch(var e:Exception ){
+        		Console.OUT.println(" Exception " + e);
+        	}
+        	finally{
+             	//Clean up
+        	}  
+            
+                    
+        ///////////////////////////////////////////////////////
+//             out.println(AcaciaFrontEndProtocol.SEND);
+//             out.flush();
+//             var name:String = "";
+// 
+//             try{
+//                 name = buff.readLine();
+//             }catch(val e:IOException){
+//                 Logger.error("Error : " + e.getMessage());
+//             }
+//             out.println(AcaciaFrontEndProtocol.STRM_ACK);
+//             out.flush();
+//             Console.OUT.println("Before kafka consumer " );
+//             val kafkaSocket:KafkaConsumer = new KafkaConsumer();
+//             Console.OUT.println("After kafka consumer " );
+//            var line:String = null;
+  //            var p:LDGPartitioner = new LDGPartitioner();
+ //            val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + name + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
+            
+//             while((line=kafkaSocket.getNext())!=null){
+  //               Console.OUT.println(line);
+                 //val vertsArr:Rail[String] = line.split(" ");
+                 //AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+  //           }
+  //          out.flush();
+            /////////////////////////////////////////////////////////////
         }
     }
 

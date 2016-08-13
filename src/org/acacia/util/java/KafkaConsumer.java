@@ -37,7 +37,7 @@ import kafka.message.MessageAndOffset;
 public class KafkaConsumer extends Thread {
 	final static String clientId = "SimpleConsumerDemoClient";
 	//kafka Topic
-    final static String TOPIC = "test";
+    final static String TOPIC = "mytopic";
     ConsumerConnector consumerConnector;
     ConsumerIterator<byte[], byte[]> it = null;
 

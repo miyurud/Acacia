@@ -36,9 +36,10 @@ import org.acacia.metadata.db.java.MetaDataDBInterface;
 import org.acacia.util.java.Utils_Java;
 
 public class StreamingLDGPartitioner {
-     private var maximum_node:Int= -1n;
+     private var maximum_node:Int = -1n;
      private var partitionList:ArrayList[Rail[Int]];
      private var cutRatioList:ArrayList[Float];
+     
     /**
      * If Input edge list is pre-processed such that 
      * all edges with starting with a particular node come together as a batch
@@ -48,173 +49,156 @@ public class StreamingLDGPartitioner {
      * ["2 3", "7 5", "2 4", "2 8", "7 6"]
      * then quality of partitioning will be higher
      */
-    
     public def StreamingLDG(var edges:ArrayList[String],var partition_count:Int, var partitions:Rail[Int] ):Rail[Int]{
-            
-        var UNASSIGNED:Int=-1n;
-       
-        if(partitions==null){  
-           partitions = new Rail[Int](maximum_node+1n,-1n);
+        val UNASSIGNED:Int = -1n;
+        var partition_sizes:Rail[Int] = new Rail[Int](partition_count, 0n);
+        
+        if(partitions == null){  
+            partitions = new Rail[Int](maximum_node+1n, -1n);
         }
-        if(cutRatioList==null){
-           cutRatioList=new ArrayList[Float]();
+        
+        if(cutRatioList == null){
+            cutRatioList = new ArrayList[Float]();
         }
-        if(partitionList==null){
-           partitionList= new ArrayList[Rail[Int]]();
+        
+        if(partitionList == null){
+            partitionList = new ArrayList[Rail[Int]]();
         }
-        var partition_sizes:Rail[Int] = new Rail[Int](partition_count,0n);
       
-        /**
-         * Fill partition sizes based on partition assignments in previous iteration
-         */
+        // Fill partition sizes based on partition assignments in previous iteration
         for(p in partitions){
-            if(p==UNASSIGNED){
+            if(p == UNASSIGNED){
                 continue;
             }
+            
             partition_sizes(p)++; 
         }
         
         var partition_votes:Rail[Int] = new Rail[Int](partition_count,0n);
-        
         var maximum_capacity:Int  = (edges.size() as Int) /partition_count;
         
-        /**
-         * Initially extract the first node of the Edge array
-         */
+        //Initially extract the first node of the Edge array
         var previous_left_node:Int = Int.parse(edges(0).split(" ")(0));
-        var left_node:Int=0n;
-        var right_node:Int=0n;
-        var max_partition_position:Int=0n;
-        var partition_position:Int=0n;
-        var max_LDG_val:Int=0n;
-        var LDG_val:Int=0n;
-        var num_edges:Int=edges.size() as Int ; 
+        var left_node:Int = 0n;
+        var right_node:Int = 0n;
+        var max_partition_position:Int = 0n;
+        var partition_position:Int = 0n;
+        var max_LDG_val:Int = 0n;
+        var LDG_val:Int = 0n;
+        var num_edges:Int = edges.size() as Int ; 
         
         for(var i:Int=0n; i<num_edges; i++){
-            
             val nodes = edges(i).split(" ");
-            left_node=Int.parse(nodes(0));
-            right_node=Int.parse(nodes(1));
+            left_node = Int.parse(nodes(0));
+            right_node = Int.parse(nodes(1));
          
-            if(previous_left_node!=left_node){
-                /**
-                 * A new node has been found. So we have to assign previous_left_node to 
-                 * a partition;
-                 */ 
-                max_partition_position=0n;
-                max_LDG_val=(partition_votes(0))*(maximum_capacity-partition_sizes(0));
+            if(previous_left_node != left_node){
                 
-                for(var tmp_partition:Int = 0n; tmp_partition<partition_count; tmp_partition++){
+                //A new node has been found. So we have to assign previous_left_node to 
+                //a partition;
+                max_partition_position = 0n;
+                max_LDG_val = (partition_votes(0)) * (maximum_capacity-partition_sizes(0));
+                
+                for(var tmp_partition:Int = 0n; tmp_partition < partition_count; tmp_partition++){
+                    LDG_val = (partition_votes(tmp_partition)) * (maximum_capacity-partition_sizes(tmp_partition));
                     
-                    LDG_val = (partition_votes(tmp_partition))*(maximum_capacity-partition_sizes(tmp_partition));
-                    
-                    if(LDG_val>max_LDG_val){
-                        max_partition_position=tmp_partition;
-                        max_LDG_val=LDG_val;
-                    }    
+                    if(LDG_val > max_LDG_val){
+                        max_partition_position = tmp_partition;
+                        max_LDG_val = LDG_val;
+                    }
                  }
                 
-                 if(max_LDG_val==0n){ 
-                    /**
-                     * use balanced partitioning. Break ties randomly
-                     */
-                    max_partition_position = partitionUsingBalanced(partition_sizes,maximum_capacity);    
-                   
-                 }  
-                 
+                if(max_LDG_val==0n){ 
+                    //use balanced partitioning. Break ties randomly
+                    max_partition_position = partitionUsingBalanced(partition_sizes, maximum_capacity);    
+                 }
                  
                  partition_sizes(max_partition_position)++;
-                 
-                
-                /**
-                 * make previous partition available to another node
-                 */ 
-                 if(partitions(previous_left_node)!=UNASSIGNED){
-                     if (partition_sizes(partitions(previous_left_node))>0){
+
+                 //make previous partition available to another node
+                 if(partitions(previous_left_node) != UNASSIGNED){
+                     if (partition_sizes(partitions(previous_left_node)) > 0){
                          partition_sizes(partitions(previous_left_node))--;
                      }
-                  }
+                 }
                  
-                 partitions(previous_left_node)=max_partition_position;
+                 partitions(previous_left_node) = max_partition_position;
                  partition_votes.fill(0n);
-                 previous_left_node= left_node;
-             
-             }    
-             if(partitions(right_node)!=UNASSIGNED){
-                 partition_votes(partitions(right_node))++;
-             } 
-            
+                 previous_left_node = left_node;
+            }    
+
+            if(partitions(right_node) != UNASSIGNED){
+                partition_votes(partitions(right_node))++;
+            }
         }
          
-        /**
-         * Last node is still remaining without a partition.
-         * Assign that to a partition
-         */
-        max_partition_position=0n;
-        max_LDG_val=0n;
-        for(var tmp_partition:Int=0n; tmp_partition<partition_count;tmp_partition++){
+        //Last node is still remaining without a partition.
+        //Assign that to a partition
+        max_partition_position = 0n;
+        max_LDG_val = 0n;
+        
+        for(var tmp_partition:Int = 0n; tmp_partition < partition_count; tmp_partition++){
             if(partition_sizes(tmp_partition) < maximum_capacity){
-                LDG_val	=(partition_votes(tmp_partition))*(1n-(partition_sizes(tmp_partition)/maximum_capacity));
+                LDG_val	= (partition_votes(tmp_partition)) * (1n - (partition_sizes(tmp_partition) / maximum_capacity));
                
-                if(LDG_val>max_LDG_val){
-                    max_partition_position=tmp_partition;
+                if(LDG_val > max_LDG_val){
+                    max_partition_position = tmp_partition;
                     max_LDG_val = LDG_val;
                 }
             }
         }
-       
-        partitions(left_node)=max_partition_position;
+        
+        partitions(left_node) = max_partition_position;
         partition_sizes(max_partition_position)++;
-       
          
         var member_count:Rail[Int] = new Rail[Int](partition_count); 
         member_count.fill(0n);
         
         for(p in partitions){
-           if(p==UNASSIGNED){
+            if(p == UNASSIGNED){
                continue;
-           }
+            }
+           
             member_count(p)++; 
         }
+        
         Console.OUT.print("\t\t" + member_count.toString());
         
         var assigned_nodes:Int =0n;
         
         for(n in member_count){
-            assigned_nodes=assigned_nodes+n;
+            assigned_nodes = assigned_nodes+n;
         }
         
-        
-        calculate_edges_per_partition(partitions,edges,partition_count);
+        calculate_edges_per_partition(partitions, edges, partition_count);
         partitionList.add(partitions);
-        return partitions;  
-    
+        
+        return partitions;      
     }
-            
-    public  def calculate_edges_per_partition(var partitions:Rail[Int], var edges:ArrayList[String], var partition_count:Int){
+
+    public def calculate_edges_per_partition(var partitions:Rail[Int], var edges:ArrayList[String], var partition_count:Int){
         var left_node:Int = 0n;
         var right_node:Int = 0n;
         var edge_count:Rail[Int] = new Rail[Int](partition_count);
         edge_count.fill(0n);
-       
         var crossing_edges:Int=0n;
-        for(var i:Int=0n; i<edges.size(); i++){
+
+        for(var i:Int = 0n; i < edges.size(); i++){
             val nodes = edges(i).split(" ");
-            left_node=Int.parse(nodes(0));
-            right_node=Int.parse(nodes(1));
+            left_node = Int.parse(nodes(0));
+            right_node = Int.parse(nodes(1));
            
             if(partitions(left_node) == partitions(right_node)){
                 // two nodes are in the same partition
                 edge_count(partitions(left_node))++;
-            }
-            else{
+            } else {
                 crossing_edges++;
-               // edge_count(partition_count)++;
             }
-            
-         }
+        }
+
         Console.OUT.print("\t\t" + edge_count.toString());
         Console.OUT.print("\t\t" + crossing_edges);
+        
         var cut_ratio:Float = crossing_edges/edges.size() as Float;
         cutRatioList.add(cut_ratio);
         Console.OUT.print("\t\t" + cut_ratio);
@@ -224,6 +208,7 @@ public class StreamingLDGPartitioner {
         var minCutRatio:Float= 1.0 as Float;
         var minCutIndex:Int = -1n;
         var partitionWithMinimumCutRatio:Rail[Int];
+        
         for( var i:Int=0n; i<cutRatioList.size(); i++){
             if(cutRatioList(i)<minCutRatio){
                 minCutRatio = cutRatioList(i);
@@ -236,68 +221,68 @@ public class StreamingLDGPartitioner {
         partitionWithMinimumCutRatio = partitionList.get(minCutIndex);
         cutRatioList.clear();
         partitionList.clear();
+
         return partitionWithMinimumCutRatio;
-        
     }
     
     private static def partitionUsingBalanced(var partition_sizes:Rail[Int], var maximum_capacity:Int):Int{
-       var  max_partition_position:Int=-1n;
-       var min:Int = partition_sizes(0);
-      // Console.OUT.println("partition sizes " + partition_sizes.toString());
-       for(partition_size in partition_sizes){
-           if(partition_size<min){
-               min=partition_size;
-               //Console.OUT.println("min partition " + min);
-           }
-       } 
-       //look for further occuraces of min
-       var min_count:Int = 0n;
-       var min_count_partitions:ArrayList[Int]= new ArrayList[Int]();      
-       for(var k:Int = 0n ; k<partition_sizes.size; k++){
-           if(partition_sizes(k)==min){
-               min_count++;
-               min_count_partitions.add(k);
+        var  max_partition_position:Int=-1n;
+        var min:Int = partition_sizes(0);
+
+        for(partition_size in partition_sizes){
+            if(partition_size < min){
+                min = partition_size;
             }
         }
        
-        if(min_count>0){
-            random:Random = new Random();
-            var number:Int = random.nextInt(min_count_partitions.size() as Int) ;
-            if(partition_sizes(min_count_partitions(number))<maximum_capacity){
-                max_partition_position=min_count_partitions(number);
-                //Console.OUT.println(" generated random partition pos " + max_partition_position);
-             }
-        }
-        else{
-            if(min_count_partitions.get(0)<maximum_capacity){
-                max_partition_position=min_count_partitions.get(0);
-            }   
+        //look for further occuraces of min
+        var min_count:Int = 0n;
+        var min_count_partitions:ArrayList[Int] = new ArrayList[Int]();
+        
+        for(var k:Int = 0n; k < partition_sizes.size; k++){
+            if(partition_sizes(k) == min){
+                min_count++;
+                min_count_partitions.add(k);
+            }
         }
        
+        if(min_count > 0){
+            random:Random = new Random();
+            var number:Int = random.nextInt(min_count_partitions.size() as Int) ;
+            
+            if(partition_sizes(min_count_partitions(number)) < maximum_capacity){
+                max_partition_position = min_count_partitions(number);
+            }
+        } else {
+            if(min_count_partitions.get(0)<maximum_capacity){
+                max_partition_position = min_count_partitions.get(0);
+            }
+        }
+        
         return max_partition_position; 
     }
-            
-   
     
-    public def generateDirectedGraph(var lines : ArrayList[String]):ArrayList[String]{
-        
-        var map:HashMap[String, ArrayList[String]]  = new HashMap[String, ArrayList[String]]();
+    public def generateDirectedGraph(var lines : ArrayList[String]) : ArrayList[String]{        
+        var map:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
         var edge:Rail[String] = new Rail[String](2);
         var direct_edge:String;
         var reverse_edge:String;
         var count:Int = 1n;
-        maximum_node=0n;
+        maximum_node = 0n;
         
         for(line in lines){
-            edge=line.split(" ");
+            edge = line.split(" ");
             var left_node:Int = Int.parse(edge(0));
             var right_node:Int = Int.parse(edge(1));
-            if(left_node>maximum_node){
-               maximum_node=left_node;
+            
+            if(left_node > maximum_node){
+               maximum_node = left_node;
             }
-            if(right_node>maximum_node){
-               maximum_node=right_node;
+            
+            if(right_node > maximum_node){
+               maximum_node = right_node;
             }
+            
             if (map.containsKey(edge(1))) {
                 // get that value and add new edge too
                 map.get(edge(1)).add(edge(0));
@@ -307,17 +292,17 @@ public class StreamingLDGPartitioner {
                 map.put(edge(1), list);
             }
         }
+        
         for (entry in map.entries()){
             var key:String = entry.getKey();
             var values:ArrayList[String] = entry.getValue();
+
             for(value in values){
                 lines.add(key + " " +value);
             }
         }
         
         return lines;
-        
-        
     }
     
     public static def saveEdgesToDisk(var partitions:Rail[Int], var edges:ArrayList[String], var graphID:String){

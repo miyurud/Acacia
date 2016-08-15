@@ -649,7 +649,11 @@ public class AcaciaFrontEndServiceSession {
             out.flush();
             
             var streamLdgPartitioner:StreamingLDGPartitioner = new StreamingLDGPartitioner();
-            var partition_count:Int = 4n; 
+            
+            val hosts= org.acacia.util.Utils.getPrivateHostList();
+            val nPlaces:Int = AcaciaManager.getNPlaces(hosts(0));
+            //Currently we create as many central partitions as the number of places the Acacia has been run with.
+            var partition_count:Int = nPlaces; 
             var partitions:Rail[Int] = null;
         	var edges:ArrayList[String]= new ArrayList[String]();
         
@@ -660,7 +664,6 @@ public class AcaciaFrontEndServiceSession {
         		var count:Int = 0n;
         
             	val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + graphName + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
-        
             	var start_time:long = System.currentTimeMillis();
            
         		for(line in inp.lines()){
@@ -674,34 +677,33 @@ public class AcaciaFrontEndServiceSession {
         	    		var original_edges:ArrayList[String]=edges.clone();
                 		edges = streamLdgPartitioner.generateDirectedGraph(edges);
         
-        	    		for(var counter:Int=1n; counter<=10n; counter++){
-                
+        	    		for(var counter:Int = 1n; counter <= 10n; counter++){
         		    		Console.OUT.println("");
         		    		Console.OUT.print(counter);
-        		    		partitions = streamLdgPartitioner.StreamingLDG(edges,partition_count,partitions);
-          
+        		    		partitions = streamLdgPartitioner.partitionWithStreamingLDG(edges,partition_count,partitions);
         	    		}
+        	    
         	            partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
-        	    		StreamingLDGPartitioner.saveEdgesToDisk(partitions,original_edges,graphID);
+        	    		StreamingLDGPartitioner.transferToInstance(partitions,original_edges, Long.parseLong(graphID));
         	    		edges.clear();
              		}
-       
         		}
         
                if(edges.size()>0){
         			//Console.OUT.println("Remaining edges size " + edges.size());
         			//Console.OUT.println("Iteration \t Node distribution \t #Edges within partitions \t #Crossing edges \t Cut ratio \t Time(ms)" );
-        			var original_edges:ArrayList[String]=edges.clone();
+        			var original_edges:ArrayList[String] = edges.clone();
         			edges = streamLdgPartitioner.generateDirectedGraph(edges);
-        			for(var counter:Int=1n; counter<=10n; counter++){
+        
+        			for(var counter:Int = 1n; counter<=10n; counter++){
                      
         				Console.OUT.println("");
         				Console.OUT.print(counter);
-              			partitions =streamLdgPartitioner.StreamingLDG(edges,partition_count,partitions);
+              			partitions =streamLdgPartitioner.partitionWithStreamingLDG(edges,partition_count,partitions);
 
         			}
-        			partitions=streamLdgPartitioner.getPartitionWithMinimumCutRatio();
-        			StreamingLDGPartitioner.saveEdgesToDisk(partitions,original_edges,graphID);
+        			partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
+        			StreamingLDGPartitioner.transferToInstance(partitions, original_edges, Long.parseLong(graphID));
         			edges.clear();
                }
                var end_time:long = System.currentTimeMillis();

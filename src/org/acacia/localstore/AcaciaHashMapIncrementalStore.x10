@@ -62,7 +62,7 @@ public class AcaciaHashMapIncrementalStore implements AcaciaLocalStore{
     private var edgeCount:Long = 0;
     private val typeMap :java.util.HashMap = new java.util.HashMap();
     
-    public def this(graphID:Int, partitionID:Int){
+    public def this(graphID:Int, partitionID:Int, baseDir:String, isCentralStore:Boolean ){
         this.graphID = graphID;
         this.partitionID = partitionID;
         

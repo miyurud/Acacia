@@ -19,6 +19,7 @@ package org.acacia.localstore;
 import java.io.File;
 import org.acacia.localstore.AcaciaLocalStoreCatalogManager;
 import org.acacia.localstore.AcaciaHashMapNativeStore;
+import org.acacia.localstore.AcaciaHashMapIncrementalStore;
 
 public class AcaciaLocalStoreFactory{
 
@@ -55,9 +56,11 @@ public class AcaciaLocalStoreFactory{
  		var result:AcaciaLocalStore = null;
 
 	if(storeType == AcaciaLocalStoreTypes.HASH_MAP_LOCAL_STORE){
-		result = new AcaciaHashMapLocalStore(graphID, partitionID);
+            result = new AcaciaHashMapLocalStore(graphID, partitionID);
 	}else if(storeType == AcaciaLocalStoreTypes.HASH_MAP_NATIVE_STORE){
-		result = new AcaciaHashMapNativeStore(graphID, partitionID, baseDir, isCentralStore);
+            result = new AcaciaHashMapNativeStore(graphID, partitionID, baseDir, isCentralStore);
+	}else if(storeType == AcaciaLocalStoreTypes.HASH_MAP_INCREMENTAL_STORE){
+            result = new AcaciaHashMapIncrementalStore(graphID, partitionID, baseDir, isCentralStore);
 	}
 	
 	return result;

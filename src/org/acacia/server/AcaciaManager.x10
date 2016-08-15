@@ -596,7 +596,7 @@ public class AcaciaManager {
 	 * @param startVertexID
 	 * @param endVertexID
 	 */
- 	public static def insertEdge(host:String , graphID:long , startVertexID:long,  endVertexID:long):boolean{		
+ 	public static def insertEdge(host:String, graphID:long, partitionID:long, startVertexID:long,  endVertexID:long):boolean{		
 		//The manger should contatct the appropriate AcaciaInstance and insert the edges.
 	 	try{
 	 		Console.OUT.println("Connecting to host : " + host + " at port : " + Conts_Java.ACACIA_INSTANCE_PORT);
@@ -633,6 +633,14 @@ public class AcaciaManager {
 	 
 	 			if((response == null)&&(!response.equals(AcaciaInstanceProtocol.OK))){
 	 				Logger_Java.error("Error in setting the default graph to : " + graphID + " on host : " + host);
+	 			}else{
+	                out.println(partitionID);
+	                out.flush();
+	                response = reader.readLine();
+	                
+	                if((response == null)&&(!response.equals(AcaciaInstanceProtocol.OK))){
+	                    Logger_Java.error("Error in uploading the graph : " + graphID + " partition : " + partitionID + " on host : " + host);
+	                }
 	 			}
 	 		}
 	 
@@ -655,6 +663,83 @@ public class AcaciaManager {
 	 
 	 	return true;
 	 }
+ 
+    /**
+     * This method is used to insert a batch of new edges to Acacia Local Instance.
+     * @param host
+     * @param graphID
+     * @param startVertexID
+     * @param endVertexID
+     */
+    public static def insertEdges(host:String, graphID:long, partitionID:long, edges:ArrayList[String]):boolean{		
+        //The manger should contatct the appropriate AcaciaInstance and insert the edges.
+        try{
+            Console.OUT.println("Connecting to host : " + host + " at port : " + Conts_Java.ACACIA_INSTANCE_PORT);
+            val socket:Socket = new Socket(host, Conts_Java.ACACIA_INSTANCE_PORT);
+            val out:PrintWriter = new PrintWriter(socket.getOutputStream());
+            val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            var response:String = "";
+ 
+            Console.OUT.println("OK Connected");
+ 
+            //First we need to Handshake
+            out.println(AcaciaInstanceProtocol.HANDSHAKE);
+            out.flush();
+            response = reader.readLine();
+ 
+            if((response != null)&&(response.equals(AcaciaInstanceProtocol.HANDSHAKE_OK))){
+                out.println(java.net.InetAddress.getLocalHost().getHostName());
+                out.flush();
+            }
+ 
+            //First we must set the default graph instance to use. The default graph is session specific. 
+            //Therefore each and every connection we make to the AcaciaInstance, we need to say we are using this particular graph.			
+ 
+            out.println(AcaciaInstanceProtocol.INSERT_EDGES);
+            out.flush();
+ 
+            response = reader.readLine();
+ 
+            if((response != null) && (response.equals(AcaciaInstanceProtocol.OK))){
+                out.println(graphID);
+                out.flush();
+                response = reader.readLine();
+ 
+                if((response == null) && (!response.equals(AcaciaInstanceProtocol.OK))){
+                    Logger_Java.error("Error in setting the default graph to : " + graphID + " on host : " + host);
+                } else {
+                    out.println(partitionID);
+                    out.flush();
+                    response = reader.readLine();
+ 
+                    if((response == null) && (!response.equals(AcaciaInstanceProtocol.OK))){
+                        Logger_Java.error("Error in uploading the graph : " + graphID + " partition : " + partitionID + " on host : " + host);
+                    }
+                }
+            }
+ 
+            //Note: In future, sending one edge at a time can be further optimized.
+            for(edge in edges){
+                out.println(edge);
+                out.flush();
+            }
+ 
+            out.println(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE); //We need to say we are done with sending edges.
+            out.flush();
+ 
+            if((response != null) && (response.equals(AcaciaInstanceProtocol.INSERT_EDGES_ACK))){
+                out.close();
+            }
+        }catch(e:java.net.UnknownHostException){
+            Logger_Java.error(e.getMessage());
+            return false;
+        } catch(ec:java.io.IOException) {
+            Logger_Java.error(ec.getMessage());
+            return false;
+        }
+ 
+        return true;
+    }
  
  	/**
   	 * This method is used to truncate a Acacia Local Instance.

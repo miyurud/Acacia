@@ -17,6 +17,7 @@ limitations under the License.
 package org.acacia.localstore;
 
 public class AcaciaLocalStoreTypes {
-	public static val HASH_MAP_LOCAL_STORE:Int = 0n;
-	public static val HASH_MAP_NATIVE_STORE:Int = 1n;
+    public static val HASH_MAP_LOCAL_STORE:Int = 0n;
+    public static val HASH_MAP_NATIVE_STORE:Int = 1n;
+    public static val HASH_MAP_INCREMENTAL_STORE:Int = 2n;
 }

@@ -83,7 +83,7 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
     private var listener:DBTruncateEventListener;
     private var listenerShtdn:ShutdownEventListener;
     //private HashMap<Integer, GraphDatabaseService> graphDBMap = null;
-    //Note : Feb 4 2015 - Since we need to deal with the <praphID>_<partitionID> scenario,
+    //Note : Feb 4 2015 - Since we need to deal with the <graphID>_<partitionID> scenario,
     //the key of the graph db map was changed to String
     private var graphDBMap:HashMap[String, AcaciaLocalStore] = null;
     private var loadedGraphs:ArrayList[String];
@@ -175,16 +175,19 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 					msg = buff.readLine();
 					
 					var graphID:String = msg;
-					
+                    var partitionID:String = null;					
+
 					Logger.info("graph id is : " + msg);
 					
 					out.println(AcaciaInstanceProtocol.OK);
 					out.flush();
 					
 					//This is the partition ID
-					msg = buff.readLine();
+                    partitionID = buff.readLine();
 					
-					setDefaultGraph(graphID, msg);
+					if(!setDefaultGraph(graphID, partitionID)){
+                        defaultGraph = AcaciaLocalStoreFactory.create(Int.parseInt(graphID), Int.parseInt(partitionID), Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder"), false, AcaciaLocalStoreTypes.HASH_MAP_INCREMENTAL_STORE);
+					}
 					
 					//Just return an acknowledgement.
 					out.println(AcaciaInstanceProtocol.OK);
@@ -193,10 +196,9 @@ public class AcaciaInstanceServiceSession extends java.lang.Thread{
 					msg = buff.readLine();
 					
 					while(!msg.equals(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE)){
-						Logger.info("Adding Edge : " + msg);
 						val vertsArr:Rail[String] = msg.split(" ");//We expect the edge to be split by a space.
 						try{
-							insertEdge(Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+                            defaultGraph.addEdge(Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
 						}catch(val ex:NumberFormatException){
 							//Just ignore. Expect the messages only in the for <long> <long> <long>
 							Logger.error("Error : " + ex.getMessage());
@@ -1370,13 +1372,14 @@ Logger.error("Error : " + e.getMessage());
     //ToDO: In future we need to update the catalog file located in the data directory.
 	private def deleteGraph(val graphID:String, val partitionID:String) : String {
 		var result:String = "0";
-		
+                val gid:String = graphID + "_" + partitionID;
+
 		//We need to first turn-off the graph DB instance
-		if (graphDBMap.containsKey(graphID)){
-			Logger.info("Unloading the graph - " + graphID + ":" + partitionID);
+		if (graphDBMap.containsKey(gid)){
+			Logger.info("Unloading the graph - " + gid);
 			unloadLocalStore(graphID, partitionID);
 		}else{
-			Logger.info("The following graph was not loaded to the system - " + graphID + ":" + partitionID);
+			Logger.info("The following graph was not loaded to the system - " + gid);
 		}
 		
 		//Next we need to delete the file content from the acacia instance directory.
@@ -1416,15 +1419,18 @@ Logger.error("Error : " + e.getMessage());
 		return result;
 	}
 
-	public def setDefaultGraph(val graphID:String, val partitionID:String):void{
-		val gid:String = graphID + "_" + partitionID;
-		defaultGraph = graphDBMap.get(gid);
-                if(defaultGraph == null){
-                    Console.OUT.println("Default graph is null");
-                }else{
-			defaultGraphID = gid;
-			Console.OUT.println("The default graph is set to : " + gid);
-                }
+	public def setDefaultGraph(val graphID:String, val partitionID:String):boolean{
+	    val gid:String = graphID + "_" + partitionID;
+            defaultGraph = graphDBMap.get(gid);
+
+            if(defaultGraph == null){
+                return false;
+            }else{
+	        defaultGraphID = gid;
+	        Console.OUT.println("The default graph is set to : " + gid);
+		    
+                return true;
+            }
 	}
 	
 	public def unSetDefaultGraph(val graphID:String, val partitionID:String):void{
@@ -1491,25 +1497,27 @@ Logger.error("Error : " + e.getMessage());
 		listenerShtdn.shutdownEventOccurred(evt);
 	}
 	
-	/**
-	 * This method inserts an edge to the graph DB
-	 * @param startVertexID
-	 * @param endVertexID
-	 */
-	public def insertEdge(val graphID:Long, val startVertexID:Long, val endVertexID:Long):void{		
-		var graphDB:AcaciaLocalStore = null;
-		
-		if (defaultGraph == null){	
-			graphDB = graphDBMap.get(""+ graphID) as AcaciaLocalStore;
-			if(graphDB == null){
-				Logger.error("Error : The graph database instance is NULL.");
-			}
-                        graphDB.addEdge(startVertexID, endVertexID);
-		}else{
-			graphDB = defaultGraph;
-                        graphDB.addEdge(startVertexID, endVertexID);
-		}
-	}
+   /**
+    * This method inserts an edge to the graph DB
+    * @param startVertexID
+    * @param endVertexID
+    */
+    public def insertEdge(val graphID:Long, val partitionID:Long, val startVertexID:Long, val endVertexID:Long):void{		
+        var graphDB:AcaciaLocalStore = null;
+        val gid:String = graphID + "_" + partitionID;
+        
+        if (defaultGraph == null){	
+            graphDB = graphDBMap.get(gid) as AcaciaLocalStore;
+            
+            if(graphDB == null){
+                Logger.error("Error : The graph database instance is NULL.");
+            }
+            defaultGraphID = gid;
+            graphDB.addEdge(startVertexID, endVertexID);
+        } else {
+            graphDB.addEdge(startVertexID, endVertexID);
+        }
+    }
 	
 	/**
 	 * This method returns the vertex's unique id if one exists. If not returns -1.

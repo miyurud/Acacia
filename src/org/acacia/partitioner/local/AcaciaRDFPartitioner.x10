@@ -529,14 +529,12 @@ public class AcaciaRDFPartitioner {
     	val numberOfPartitions:Int = partitionFilesMap.keySet().size() < nThreads ? nThreads : partitionFilesMap.keySet().size() as Int;
     	val numVerts:Rail[Int] = new Rail[Int](numberOfPartitions);
     
-    	
-    
     	for(var i:Int=0n;i<nParts;i++){
-    		val actualPartitionID:String = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
-    		store = new AcaciaHashMapNativeStore(Int.parseInt(graphID), Int.parse(actualPartitionID) as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), false);
+    		MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH, IDPARTITION) VALUES(" + graphID + "," + i + ")");
+    		store = new AcaciaHashMapNativeStore(Int.parseInt(graphID), i, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), false);
     		store.setOntologyFileName(ontologyFileName);
     		store.initializeRelationshipMapWithProperties(predicates.keySet().size() as Int);
-    		initLocalStores(store,actualPartitionID,i);
+    		initLocalStores(store,i);
     		var itrN:x10.lang.Iterator[Int] = graphStorage.keySet().iterator();
     		val temp = graphStorage.keySet().size();
     		var count:Int = 0n;
@@ -547,6 +545,7 @@ public class AcaciaRDFPartitioner {
     				distributeLocalData(fromVertex,store);
     			}
     		}
+    
     		val result:Boolean = call_runUpdate("UPDATE ACACIA_META.PARTITION SET VERTEXCOUNT=" + store.getVertexCount() + ", EDGECOUNT=" + store.getEdgeCount() + " WHERE GRAPH_IDGRAPH=" + graphID + " and IDPARTITION=" + store.getPartitionID());
     		store.storeGraph();
     	}
@@ -566,7 +565,7 @@ public class AcaciaRDFPartitioner {
     
         MetaDataDBInterface.runUpdate("UPDATE ACACIA_META.GRAPH SET CENTRALPARTITIONCOUNT=" + numberOfCentralPartitions + ", VERTEXCOUNT=" + vertexCount + ", EDGECOUNT=" + edgeCount + " WHERE IDGRAPH=" + graphID);
         
-        for(var i:Int=0n;i<nParts;i++){
+        for(var i:Int = 0n; i < nParts; i++){
         	store = new AcaciaHashMapNativeStore(Int.parseInt(graphID), i as Int, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), true);
         	store.setOntologyFileName(ontologyFileName);
         	store.initializeRelationshipMapWithProperties(predicates.keySet().size() as Int);
@@ -640,19 +639,18 @@ public class AcaciaRDFPartitioner {
     var replicationHostID:Int = 0n;
     var replicationHostName:String = null;
     for(val repPlace in repPlaces){
-    val i:Int = Int.parse(repPlace);
-    replicationHostID = (i % hostCount) as Int;
-    replicationHostName = hostList.get(hostID);
-    val replicationActualPartID:String = partitionIDsMap.get(i);
-    //  val replicationWithinPlaceIndex:Int = ((i - hostID) as Int)/hostCount;
-    val replicationInstancePort:Int = PlaceToNodeMapper.getInstancePort(i);
-    //  Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
-    val replicationFileTransferport:Int = PlaceToNodeMapper.getFileTransferServicePort(i);
-    AcaciaManager.batchUploadCentralReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+"_trf.zip", replicationFileTransferport,i);
-    //  //val replicationHost:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + replicationHostName + "'")(0);
-    MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.REPLICATION_STORED_IN(idreplication, stored_partition_id, stored_host_id) VALUES(" + j + "," + graphID + "_" + j + "," + replicationHostID + ")");
-    //  
-    Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
+        val i:Int = Int.parse(repPlace);
+        replicationHostID = (i % hostCount) as Int;
+        replicationHostName = hostList.get(hostID);
+        //val replicationActualPartID:String = partitionIDsMap.get(i);
+        //  val replicationWithinPlaceIndex:Int = ((i - hostID) as Int)/hostCount;
+        val replicationInstancePort:Int = PlaceToNodeMapper.getInstancePort(i);
+        //  Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
+        val replicationFileTransferport:Int = PlaceToNodeMapper.getFileTransferServicePort(i);
+        AcaciaManager.batchUploadCentralReplication(replicationHostName, replicationInstancePort, Long.parseLong(graphID), filePath+"_trf.zip", replicationFileTransferport,i);
+        //  //val replicationHost:String = call_runSelect("SELECT idhost FROM ACACIA_META.HOST WHERE name LIKE '" + replicationHostName + "'")(0);
+        MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.REPLICATION_STORED_IN(idreplication, stored_partition_id, stored_host_id) VALUES(" + j + "," + graphID + "_" + j + "," + replicationHostID + ")");
+        Console.OUT.println("Send replication "+graphID+"_"+j+" to worker "+i);
     }
     }
     }
@@ -731,8 +729,7 @@ public class AcaciaRDFPartitioner {
 			     	val i:Int = Int.parse(repPlace);
 			     	replicationHostID = (i % hostCount) as Int;
 			     	replicationHostName = hostList.get(hostID);
-				   	val replicationActualPartID:String = partitionIDsMap.get(i);
-				   //  val replicationWithinPlaceIndex:Int = ((i - hostID) as Int)/hostCount;
+
 				     val replicationInstancePort:Int = PlaceToNodeMapper.getInstancePort(i);
 				   //  Console.OUT.println("withinPlaceIndex:" + replicationWithinPlaceIndex + " instancePort:" + replicationInstancePort);
 				     val replicationFileTransferport:Int = PlaceToNodeMapper.getFileTransferServicePort(i);
@@ -758,12 +755,8 @@ public class AcaciaRDFPartitioner {
     		e2.printStackTrace();
     	}
     }
-    
-    public def getInitlaPartitionID():Int{
-         return -1n;
-    }
-    
-    private def initLocalStores(store:AcaciaHashMapNativeStore,actualPartitionID:String,i:Int){
+        
+    private def initLocalStores(store:AcaciaHashMapNativeStore,i:Int){
     	var br:BufferedReader=null;
     	var isFirstTime:Boolean = true;
     	try{
@@ -791,14 +784,6 @@ public class AcaciaRDFPartitioner {
     					while(itr.hasNext()){
     						val entry:x10.util.Map.Entry[String, Long] = itr.next();
     						store.addPredicate(entry.getValue() as Int, entry.getKey() as x10.lang.String);
-    					}
-    
-    					//partitionFilesMap.put(partitionID, refToHashMapNativeStore);
-    					//partitionIDsList.add(actualPartitionID);
-    					partitionIDsMap.put(partitionID, actualPartitionID);
-    					if(!initPartFlag){
-    						initlaPartitionID = Int.parseInt(actualPartitionID);
-    						initPartFlag = true;
     					}
     				}
     			}

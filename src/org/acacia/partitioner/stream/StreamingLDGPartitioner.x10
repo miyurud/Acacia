@@ -49,7 +49,7 @@ public class StreamingLDGPartitioner {
      * ["2 3", "7 5", "2 4", "2 8", "7 6"]
      * then quality of partitioning will be higher
      */
-    public def StreamingLDG(var edges:ArrayList[String],var partition_count:Int, var partitions:Rail[Int] ):Rail[Int]{
+    public def partitionWithStreamingLDG(var edges:ArrayList[String],var partition_count:Int, var partitions:Rail[Int]):Rail[Int]{
         val UNASSIGNED:Int = -1n;
         var partition_sizes:Rail[Int] = new Rail[Int](partition_count, 0n);
         
@@ -264,7 +264,7 @@ public class StreamingLDGPartitioner {
     
     public def generateDirectedGraph(var lines : ArrayList[String]) : ArrayList[String]{        
         var map:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-        var edge:Rail[String] = new Rail[String](2);
+        var edge:Rail[String] = null;
         var direct_edge:String;
         var reverse_edge:String;
         var count:Int = 1n;
@@ -305,43 +305,53 @@ public class StreamingLDGPartitioner {
         return lines;
     }
     
-    public static def saveEdgesToDisk(var partitions:Rail[Int], var edges:ArrayList[String], var graphID:String){
-        //iterate over the edges list
-       val centralStoresMap:HashMap[Short, AcaciaHashMapCentralStore] = new HashMap[Short, AcaciaHashMapCentralStore](); 
-       
-       val numberOfCentralPartitions:int = 4n;	
+    public static def transferToInstance(var partitions:Rail[Int], var edges:ArrayList[String], val graphID:Long){
+       //iterate over the edges list
+       val centralStoresMap:HashMap[Short, AcaciaHashMapCentralStore] = new HashMap[Short, AcaciaHashMapCentralStore]();
        val hosts= org.acacia.util.Utils.getPrivateHostList();
+       val nPlaces:Int = AcaciaManager.getNPlaces(hosts(0));
+       //Currently we create as many central partitions as the number of places the Acacia has been run with.
+       val numberOfCentralPartitions:int = nPlaces;	
        
-
        for(var i:short = 0s; i < numberOfCentralPartitions; i++){
-       		centralStoresMap.put(i, new AcaciaHashMapCentralStore(Int.parseInt(graphID), i));
+       		centralStoresMap.put(i, new AcaciaHashMapCentralStore(graphID as Int, i));
        }
        
+       var mapOfPartitions:HashMap[Int, ArrayList[String]] = new HashMap[Int, ArrayList[String]]();
+
+       var localEdges:ArrayList[String] = null;
+       
        for(edge in edges){
-            
         	val nodes = edge.split(" ");
         	val left_node=Int.parse(nodes(0));
         	val right_node=Int.parse(nodes(1));
           
-            if(partitions(left_node)==partitions(right_node)){
+            if(partitions(left_node) == partitions(right_node)){
                //This edge belongs to the same partition
                //"mahen-Satellite-C50-A" below here is for testing purposes  only. Correct host will be retrieved via val hosts Rail[String] above;
-               AcaciaServer.insertEdge("mahen-Satellite-C50-A", Long.parse(graphID), Long.parse(left_node+""), Long.parse(right_node+""));
-            }
+               localEdges = mapOfPartitions.get(partitions(left_node));
+               if(localEdges == null){
+                   localEdges = new ArrayList[String]();
+                   mapOfPartitions.put(partitions(left_node), localEdges);
+               }
+               
+               localEdges.add(left_node + " " + right_node);
+               //AcaciaServer.insertEdge("wso2-ThinkPad-T530", graphID, partitions(left_node), Long.parse(left_node+""), Long.parse(right_node+""));
+            } else {
+                Console.OUT.println("Insert edge to central store yet to be implemented...");
             
-            else{
                 //save this edge to the central store of the from vertex
-                centralStoresMap.get(partitions(left_node) as short).addEdge(left_node, right_node);
+                //centralStoresMap.get(partitions(left_node) as short).addEdge(left_node, right_node);
                 //central.storeGraph();
             }
         }
        
-        //save all the edges in each central store
-        for(var i:short = 0s; i < numberOfCentralPartitions; i++){
-        		centralStoresMap.get(i).storeGraph();
-        }
+       val itr:Iterator[x10.util.Map.Entry[Int, ArrayList[String]]] = mapOfPartitions.entries().iterator();
        
-        
+       while(itr.hasNext()){
+           var entr:x10.util.Map.Entry[Int, ArrayList[String]] = itr.next();
+           AcaciaManager.insertEdges("wso2-ThinkPad-T530", graphID, entr.getKey() as Long, entr.getValue());
+       }
     }
     
     

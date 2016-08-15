@@ -57,7 +57,7 @@ public class MetisPartitioner {
   	private var graphID:String;
   	private var partitionIndex:Rail[short]; //We keep the partition index as short because sgraphStoragehort can store
   	//maximum 32,767 values in a short variable.
-  	private var partitionIDsList:ArrayList[String] = new ArrayList[String]();
+  	private var partitionIDsList:ArrayList[Short] = new ArrayList[Short]();
   	private var initPartFlag:boolean;
   	private var isDistributedCentralPartitions:boolean;
   	private var initlaPartitionID:int;
@@ -118,16 +118,12 @@ public class MetisPartitioner {
 		  		refToWriter = partitionFilesMap.get(partitionID);
 		  
 		  		if(refToWriter == null){
-  					var actualPartitionID:String = MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + ")");
+  					MetaDataDBInterface.runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH, IDPARTITION) VALUES(" + graphID + "," + partitionID + ")");
   					//refToWriter = new PartitionWriter(outputFilePath+"/"+graphID+"_"+actualPartitionID);
-  					refToWriter = new PartitionWriter(Int.parse(graphID), Int.parse(actualPartitionID), outputFilePath+"/"+graphID+"_"+actualPartitionID);
+  					refToWriter = new PartitionWriter(Int.parse(graphID), partitionID, outputFilePath+"/"+graphID+"_"+partitionID);
   					partitionFilesMap.put(partitionID, refToWriter);
   
-  					partitionIDsList.add(actualPartitionID);
-  					if(!initPartFlag){
-  						initlaPartitionID = Int.parse(actualPartitionID);
-  						initPartFlag = true;
-  					}
+  					partitionIDsList.add(partitionID);
   				}
   				line = br.readLine();
   				counter++;
@@ -481,18 +477,14 @@ public class MetisPartitioner {
   		}
   	}
   
-  	public def getInitlaPartitionID():int{
-  		return initlaPartitionID;
-  	}
-  
   	public def getPartitionFileList():Rail[String]{
   		return partitionFileList;		
   	}
   
-  	public def getPartitionIDList():Rail[String]{
-  		val items:Rail[String] = new Rail[String](partitionIDsList.size());
+  	public def getPartitionIDList():Rail[Short]{
+  		val items:Rail[Short] = new Rail[Short](partitionIDsList.size());
   		var cntr:int = 0n;
-  		for(val i:String in partitionIDsList){
+  		for(val i:Short in partitionIDsList){
   			items(cntr) = i;
   			cntr++;
   		}

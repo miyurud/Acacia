@@ -112,7 +112,7 @@ public class AcaciaHSQLDBComm {
 			stmt.executeUpdate("SET SCHEMA ACACIA_META;");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.graph_status(idgraph_status INT NOT NULL IDENTITY, description VARCHAR(45) NOT NULL);");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.graph(idgraph INT NOT NULL IDENTITY, name VARCHAR(45) NULL, upload_path VARCHAR(1024) NOT NULL, upload_start_time TIMESTAMP NOT NULL, upload_end_time TIMESTAMP NOT NULL, GRAPH_STATUS_IDGRAPH_STATUS INT, vertexcount BIGINT NOT NULL, CENTRALPARTITIONCOUNT INT);");
-			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.partition(idpartition INT NOT NULL IDENTITY, graph_idgraph INT, vertexcount INT, edgecount INT);");
+			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.partition(idpartition INT NOT NULL, graph_idgraph INT, vertexcount INT, edgecount INT);");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.host(idhost INT NOT NULL IDENTITY, name VARCHAR(45), ip VARCHAR(45));");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.host_has_partition(host_idhost INT, partition_idpartition INT, partition_graph_idgraph INT);");
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ACACIA_META.edgemap(idfrom INT NOT NULL, idto INT NOT NULL);");

@@ -339,26 +339,23 @@ for (p in Place.places()) {
     	HadoopOrchestrator.submitJob("jar bin/acacia.jar org.acacia.partitioner.java.EdgelistPartitioner");
     	val partitionedFileCount:Int = HDFSInterface.getFileCountOnDir("/user/miyuru/merged-out");
     	
-    	var ptnArrLst:ArrayList[String] = new ArrayList[String]();
+    	var ptnArrLst:ArrayList[Short] = new ArrayList[Short]();
     	var initlaPartitionID:String = null;
     	var initPartFlag:Boolean = false;
-    	for(var i:Int = 0n; i < partitionedFileCount; i++){
-    		val partitionid:String = call_runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH) VALUES(" + graphID + " )");    			
-    		Console.OUT.println("The new partition id : " + partitionid);
-    		
-    		if(!initPartFlag){
-    			initlaPartitionID = partitionid;
-    			initPartFlag = true;
-    		}
-    		
-    		ptnArrLst.add(partitionid);
+    
+    	for(var i:Short = 0s; i < partitionedFileCount; i++){
+    		call_runInsert("INSERT INTO ACACIA_META.PARTITION(GRAPH_IDGRAPH, IDPARTITION) VALUES(" + graphID + "," + i + " )");    			
+    		Console.OUT.println("The new partition id : " + i);
+
+    		ptnArrLst.add(i);
     	}
+    
     	Console.OUT.println("Getting the file list");
     	var fileList:Rail[String] = HDFSInterface.getListofFileNamesOnDir("/user/miyuru/merged-out");
         Console.OUT.println("File list size : " + fileList.size);	
     
     	// var cntr:Int = 0n;
-    	val ptnArr:Rail[String] = ptnArrLst.toRail();
+    	val ptnArr:Rail[Short] = ptnArrLst.toRail();
     	val hostIDMap:HashMap[String, String] = getLiveHostIDList();
         val initPartID:Int = Int.parseInt(initlaPartitionID);
         var placeID:Int = 0n;
@@ -507,11 +504,10 @@ for (p in Place.places()) {
     val nPlaces:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
     Console.OUT.println("NNNNNNNNNNNNN--->nPlaces:" + nPlaces);
     converter.convert(item, graphID, inputFilePath, Utils.call_getAcaciaProperty("org.acacia.server.runtime.location"), nPlaces, isDistrbutedCentralPartitions, nThreads, nPlaces);
-    val initialPartID:Int = converter.getInitlaPartitionID();
     //val lst:x10.interop.Java.array[x10.lang.String] = converter.getPartitionFileList();
     var batchUploadFileList:Rail[String] = converter.getPartitionFileList();
                 
-        var ptnArrLst:Rail[String] = converter.getPartitionIDList();
+        var ptnArrLst:Rail[Short] = converter.getPartitionIDList();
         
         
         Console.OUT.println("+++++++++++++++++A");
@@ -999,11 +995,11 @@ for (p in Place.places()) {
      * @deprecated
      * This method must be deprecated becase its seems inserting edges in an adhoc manner.
      */
-    public static def insertEdge(val host:String, val graphID:Long, val startVert:Long, val endVert:Long){
+    public static def insertEdge(val host:String, val graphID:Long, val partitionID:Long, val startVert:Long, val endVert:Long){
         if(hostPlaceMap.containsKey(host)){
             val selectedPlace:Long = hostPlaceMap.get(host);
             val res:Boolean = at(Place.places()(selectedPlace)){
-                return AcaciaManager.insertEdge(System.getenv("HOSTNAME"), graphID, startVert, endVert);
+                return AcaciaManager.insertEdge(System.getenv("HOSTNAME"), graphID, partitionID, startVert, endVert);
             };
         }
     }

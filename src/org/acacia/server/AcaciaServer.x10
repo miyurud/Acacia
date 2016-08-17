@@ -28,6 +28,7 @@ import x10.util.Map.Entry;
 import org.acacia.util.Utils;
 import org.acacia.util.Conts;
 import org.acacia.util.PlaceToNodeMapper;
+import org.acacia.util.java.KafkaConsumer;
 import org.acacia.partitioner.hadoop.HadoopOrchestrator;
 import org.acacia.partitioner.hadoop.HDFSInterface;
 import org.acacia.partitioner.hadoop.HDFSFile;
@@ -45,6 +46,7 @@ import org.acacia.log.java.Logger_Java;
 import org.acacia.util.java.Conts_Java;
 import org.acacia.util.java.Utils_Java;
 import org.acacia.partitioner.local.MetisPartitioner;
+import org.acacia.partitioner.stream.HashPartitioner;
 
 import org.acacia.vertexcounter.java.VertexCounterClient;
 
@@ -1125,6 +1127,73 @@ for (p in Place.places()) {
     
     public static def runNeo4j(){
     	
+    }
+
+    //Upload a stream 
+    public static def uploadStream(val item:String): void{
+    	Console.OUT.println("Reading Stream from Kafka Queue");
+    	val isDistrbutedCentralPartitions:Boolean = true;
+    	val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
+        
+        val partitioner:HashPartitioner = new HashPartitioner();
+        
+        val nThreads:Int = Int.parse(Utils.call_getAcaciaProperty("org.acacia.partitioner.local.threads"));//4n; //This should be ideally determined based on the number of hardware threads available on each host.
+        val nPlaces:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+        Console.OUT.println("NNNNNNNNNNNNN--->nPlaces:" + nPlaces);
+        partitioner.init(nPlaces, graphID);
+        
+/*
+        //Read the stream and send partitioner
+        try {
+        
+	        var skt:Socket = new Socket(host, port);
+	        
+	        var inReader:BufferedReader = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+	        
+	        var line:String = ""; 
+	        Console.OUT.println("Starting reading...");
+	        while (!skt.isClosed()){
+	        
+		        line=inReader.readLine();
+		        
+		        Console.OUT.println("response -" + line );
+		        //Check whether line is in correct format
+		        val tmpArr:Rail[String] = line.split(" ");
+		        
+		        if (tmpArr.size != 3) {
+		        	Console.OUT.println( "Message format not recognized");
+			        return;
+		        } 
+		        val fromVertex:int = Int.parse(tmpArr(1)) as Int;
+		        val toVertex:int = Int.parse(tmpArr(2)) as Int;
+		        
+		        //send the read line to the partitioning algorithm
+	        	//partitioner.partition(fromVertex, toVertex);
+	        }
+        
+        } catch (var e:java.net.UnknownHostException ) {
+        	Console.OUT.println(e);
+        } catch (var e:java.io.IOException ) {
+        	Console.OUT.println(e);
+        }*/
+	
+	val kafkaSocket:KafkaConsumer = new KafkaConsumer();
+	var line:String = null;
+	
+	Console.OUT.println("GraphID : " + graphID);
+            while((line=kafkaSocket.getNext())!=null){
+                Console.OUT.println(line);
+		if(line.equals("-1")) {
+			break;
+		}
+                val vertsArr:Rail[String] = line.split(" ");
+		partitioner.partition(Int.parse(vertsArr(0)), Int.parse(vertsArr(1)));
+                //AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+
+            }
+	Console.OUT.println("Stream ends");
+	partitioner.saveToDisk();
+
     }
     
     //@Native("java", "System.out.println(\"Hi!\" + (#1))")

@@ -1,17 +1,17 @@
 /**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+ * Copyright 2015 Acacia Team
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.acacia.frontend;
@@ -59,15 +59,15 @@ import org.acacia.metadata.db.java.MetaDataDBInterface;
 /**
  * Class AcaciaFrontEndServiceSession
  */
-public class AcaciaFrontEndServiceSession {
+public class AcaciaFrontEndServiceSession extends java.lang.Thread {
 	private var sessionSkt:Socket = null;
-    //private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
-    private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
-    private var placeGroup:PlaceGroup = null;
-    
+	//private var gremlinInterpreter:AcaciaGremlinInterpreter = null;
+	private val IS_DISTRIBUTED = Boolean.parse(Utils.call_getAcaciaProperty("org.acacia.server.mode.isdistributed"));
+	private var placeGroup:PlaceGroup = null;
+	
 	public def this(val socket:Socket,val pg:PlaceGroup){
 		sessionSkt = socket;
- 		placeGroup = pg;
+		placeGroup = pg;
 	}
 	
 	public def run():void{
@@ -75,7 +75,7 @@ public class AcaciaFrontEndServiceSession {
 			var buff:BufferedReader = new BufferedReader(new InputStreamReader(sessionSkt.getInputStream()));
 			var out:PrintWriter = new PrintWriter(sessionSkt.getOutputStream());
 			var msg:String = null;
-	
+			
 			while((msg = buff.readLine())!= null){
 				if(msg.equals(AcaciaFrontEndProtocol.EXIT)){
 					out.println(AcaciaFrontEndProtocol.EXIT_ACK);
@@ -83,18 +83,18 @@ public class AcaciaFrontEndServiceSession {
 					sessionSkt.close();
 					break;
 				}else if(msg.equals(AcaciaFrontEndProtocol.SHTDN)){//Shutdown Acacia. This should be implemented as Java event communication.
-                    //At the moment there is no shutdown hapenning here. But we want to at least shutdown the DB connection to meta database. 
-                    val result:Boolean = MetaDataDBInterface.runUpdate("SHUTDOWN;");
-
-                    out.println(AcaciaFrontEndProtocol.EXIT_ACK);
-                    out.flush();
-                    try{
-                        sessionSkt.close();
-                        break;
-                     }catch(val e:IOException){
-                        Logger.error("Error : " + e.getMessage());
-                     }
-                 }else{
+					//At the moment there is no shutdown hapenning here. But we want to at least shutdown the DB connection to meta database. 
+					val result:Boolean = MetaDataDBInterface.runUpdate("SHUTDOWN;");
+					
+					out.println(AcaciaFrontEndProtocol.EXIT_ACK);
+					out.flush();
+					try{
+						sessionSkt.close();
+						break;
+					}catch(val e:IOException){
+						Logger.error("Error : " + e.getMessage());
+					}
+				}else{
 					process(msg, buff, out);
 				}
 			}			
@@ -109,7 +109,7 @@ public class AcaciaFrontEndServiceSession {
 	public def process(val msg:String, val buff:BufferedReader, out:PrintWriter):void {
 		var response:String = "";
 		var str:String = null;
-        var query:String=null;
+		var query:String=null;
 		
 		if(msg.equals(AcaciaFrontEndProtocol.LIST)){//List the graphs on Acacia
 			val resultArr:Rail[String] = call_runSelect("SELECT IDGRAPH,NAME,UPLOAD_PATH,GRAPH_STATUS_IDGRAPH_STATUS FROM ACACIA_META.GRAPH");
@@ -117,10 +117,10 @@ public class AcaciaFrontEndServiceSession {
 			for (item in resultArr.range()){
 				response += resultArr(item) + "|";
 			}
-
-            if(response.equals("|")){
-                response += "|";
-            }
+			
+			if(response.equals("|")){
+				response += "|";
+			}
 			response += "\r\n";
 			out.println(response);
 			out.flush();
@@ -150,7 +150,7 @@ public class AcaciaFrontEndServiceSession {
 			out.flush();
 			var name:String = "";
 			var path:String = "";
-
+			
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
@@ -172,18 +172,18 @@ public class AcaciaFrontEndServiceSession {
 				out.flush();				
 			}else{
 				var file:File = new File(path);
-
+				
 				if(file.exists()){
-                    if(IS_DISTRIBUTED){
-					    AcaciaServer.uploadGraphDistributed(name, path);
-					    out.println(AcaciaFrontEndProtocol.DONE);
-					    out.flush();
-                    }else{
-                        Console.OUT.println("Uploading the graph locally.");
-                        AcaciaServer.uploadGraphLocally(name, path);
-                        out.println(AcaciaFrontEndProtocol.DONE);
-                        out.flush();
-                    }
+					if(IS_DISTRIBUTED){
+						AcaciaServer.uploadGraphDistributed(name, path);
+						out.println(AcaciaFrontEndProtocol.DONE);
+						out.flush();
+					}else{
+						Console.OUT.println("Uploading the graph locally.");
+						AcaciaServer.uploadGraphLocally(name, path);
+						out.println(AcaciaFrontEndProtocol.DONE);
+						out.flush();
+					}
 				}else{
 					out.println(AcaciaFrontEndProtocol.ERROR + ":Graph data file does not exist on the specified path");
 					out.flush();	
@@ -194,7 +194,7 @@ public class AcaciaFrontEndServiceSession {
 			out.flush();
 			
 			var graphID:String = "";
-
+			
 			try{
 				graphID = buff.readLine();
 			}catch(val e:IOException){
@@ -215,24 +215,24 @@ public class AcaciaFrontEndServiceSession {
 			out.flush();
 			var name:String = "";
 			var path:String = "";
-
+			
 			try{
 				str = buff.readLine();
 			}catch(val e:IOException){
 				Logger.error("Error : " + e.getMessage());
 			}
-
+			
 			val strArr:Rail[String] = str.split("|");
-
+			
 			if(strArr.size != 2){
 				out.println(AcaciaFrontEndProtocol.ERROR + ":Message format not recognized");
 				out.flush();
 				return;
 			}
-
+			
 			name=strArr(0);
 			path=strArr(1);
-
+			
 			if(graphExists(path)){
 				out.println(AcaciaFrontEndProtocol.ERROR + ":Graph exists");
 				out.flush();				
@@ -284,920 +284,920 @@ public class AcaciaFrontEndServiceSession {
 			out.println(AcaciaFrontEndProtocol.DONE);
 			out.flush();
 		}else if(msg.equals(AcaciaFrontEndProtocol.GREM)){
-            out.println(AcaciaFrontEndProtocol.GREM_ACK);
-            out.println(AcaciaFrontEndProtocol.SEND);
-            out.flush();
-            
-            //Next we get the Gremlin commands in an interactive session
-            // gremlinInterpreter = new AcaciaGremlinInterpreter(buff, out);
-            // gremlinInterpreter.run();
-            out.println("Exitted here...");
-            out.flush();
+			out.println(AcaciaFrontEndProtocol.GREM_ACK);
+			out.println(AcaciaFrontEndProtocol.SEND);
+			out.flush();
+			
+			//Next we get the Gremlin commands in an interactive session
+			// gremlinInterpreter = new AcaciaGremlinInterpreter(buff, out);
+			// gremlinInterpreter.run();
+			out.println("Exitted here...");
+			out.flush();
 		}else if(msg.equals(AcaciaFrontEndProtocol.PAGERANK)){
-            out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-            out.flush();
-            //First we get the ID of the graph to calculate PageRank.
-            try{
-            	str = buff.readLine();
-            }catch(val e:IOException){
-            	Logger.error("Error : " + e.getMessage());
-            }
-            Logger.info("graph|" + str + "|");
-            
-            if(!graphExistsByID(str)){
-            	out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-            	out.flush();				
-            }else{
-                //(int EntireGraphSize, int localGraphSize)
-            	str = getPageRank(str);
-            }
-            out.println("result is |" + str + "|");
-            out.flush();
-        }else if(msg.equals(AcaciaFrontEndProtocol.TOP_K_PAGERANK)){
-	        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-	        out.flush();
-	        //First we get the ID of the graph to calculate PageRank.
-	        try{
-	        	str = buff.readLine();
-	        
-		        if(!graphExistsByID(str)){
-			        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-			        out.flush();				
-		        }else{
-			        //(int EntireGraphSize, int localGraphSize)
-		        
-		            //Next we need to ask the K value from user
-			        out.println(AcaciaFrontEndProtocol.TOP_K_SEND);
-			        out.flush();
-			        val str2:String = buff.readLine();
-			        Console.OUT.println("TK Pagerank start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-			        str = getTopKPageRank(str, Int.parse(str2));
-			        Console.OUT.println("TK Pagerank end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-		        }        
-	        }catch(val e:IOException){
-	        	Logger.error("Error : " + e.getMessage());
-	        }
-	        Logger.info("graph|" + str + "|");
-	        out.println("result is |" + str + "|");
-	        out.flush();
-        }else if(msg.equals(AcaciaFrontEndProtocol.OUT_DEGREE)){
-        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-        	out.flush();
-
-        	//First we get the ID of the graph to calculate the out degree distribution.
-        	try{
-        		str = buff.readLine();
-        	}catch(val e:IOException){
-        		Logger.error("Error : " + e.getMessage());
-        	}
-            Logger.info("graph|" + str + "|");
-        
-        	if(!graphExistsByID(str)){
-        		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-        		out.flush();				
-        	}else{
-                Console.OUT.println("Out Degree distribution is ready....");
-                //Console.OUT.println(getOutDegreeDistribution(str));
-                out.println(getOutDegreeDistribution(str));
-                out.flush();
-        	}
-          }else if(msg.equals(AcaciaFrontEndProtocol.FREE_DATA_DIR_SPACE)){
-            out.println(getFreeSpaceInfo());
-            out.flush();
-          }else if(msg.equals(AcaciaFrontEndProtocol.AVERAGE_OUT_DEGREE)){
-        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-        	out.flush();
-        
-            //First we get the ID of the graph to calculate the out degree distribution.
-            try{
-                str = buff.readLine();
-            }catch(val e:IOException){
-                Logger.error("Error : " + e.getMessage());
-            }
-        
-            if(!graphExistsByID(str)){
-                out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-                out.flush();				
-            }else{
-            	org.acacia.log.Logger.info("Average out degree start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-                val outDegDist:String = getOutDegreeDistribution(str);
-                var outDegreeEntireGraph:HashMap[int, int] = new x10.util.HashMap[int, int]();
-                var res1:Rail[String] = outDegDist.split(";");
-                var intrmRes:Rail[String] = null;
-                
-                
-                for (item in res1.range()){
-                    intrmRes = res1(item).split(":");
-                    outDegreeEntireGraph.put(Int.parse(intrmRes(0)), Int.parse(intrmRes(1)));
-                }
-                
-                //Next we need to sum-up all the degrees to get the average.
-                var itr:Iterator[x10.util.Map.Entry[Int, Int]] = outDegreeEntireGraph.entries().iterator();
-                var totalDeg:Long = 0;
-                var vCount:Long = 0;
-                
-                while(itr.hasNext()){
-                    val item:x10.util.Map.Entry[Int, Int] = itr.next();
-                    totalDeg += item.getValue();
-                    vCount++;
-                }
-                
-                val aodeg = (totalDeg as Double/vCount);
-                org.acacia.log.Logger.info("Average out degree end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-                                
-                out.println(aodeg);//Write the result to the client.
-                out.flush();
-            }
-            org.acacia.log.Logger.info("********************* Done average out degree *****");
-        }else if(msg.equals(AcaciaFrontEndProtocol.TRIANGLES)){
-	        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-	        out.flush();
-	        
-	        try{
-	        	str = buff.readLine();
-	        }catch(val e:IOException){
-	        	Logger.error("Error : " + e.getMessage());
-	        }
-	        
-	        if(!graphExistsByID(str)){
-		        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-		        out.flush();				
-	        }else{
-		        //Console.OUT.println("Triangle counting start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-	            val startTime:Long = java.lang.System.currentTimeMillis();
-		        val nTraingles:Long = countTraingles(str);	
-		        Console.OUT.println("nTraingles : " + nTraingles);
-		        //Console.OUT.println("Triangle counting end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
-		        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
-		        Console.OUT.println("Triangle counting duration(ms) : " + duration);
-		        		        
-		        out.println(nTraingles);//Write the result to the client.
-		        out.flush();
-	        }
-        } else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
-        
-        	out.println(AcaciaFrontEndProtocol.S_QUERY_SEND);
-        	out.flush();
-        	try{
-        		query = buff.readLine();
-        	}catch(val e:IOException){
-        		Logger.error("Error : " + e.getMessage());
-        	}
-        	
-        	out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-        	out.flush();
-        	var graphID:String = "";
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			//First we get the ID of the graph to calculate PageRank.
+			try{
+				str = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			Logger.info("graph|" + str + "|");
+			
+			if(!graphExistsByID(str)){
+				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+				out.flush();				
+			}else{
+				//(int EntireGraphSize, int localGraphSize)
+				str = getPageRank(str);
+			}
+			out.println("result is |" + str + "|");
+			out.flush();
+		}else if(msg.equals(AcaciaFrontEndProtocol.TOP_K_PAGERANK)){
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			//First we get the ID of the graph to calculate PageRank.
+			try{
+				str = buff.readLine();
+				
+				if(!graphExistsByID(str)){
+					out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+					out.flush();				
+				}else{
+					//(int EntireGraphSize, int localGraphSize)
+					
+					//Next we need to ask the K value from user
+					out.println(AcaciaFrontEndProtocol.TOP_K_SEND);
+					out.flush();
+					val str2:String = buff.readLine();
+					Console.OUT.println("TK Pagerank start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+					str = getTopKPageRank(str, Int.parse(str2));
+					Console.OUT.println("TK Pagerank end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+				}        
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			Logger.info("graph|" + str + "|");
+			out.println("result is |" + str + "|");
+			out.flush();
+		}else if(msg.equals(AcaciaFrontEndProtocol.OUT_DEGREE)){
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			
+			//First we get the ID of the graph to calculate the out degree distribution.
+			try{
+				str = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			Logger.info("graph|" + str + "|");
+			
+			if(!graphExistsByID(str)){
+				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+				out.flush();				
+			}else{
+				Console.OUT.println("Out Degree distribution is ready....");
+				//Console.OUT.println(getOutDegreeDistribution(str));
+				out.println(getOutDegreeDistribution(str));
+				out.flush();
+			}
+		}else if(msg.equals(AcaciaFrontEndProtocol.FREE_DATA_DIR_SPACE)){
+			out.println(getFreeSpaceInfo());
+			out.flush();
+		}else if(msg.equals(AcaciaFrontEndProtocol.AVERAGE_OUT_DEGREE)){
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			
+			//First we get the ID of the graph to calculate the out degree distribution.
+			try{
+				str = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			
+			if(!graphExistsByID(str)){
+				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+				out.flush();				
+			}else{
+				org.acacia.log.Logger.info("Average out degree start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+				val outDegDist:String = getOutDegreeDistribution(str);
+				var outDegreeEntireGraph:HashMap[int, int] = new x10.util.HashMap[int, int]();
+				var res1:Rail[String] = outDegDist.split(";");
+				var intrmRes:Rail[String] = null;
+				
+				
+				for (item in res1.range()){
+					intrmRes = res1(item).split(":");
+					outDegreeEntireGraph.put(Int.parse(intrmRes(0)), Int.parse(intrmRes(1)));
+				}
+				
+				//Next we need to sum-up all the degrees to get the average.
+				var itr:Iterator[x10.util.Map.Entry[Int, Int]] = outDegreeEntireGraph.entries().iterator();
+				var totalDeg:Long = 0;
+				var vCount:Long = 0;
+				
+				while(itr.hasNext()){
+					val item:x10.util.Map.Entry[Int, Int] = itr.next();
+					totalDeg += item.getValue();
+					vCount++;
+				}
+				
+				val aodeg = (totalDeg as Double/vCount);
+				org.acacia.log.Logger.info("Average out degree end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+				
+				out.println(aodeg);//Write the result to the client.
+				out.flush();
+			}
+			org.acacia.log.Logger.info("********************* Done average out degree *****");
+		}else if(msg.equals(AcaciaFrontEndProtocol.TRIANGLES)){
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			
+			try{
+				str = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			
+			if(!graphExistsByID(str)){
+				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+				out.flush();				
+			}else{
+				//Console.OUT.println("Triangle counting start time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+				val startTime:Long = java.lang.System.currentTimeMillis();
+				val nTraingles:Long = countTraingles(str);	
+				Console.OUT.println("nTraingles : " + nTraingles);
+				//Console.OUT.println("Triangle counting end time: " + org.acacia.util.java.Utils_Java.getCurrentTimeStamp());
+				val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+				Console.OUT.println("Triangle counting duration(ms) : " + duration);
+				
+				out.println(nTraingles);//Write the result to the client.
+				out.flush();
+			}
+		} else if(msg.equals(AcaciaFrontEndProtocol.SPARQL)){   	//execute sparql queries
+			
+			out.println(AcaciaFrontEndProtocol.S_QUERY_SEND);
+			out.flush();
+			try{
+				query = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			var graphID:String = "";
+			
+			try{
+				graphID = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			
+			var startTime:Long = java.lang.System.currentTimeMillis();
+			
+			if(!graphExistsByID(graphID)){
+				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+				out.flush();				
+			}else{
+				// try{
+				// var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
+				// var lexer: SparqlLexer  =new SparqlLexer(stream);
+				// var tokenStream: CommonTokenStream =new CommonTokenStream(lexer);
+				// var parser: SparqlParser =new SparqlParser(tokenStream); 
+				// parser.query();
+				
+				try{
+					out.println("Do you want to write results to a file?[y/n]");
+					out.flush();
+					
+					var isFile:String=buff.readLine().trim();
+					
+					Console.OUT.println("|" + isFile + "|");
+					
+					if(isFile.equals("y")){
+						
+						out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
+						out.flush();
+						var fileName:String=buff.readLine();
+						out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
+						out.flush();
+						
+						var filePath:String=buff.readLine();
+						
+						startTime = java.lang.System.currentTimeMillis();
+						var results:ArrayList[String]= runSPARQL(graphID, query);                
+						
+						//write the result file
+					}
+					else if(isFile.equals("n")){    
+						startTime = java.lang.System.currentTimeMillis();
+						var results:ArrayList[String]= runSPARQL(graphID, query);
+						
+						if((results == null) || (results.isEmpty())){
+							out.println("No matching found.");
+							out.flush();
+						}else if(results.size()<=100){
+							for(var i:Int=0n; i < results.size(); i++){  	
+								out.println(results.get(i));//print the result     
+							}
+							out.flush();
+						}
+						else{
+							
+							for(var i:Int=0n; i < 100; i++){  	//100 limited results
+								out.println(results.get(i));//print the result     
+							}
+							out.println("...");
+							out.flush();
+						}
+					}
+					else{
+						out.println("Error");
+						out.flush();
+					}		
+				}catch(val e:IOException){
+					Logger.error("Error : " + e.getMessage());
+				}
+			}
+			val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+			Console.OUT.println("SPARQL query duration(ms) : " + duration);        
+		}else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
+			
+			out.println(AcaciaFrontEndProtocol.K_VALUE);
+			out.flush();
+			
+			// var kcore:String = "";
+			try{
+				str = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			
+			out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
+			out.flush();
+			
+			var graphID:String = "";
+			
+			try{
+				graphID = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			
+			if(!graphExistsByID(graphID)){
+				out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
+				out.flush();				
+			}else{
+				out.println();
+				out.println("Processing for K-Core value "+str+" in graph "+graphID);
+				out.println();
+				out.flush();
+				val startTime:Long = java.lang.System.currentTimeMillis();
+				var kCoreIds:HashSet[String] = runKCore(graphID,str);	
+				
+				if((kCoreIds == null) || (kCoreIds.isEmpty())){
+					out.println();
+					out.println("No vertices exist for K Core value : "+str);
+					out.println();
+					out.flush();
+				}else{
+					var itr:Iterator[String]  = kCoreIds.iterator();
+					var vertexID:String;
+					while(itr.hasNext()){
+						vertexID = itr.next();
+						out.print(vertexID+" ");//print the result     
+					}
+					out.println();
+					out.println();
+					out.println("Number of vertices for K-Core value "+str+" : "+kCoreIds.size());
+					out.println();
+					val duration:Long = java.lang.System.currentTimeMillis() - startTime;
+					Console.OUT.println("K-Core duration(ms) : " + duration);
+					out.flush();
+				}
+			}
+			
+			
+		}else if(msg.equals(AcaciaFrontEndProtocol.K_NN)){
+			Console.OUT.println("KNN");
+		}else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM)){
+			//Read a stream into Acacia
+			var p:LDGPartitioner = new LDGPartitioner();
+			Console.OUT.println(p.selectLDGHost());
+			
+			var host:String="localhost";
+			//port =k
+			var port:Int=4231n;
+			
+			try {
+				var skt:Socket = new Socket(host, port);
+				
+				var outWriter:PrintWriter = new PrintWriter(skt.getOutputStream());
+				var inReader:BufferedReader = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+				
+				var line:String = null; 
+				
+				while (!skt.isClosed()){
+					line = buff.readLine();
+					
+					Console.OUT.println("request -" + line);
+					outWriter.println(line);
+					outWriter.flush();
+					
+					line = inReader.readLine();
+					
+					if (line != null){
+						Console.OUT.println("response -" + line);
+					}
+					
+					if (line.equals("close-ok")){
+						break;
+					}else if(line.equals("shtdn-ok")){
+						break;
+					}
+				}
+			} catch (var e:java.net.UnknownHostException ) {
+				e.printStackTrace();
+			} catch (var e:java.io.IOException ) {
+				e.printStackTrace();
+			}
+			
+			out.flush();
+		} else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM_KAFKA)){
+			
+			Console.OUT.println("Executing Restreaming LDG");           
+			out.println(AcaciaFrontEndProtocol.SEND);
+			out.flush();
+			var graphName:String = "";
+			var fileName:String="";
+			//get graph name
+			try{
+				graphName = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			out.println(AcaciaFrontEndProtocol.STRM_ACK);
+			out.flush();
+			//get file location
+			try{
+				fileName = buff.readLine();
+			}catch(val e:IOException){
+				Logger.error("Error : " + e.getMessage());
+			}
+			out.println(AcaciaFrontEndProtocol.STRM_ACK);
+			out.flush();
+			
+			var streamLdgPartitioner:StreamingLDGPartitioner = new StreamingLDGPartitioner();
+			
+			val hosts= org.acacia.util.Utils.getPrivateHostList();
+			val nPlaces:Int = AcaciaManager.getNPlaces(hosts(0));
+			//Currently we create as many central partitions as the number of places the Acacia has been run with.
+			var partition_count:Int = nPlaces; 
+			var partitions:Rail[Int] = null;
+			var edges:ArrayList[String]= new ArrayList[String]();
+			
+			try{
+				
+				val input = new File(fileName);
+				val inp = input.openRead();
+				var count:Int = 0n;
+				
+				val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + graphName + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
+				var start_time:long = System.currentTimeMillis();
+				
+				for(line in inp.lines()){
+					partitions=null;
+					edges.add(line);
+					count++;
+					
+					if(count%1000n==0n ){
+						
+						Console.OUT.println();
+						var original_edges:ArrayList[String]=edges.clone();
+						edges = streamLdgPartitioner.generateDirectedGraph(edges);
+						
+						for(var counter:Int = 1n; counter <= 10n; counter++){
+							Console.OUT.println("");
+							Console.OUT.print(counter);
+							partitions = streamLdgPartitioner.partitionWithStreamingLDG(edges,partition_count,partitions);
+						}
+						
+						partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
+						StreamingLDGPartitioner.transferToInstances(partitions,original_edges, Long.parseLong(graphID));
+						edges.clear();
+					}
+				}
+				
+				if(edges.size()>0){
+					//Console.OUT.println("Remaining edges size " + edges.size());
+					//Console.OUT.println("Iteration \t Node distribution \t #Edges within partitions \t #Crossing edges \t Cut ratio \t Time(ms)" );
+					var original_edges:ArrayList[String] = edges.clone();
+					edges = streamLdgPartitioner.generateDirectedGraph(edges);
+					
+					for(var counter:Int = 1n; counter<=10n; counter++){
+						
+						Console.OUT.println("");
+						Console.OUT.print(counter);
+						partitions =streamLdgPartitioner.partitionWithStreamingLDG(edges,partition_count,partitions);
+						
+					}
+					partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
+					StreamingLDGPartitioner.transferToInstances(partitions, original_edges, Long.parseLong(graphID));
+					edges.clear();
+				}
+				var end_time:long = System.currentTimeMillis();
+				Console.OUT.println("\t"+(end_time - start_time) + " ms");
+				out.println("Done");
+				out.flush();
+				
+			}
+			catch(var e:Exception ){
+				Console.OUT.println(" Exception " + e);
+			}
+			finally{
+				//Clean up
+			}  
+			
+			
+			///////////////////////////////////////////////////////
+			//             out.println(AcaciaFrontEndProtocol.SEND);
+			//             out.flush();
+			//             var name:String = "";
+			// 
+			//             try{
+			//                 name = buff.readLine();
+			//             }catch(val e:IOException){
+			//                 Logger.error("Error : " + e.getMessage());
+			//             }
+			//             out.println(AcaciaFrontEndProtocol.STRM_ACK);
+			//             out.flush();
+			//             Console.OUT.println("Before kafka consumer " );
+			//             val kafkaSocket:KafkaConsumer = new KafkaConsumer();
+			//             Console.OUT.println("After kafka consumer " );
+			//            var line:String = null;
+			//            var p:LDGPartitioner = new LDGPartitioner();
+			//            val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + name + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
+			
+			//             while((line=kafkaSocket.getNext())!=null){
+			//               Console.OUT.println(line);
+			//val vertsArr:Rail[String] = line.split(" ");
+			//AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+			//           }
+			//          out.flush();
+			/////////////////////////////////////////////////////////////
+		}
+	}
 	
-        	try{
-        		graphID = buff.readLine();
-        	}catch(val e:IOException){
-        		Logger.error("Error : " + e.getMessage());
-        	}
-        	
-            var startTime:Long = java.lang.System.currentTimeMillis();
-        
-        	if(!graphExistsByID(graphID)){
-        		out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-        		out.flush();				
-        	}else{
-        		// try{
-		        // var stream : ANTLRStringStream  =new ANTLRStringStream(query);			
-		        // var lexer: SparqlLexer  =new SparqlLexer(stream);
-		        // var tokenStream: CommonTokenStream =new CommonTokenStream(lexer);
-		        // var parser: SparqlParser =new SparqlParser(tokenStream); 
-		        // parser.query();
-		        
-		        try{
-			        out.println("Do you want to write results to a file?[y/n]");
-			        out.flush();
-			        
-			        var isFile:String=buff.readLine().trim();
-			        
-			        Console.OUT.println("|" + isFile + "|");
-			        
-			        if(isFile.equals("y")){
-			        
-			        out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_NAME);
-			        out.flush();
-			        var fileName:String=buff.readLine();
-			        out.println(AcaciaFrontEndProtocol.OUTPUT_FILE_PATH);
-			        out.flush();
-			        
-			        var filePath:String=buff.readLine();
-			        
-			        startTime = java.lang.System.currentTimeMillis();
-			        var results:ArrayList[String]= runSPARQL(graphID, query);                
-			        
-		        	//write the result file
-		        }
-		        else if(isFile.equals("n")){    
-		            startTime = java.lang.System.currentTimeMillis();
-			        var results:ArrayList[String]= runSPARQL(graphID, query);
-			        
-			        if((results == null) || (results.isEmpty())){
-				        out.println("No matching found.");
-				        out.flush();
-			        }else if(results.size()<=100){
-				        for(var i:Int=0n; i < results.size(); i++){  	
-				        out.println(results.get(i));//print the result     
-			        }
-			        out.flush();
-			        }
-			        else{
-			        
-				        for(var i:Int=0n; i < 100; i++){  	//100 limited results
-				        out.println(results.get(i));//print the result     
-			        }
-			        out.println("...");
-			        out.flush();
-			        }
-			        }
-			        else{
-				        out.println("Error");
-				        out.flush();
-			        }		
-		        }catch(val e:IOException){
-		        	Logger.error("Error : " + e.getMessage());
-		        }
-        	}
-            val duration:Long = java.lang.System.currentTimeMillis() - startTime;
-            Console.OUT.println("SPARQL query duration(ms) : " + duration);        
-        }else if(msg.equals(AcaciaFrontEndProtocol.K_CORE)){
-        
-	        out.println(AcaciaFrontEndProtocol.K_VALUE);
-	        out.flush();
+	private def runKNN(val graphID:String):ArrayList[String]{
+		//To be implemented
+		return null;
+	}
 	
-	        // var kcore:String = "";
-	        try{
-	        	str = buff.readLine();
-	        }catch(val e:IOException){
-	        	Logger.error("Error : " + e.getMessage());
-	        }
-
-	        out.println(AcaciaFrontEndProtocol.GRAPHID_SEND);
-	        out.flush();
+	private def runKCore(val graphID:String, val kcore:String):HashSet[String]{
+		
+		//Console.OUT.println("It is K Core");
+		var result:HashSet[String] = new HashSet[String]();
+		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
+		val hostListLen:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+		val intermRes:Rail[Rail[String]] = new Rail[Rail[String]](hostListLen);
+		var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+		var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
+		
+		for(var i:long=0; i<l.size; i++){
+			Console.OUT.println(l(i));
+			
+			val items:Rail[String] = l(i).split(",");
+			val pts = mp.get(items(0));
+			var partitions:ArrayList[String] = null;
+			
+			if(pts == null){
+				partitions = new ArrayList[String]();
+			}else{
+				partitions = pts as ArrayList[String];
+			}
+			
+			partitions.add(items(1));
+			mp.put(items(0), partitions);
+		}
+		
+		var cntr:Int = 0n;
+		var placeDetails:String="";
+		
+		finish for (val p in Place.places()){
+			
+			placeDetails= placeDetails+p.id+"/"+PlaceToNodeMapper.getHost(p.id)+"/"+ PlaceToNodeMapper.getInstancePort(p.id)+",";             
+			
+		}
+		
+		finish for (val p in Place.places()){
+			
+			val k:Int = cntr;
+			val host = PlaceToNodeMapper.getHost(p.id);
+			val port = PlaceToNodeMapper.getInstancePort(p.id);
+			var partitionID:String = null;
+			var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+			if(partitions==null){
+				
+			}
+			
+			if(partitions.size() > 0){
+				partitionID = partitions.removeFirst();
+			}
+			
+			val ptID:String = partitionID;
+			
+			async{
+				intermRes(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
+			}
+			
+			cntr++;
+		}
+		for(var i:Int=0n; i < hostListLen; i++){
+			val intermResult = intermRes(i);
+			if(intermResult != null){
+				for(var j:Int=0n; j < intermResult.size; j++){
+					result.add(intermResult(j));//result += intermResult;
+				}
+				Console.OUT.println("Result at (" + i + ") : " + intermResult);
+			}
+			if(intermResult == null){
+				Console.OUT.println("Result at (" + i + ") : [0 vertices]");
+			}
+		}
+		
+		return result;
+	}
 	
-	        var graphID:String = "";
-	        
-	        try{
-	        	graphID = buff.readLine();
-	        }catch(val e:IOException){
-	        	Logger.error("Error : " + e.getMessage());
-	        }
-	        
-	        if(!graphExistsByID(graphID)){
-		        out.println(AcaciaFrontEndProtocol.ERROR + ":The specified graph id does not exist");
-		        out.flush();				
-	        }else{
-	        	out.println();
-		        out.println("Processing for K-Core value "+str+" in graph "+graphID);
-		        out.println();
-		        out.flush();
-		        val startTime:Long = java.lang.System.currentTimeMillis();
-		        var kCoreIds:HashSet[String] = runKCore(graphID,str);	
 	
-		        if((kCoreIds == null) || (kCoreIds.isEmpty())){
-		        	out.println();
-			        out.println("No vertices exist for K Core value : "+str);
-			        out.println();
-			        out.flush();
-		        }else{
-				    var itr:Iterator[String]  = kCoreIds.iterator();
-				    var vertexID:String;
-			        while(itr.hasNext()){
-			        	vertexID = itr.next();
-			        	out.print(vertexID+" ");//print the result     
-		        	}
-			        out.println();
-			        out.println();
-			        out.println("Number of vertices for K-Core value "+str+" : "+kCoreIds.size());
-			        out.println();
-			        val duration:Long = java.lang.System.currentTimeMillis() - startTime;
-			        Console.OUT.println("K-Core duration(ms) : " + duration);
-			        out.flush();
-        		}
-        	}
-     
-        	
-        }else if(msg.equals(AcaciaFrontEndProtocol.K_NN)){
-            Console.OUT.println("KNN");
-        }else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM)){
-            //Read a stream into Acacia
-            var p:LDGPartitioner = new LDGPartitioner();
-            Console.OUT.println(p.selectLDGHost());
-        
-            var host:String="localhost";
-            //port =k
-            var port:Int=4231n;
-        
-            try {
-               var skt:Socket = new Socket(host, port);
-           
-               var outWriter:PrintWriter = new PrintWriter(skt.getOutputStream());
-               var inReader:BufferedReader = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-        
-               var line:String = null; 
-        
-               while (!skt.isClosed()){
-                  line = buff.readLine();
-       
-                  Console.OUT.println("request -" + line);
-                  outWriter.println(line);
-                  outWriter.flush();
-        
-                  line = inReader.readLine();
-        
-        		  if (line != null){
-        			Console.OUT.println("response -" + line);
-                  }
-        
-         		  if (line.equals("close-ok")){
-         			break;
-         		  }else if(line.equals("shtdn-ok")){
-         			break;
-        		  }
-        		}
-        	} catch (var e:java.net.UnknownHostException ) {
-        		e.printStackTrace();
-         	} catch (var e:java.io.IOException ) {
-         		e.printStackTrace();
-         	}
-        
-        	out.flush();
-        } else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM_KAFKA)){
-            
-        	Console.OUT.println("Executing Restreaming LDG");           
-        	out.println(AcaciaFrontEndProtocol.SEND);
-        	out.flush();
-        	var graphName:String = "";
-            var fileName:String="";
-            //get graph name
-        	try{
-            	graphName = buff.readLine();
-            }catch(val e:IOException){
-                Logger.error("Error : " + e.getMessage());
-            }
-            out.println(AcaciaFrontEndProtocol.STRM_ACK);
-            out.flush();
-            //get file location
-            try{
-            	fileName = buff.readLine();
-            }catch(val e:IOException){
-            	Logger.error("Error : " + e.getMessage());
-            }
-            out.println(AcaciaFrontEndProtocol.STRM_ACK);
-            out.flush();
-            
-            var streamLdgPartitioner:StreamingLDGPartitioner = new StreamingLDGPartitioner();
-            
-            val hosts= org.acacia.util.Utils.getPrivateHostList();
-            val nPlaces:Int = AcaciaManager.getNPlaces(hosts(0));
-            //Currently we create as many central partitions as the number of places the Acacia has been run with.
-            var partition_count:Int = nPlaces; 
-            var partitions:Rail[Int] = null;
-        	var edges:ArrayList[String]= new ArrayList[String]();
-        
-        	try{
-        	
-        		val input = new File(fileName);
-        		val inp = input.openRead();
-        		var count:Int = 0n;
-        
-            	val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + graphName + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
-            	var start_time:long = System.currentTimeMillis();
-           
-        		for(line in inp.lines()){
-        			partitions=null;
-        			edges.add(line);
-        			count++;
-        
-        			if(count%1000n==0n ){
-                        
-        	    		Console.OUT.println();
-        	    		var original_edges:ArrayList[String]=edges.clone();
-                		edges = streamLdgPartitioner.generateDirectedGraph(edges);
-        
-        	    		for(var counter:Int = 1n; counter <= 10n; counter++){
-        		    		Console.OUT.println("");
-        		    		Console.OUT.print(counter);
-        		    		partitions = streamLdgPartitioner.partitionWithStreamingLDG(edges,partition_count,partitions);
-        	    		}
-        	    
-        	            partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
-        	    		StreamingLDGPartitioner.transferToInstance(partitions,original_edges, Long.parseLong(graphID));
-        	    		edges.clear();
-             		}
-        		}
-        
-               if(edges.size()>0){
-        			//Console.OUT.println("Remaining edges size " + edges.size());
-        			//Console.OUT.println("Iteration \t Node distribution \t #Edges within partitions \t #Crossing edges \t Cut ratio \t Time(ms)" );
-        			var original_edges:ArrayList[String] = edges.clone();
-        			edges = streamLdgPartitioner.generateDirectedGraph(edges);
-        
-        			for(var counter:Int = 1n; counter<=10n; counter++){
-                     
-        				Console.OUT.println("");
-        				Console.OUT.print(counter);
-              			partitions =streamLdgPartitioner.partitionWithStreamingLDG(edges,partition_count,partitions);
-
-        			}
-        			partitions = streamLdgPartitioner.getPartitionWithMinimumCutRatio();
-        			StreamingLDGPartitioner.transferToInstance(partitions, original_edges, Long.parseLong(graphID));
-        			edges.clear();
-               }
-               var end_time:long = System.currentTimeMillis();
-               Console.OUT.println("\t"+(end_time - start_time) + " ms");
-               out.println("Done");
-               out.flush();
-       
-        	}
-        	catch(var e:Exception ){
-        		Console.OUT.println(" Exception " + e);
-        	}
-        	finally{
-             	//Clean up
-        	}  
-            
-                    
-        ///////////////////////////////////////////////////////
-//             out.println(AcaciaFrontEndProtocol.SEND);
-//             out.flush();
-//             var name:String = "";
-// 
-//             try{
-//                 name = buff.readLine();
-//             }catch(val e:IOException){
-//                 Logger.error("Error : " + e.getMessage());
-//             }
-//             out.println(AcaciaFrontEndProtocol.STRM_ACK);
-//             out.flush();
-//             Console.OUT.println("Before kafka consumer " );
-//             val kafkaSocket:KafkaConsumer = new KafkaConsumer();
-//             Console.OUT.println("After kafka consumer " );
-//            var line:String = null;
-  //            var p:LDGPartitioner = new LDGPartitioner();
- //            val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + name + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
-            
-//             while((line=kafkaSocket.getNext())!=null){
-  //               Console.OUT.println(line);
-                 //val vertsArr:Rail[String] = line.split(" ");
-                 //AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
-  //           }
-  //          out.flush();
-            /////////////////////////////////////////////////////////////
-        }
-    }
-
-    private def runKNN(val graphID:String):ArrayList[String]{
-        //To be implemented
-        return null;
-    }
-    
-    private def runKCore(val graphID:String, val kcore:String):HashSet[String]{
-    
-	    //Console.OUT.println("It is K Core");
-	    var result:HashSet[String] = new HashSet[String]();
-	    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-	    val hostListLen:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
-	    val intermRes:Rail[Rail[String]] = new Rail[Rail[String]](hostListLen);
-	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-
-	    for(var i:long=0; i<l.size; i++){
-	    	Console.OUT.println(l(i));
-	    
-		    val items:Rail[String] = l(i).split(",");
-		    val pts = mp.get(items(0));
-		    var partitions:ArrayList[String] = null;
-		    
-		    if(pts == null){
-		    	partitions = new ArrayList[String]();
-		    }else{
-		    	partitions = pts as ArrayList[String];
-		    }
-    
-    		partitions.add(items(1));
-    		mp.put(items(0), partitions);
-	    }
-	    
-	    var cntr:Int = 0n;
-	    var placeDetails:String="";
-	    
-	    finish for (val p in Place.places()){
-	    
-	    	placeDetails= placeDetails+p.id+"/"+PlaceToNodeMapper.getHost(p.id)+"/"+ PlaceToNodeMapper.getInstancePort(p.id)+",";             
-	    
-	    }
-    
-	    finish for (val p in Place.places()){
-	    
-		    val k:Int = cntr;
-		    val host = PlaceToNodeMapper.getHost(p.id);
-		    val port = PlaceToNodeMapper.getInstancePort(p.id);
-		    var partitionID:String = null;
-		    var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-		    if(partitions==null){
-	    
-		    }
-    
-		    if(partitions.size() > 0){
-		    	partitionID = partitions.removeFirst();
-		    }
-    
-	    	val ptID:String = partitionID;
-	    
-	    	async{
-	    		intermRes(k) = AcaciaManager.runKCore(host, port, graphID, ptID, kcore,p.id,placeDetails);
-    		}
-    
-    		cntr++;
-    	}
-    	for(var i:Int=0n; i < hostListLen; i++){
-		    val intermResult = intermRes(i);
-		    if(intermResult != null){
-		    	for(var j:Int=0n; j < intermResult.size; j++){
-		    		result.add(intermResult(j));//result += intermResult;
-	    		}
-		    Console.OUT.println("Result at (" + i + ") : " + intermResult);
-		    }
-		    if(intermResult == null){
-		    	Console.OUT.println("Result at (" + i + ") : [0 vertices]");
-		    }
-    	}
-    
-    	return result;
-    }
-    
-
-
-    private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
-        var result:ArrayList[String] = new ArrayList[String]();
-        val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-        val hostListLen:Int = Place.numPlaces() as Int;
-        var intermRes:Rail[ArrayList[InterimResult]] = new Rail[ArrayList[InterimResult]](hostListLen);
-        var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-        var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-        
-        val nPlaces:Int = AcaciaManager.getNPlaces(l(0n));
-        
-     
-        for(var i:long=0; i<l.size; i++){
-            Console.OUT.println(l(i));
-        
-            val items:Rail[String] = l(i).split(",");
-            val pts = mp.get(items(0));
-            var partitions:ArrayList[String] = null;
-            
-            if(pts == null){
-                partitions = new ArrayList[String]();
-            }else{
-                partitions = pts as ArrayList[String];
-            }
-            
-            partitions.add(items(1));
-            mp.put(items(0), partitions);
-        }
-        
-        var cntr:Int = 0n;
-        var placeDetails:String="";
-        
-        finish for (var i:Int = 0n; i < nPlaces; i++){
-	        placeDetails= placeDetails + i + "/"+PlaceToNodeMapper.getHost(i)+"/"+ PlaceToNodeMapper.getInstancePort(i)+",";             
-        }
-	        finish for (p in placeGroup){
-	        	val k:Int = cntr;
-	        	var temp:Int = p.id as Int;
-	        	if(p.isDead()){
-	        		val pID = p.id;
-	        		var done:Boolean = false; 
-	        		val host = PlaceToNodeMapper.getHost(pID);
-	        		for(pl in Place.places()){
-	        			if(!pl.isDead()){
-	        				if(pl.id != pID){
-	        					val newHost = PlaceToNodeMapper.getHost(pl.id);
-	        					if(host.equals(newHost)){
-	        						temp = pl.id as Int;
-	        						done = true;
-	        						break;
-	        					}
-	        				}
-	        			}
-	        		}
-	        		if(!done){
-	        			//go for replication
-	        			var partitionID:String = null;
-	        			var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-	        			if(partitions==null){
-	        
-	        			}
-	        
-	        			if(partitions.size() > 0){
-	        				partitionID = partitions.removeFirst();
-	        			}
-	        			val ptID:String = partitionID;
-	        			val storedHosts:Rail[String] = call_runSelect("SELECT STORED_HOST_ID FROM ACACIA_META.REPLICATION_STORED_IN WHERE STORED_PARTITION_ID=" + graphID + "_" + partitionID + ";");
-	        			for(storedHost in storedHosts){
-	        				for(pl in Place.places()){
-	                				if(!pl.isDead()){
-	        						temp = pl.id as Int;
-	        						val port = PlaceToNodeMapper.getInstancePort(temp);
-	        						val n:Int = p.id as Int;
-	        						async{
-	        							intermRes(k) = call_runSPARQLWithReplications(host, port, graphID, ptID, query, n, placeDetails,p.id as Int);
-	        						}	
-	        						done = true;
-	        						break;
-	        					} 
-	        				}
-	        				if(done){
-	        					break;
-	        				}
-	        			}
-	        			if(!done){
-	        				intermRes(k) = null;
-	        			}
-	        			cntr++;
-	        			continue;
-	        		}
-	        	}
-	            val host = PlaceToNodeMapper.getHost(temp);
-	            val port = PlaceToNodeMapper.getInstancePort(temp);
-	            var partitionID:String = null;
-	            
-	            var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-	            if(partitions==null){
-	            	
-	            }
-	            
-	            if(partitions.size() > 0){
-	               partitionID = partitions.removeFirst();
-	            }
-	       
-	            val ptID:String = partitionID;
-	            val n:Int = p.id as Int;
-	            async{
-	                intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query, n, placeDetails);
-	            }
-	        
-	            cntr++;
-	        }
-	        
-
-       // }
-        val tokenizer = new Tokenizer(query);
-        val variableMap = tokenizer.getVariableMap();
-        val triplesSize = tokenizer.getTriples().size();
-        val variableCount = tokenizer.getVariableCount();
-        val answerSet = new AnswerSet(variableCount);
-        val allResults = new HashMap[String,HashSet[String]]();
-        for(var i:Int=0n;i<triplesSize;i++){
-        	val tempResult = new HashSet[String]();
-        	var key:String = null;
-        	for(var k:Int=0n; k < hostListLen; k++){
-        		if(intermRes(k) != null){
-        			val intermResult = intermRes(k).get(i);
-        			key = intermResult.resultMapLocal.keySet().iterator().next();
-        			tempResult.addAll(intermResult.resultMapLocal.get(key));
-        			tempResult.addAll(intermResult.resultMapCentral.get(key));
-        			intermRes(k).set(null,i);
-        		}
-        	}
-        	allResults.put(key,tempResult);
-        }
-        intermRes = null;
-        System.gc();
-    
-        val oneVariableKeys = new ArrayList[String]();
-        val itr = allResults.keySet().iterator();
-        while(itr.hasNext()){
-        	val key = itr.next();
-        	val str = key.split(",");
-        	val size = str.size;
-        	if(size == 1){
-        		oneVariableKeys.add(key);
-        	}else if(size == 2){
-        		val tempResults = allResults.get(key);
-        		answerSet.mergeAnswer(tempResults,variableMap.get(str(0)),variableMap.get(str(1)));
-        		val s = answerSet.getAnswerSet()(0n).size();
-        		Console.OUT.println(key);
-        		if(s == 0){
-        			while(oneVariableKeys.size() > 0){
-        				oneVariableKeys.removeFirst();
-        			}
-        			break;
-        		}
-        		System.gc();
-        	}
-        }
-        val itr1 = oneVariableKeys.iterator();
-        while(itr1.hasNext()){
-        	val key = itr1.next();
-        	val tempResults = allResults.get(key);
-        	answerSet.mergeAnswer(tempResults,variableMap.get(key));
-        	val s = answerSet.getAnswerSet()(0n).size();
-        	if(s == 0){
-         		break;
-        	}
-        	System.gc();
-        }
-        val tempHashSet = new HashSet[String]();
-        val temp = answerSet.getAnswerSet();
-        for(var i:Int=0n;i<temp(0).size();i++){
-        	var s:String = new String();
-        	var last:Boolean = false;
-        	for(var j:Long=0;j<variableCount;j++){
-        		s = s + temp(j).get(i);
-        		if(j != variableCount-1){
-        			s = s + ", ";
-        		}
-        	}
-        tempHashSet.add(s);
-        }
-        result.addAll(tempHashSet);
-        return result;
-    }
-    
-    
-    
-
+	
+	private def runSPARQL(val graphID:String, val query:String):ArrayList[String]{
+		var result:ArrayList[String] = new ArrayList[String]();
+		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
+		val hostListLen:Int = Place.numPlaces() as Int;
+		var intermRes:Rail[ArrayList[InterimResult]] = new Rail[ArrayList[InterimResult]](hostListLen);
+		var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+		var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
+		
+		val nPlaces:Int = AcaciaManager.getNPlaces(l(0n));
+		
+		
+		for(var i:long=0; i<l.size; i++){
+			Console.OUT.println(l(i));
+			
+			val items:Rail[String] = l(i).split(",");
+			val pts = mp.get(items(0));
+			var partitions:ArrayList[String] = null;
+			
+			if(pts == null){
+				partitions = new ArrayList[String]();
+			}else{
+				partitions = pts as ArrayList[String];
+			}
+			
+			partitions.add(items(1));
+			mp.put(items(0), partitions);
+		}
+		
+		var cntr:Int = 0n;
+		var placeDetails:String="";
+		
+		finish for (var i:Int = 0n; i < nPlaces; i++){
+			placeDetails= placeDetails + i + "/"+PlaceToNodeMapper.getHost(i)+"/"+ PlaceToNodeMapper.getInstancePort(i)+",";             
+		}
+		finish for (p in placeGroup){
+			val k:Int = cntr;
+			var temp:Int = p.id as Int;
+			if(p.isDead()){
+				val pID = p.id;
+				var done:Boolean = false; 
+				val host = PlaceToNodeMapper.getHost(pID);
+				for(pl in Place.places()){
+					if(!pl.isDead()){
+						if(pl.id != pID){
+							val newHost = PlaceToNodeMapper.getHost(pl.id);
+							if(host.equals(newHost)){
+								temp = pl.id as Int;
+								done = true;
+								break;
+							}
+						}
+					}
+				}
+				if(!done){
+					//go for replication
+					var partitionID:String = null;
+					var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+					if(partitions==null){
+						
+					}
+					
+					if(partitions.size() > 0){
+						partitionID = partitions.removeFirst();
+					}
+					val ptID:String = partitionID;
+					val storedHosts:Rail[String] = call_runSelect("SELECT STORED_HOST_ID FROM ACACIA_META.REPLICATION_STORED_IN WHERE STORED_PARTITION_ID=" + graphID + "_" + partitionID + ";");
+					for(storedHost in storedHosts){
+						for(pl in Place.places()){
+							if(!pl.isDead()){
+								temp = pl.id as Int;
+								val port = PlaceToNodeMapper.getInstancePort(temp);
+								val n:Int = p.id as Int;
+								async{
+									intermRes(k) = call_runSPARQLWithReplications(host, port, graphID, ptID, query, n, placeDetails,p.id as Int);
+								}	
+								done = true;
+								break;
+							} 
+						}
+						if(done){
+							break;
+						}
+					}
+					if(!done){
+						intermRes(k) = null;
+					}
+					cntr++;
+					continue;
+				}
+			}
+			val host = PlaceToNodeMapper.getHost(temp);
+			val port = PlaceToNodeMapper.getInstancePort(temp);
+			var partitionID:String = null;
+			
+			var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+			if(partitions==null){
+				
+			}
+			
+			if(partitions.size() > 0){
+				partitionID = partitions.removeFirst();
+			}
+			
+			val ptID:String = partitionID;
+			val n:Int = p.id as Int;
+			async{
+				intermRes(k) = call_runSPARQL(host, port, graphID, ptID, query, n, placeDetails);
+			}
+			
+			cntr++;
+		}
+		
+		
+		// }
+		val tokenizer = new Tokenizer(query);
+		val variableMap = tokenizer.getVariableMap();
+		val triplesSize = tokenizer.getTriples().size();
+		val variableCount = tokenizer.getVariableCount();
+		val answerSet = new AnswerSet(variableCount);
+		val allResults = new HashMap[String,HashSet[String]]();
+		for(var i:Int=0n;i<triplesSize;i++){
+			val tempResult = new HashSet[String]();
+			var key:String = null;
+			for(var k:Int=0n; k < hostListLen; k++){
+				if(intermRes(k) != null){
+					val intermResult = intermRes(k).get(i);
+					key = intermResult.resultMapLocal.keySet().iterator().next();
+					tempResult.addAll(intermResult.resultMapLocal.get(key));
+					tempResult.addAll(intermResult.resultMapCentral.get(key));
+					intermRes(k).set(null,i);
+				}
+			}
+			allResults.put(key,tempResult);
+		}
+		intermRes = null;
+		System.gc();
+		
+		val oneVariableKeys = new ArrayList[String]();
+		val itr = allResults.keySet().iterator();
+		while(itr.hasNext()){
+			val key = itr.next();
+			val str = key.split(",");
+			val size = str.size;
+			if(size == 1){
+				oneVariableKeys.add(key);
+			}else if(size == 2){
+				val tempResults = allResults.get(key);
+				answerSet.mergeAnswer(tempResults,variableMap.get(str(0)),variableMap.get(str(1)));
+				val s = answerSet.getAnswerSet()(0n).size();
+				Console.OUT.println(key);
+				if(s == 0){
+					while(oneVariableKeys.size() > 0){
+						oneVariableKeys.removeFirst();
+					}
+					break;
+				}
+				System.gc();
+			}
+		}
+		val itr1 = oneVariableKeys.iterator();
+		while(itr1.hasNext()){
+			val key = itr1.next();
+			val tempResults = allResults.get(key);
+			answerSet.mergeAnswer(tempResults,variableMap.get(key));
+			val s = answerSet.getAnswerSet()(0n).size();
+			if(s == 0){
+				break;
+			}
+			System.gc();
+		}
+		val tempHashSet = new HashSet[String]();
+		val temp = answerSet.getAnswerSet();
+		for(var i:Int=0n;i<temp(0).size();i++){
+			var s:String = new String();
+			var last:Boolean = false;
+			for(var j:Long=0;j<variableCount;j++){
+				s = s + temp(j).get(i);
+				if(j != variableCount-1){
+					s = s + ", ";
+				}
+			}
+			tempHashSet.add(s);
+		}
+		result.addAll(tempHashSet);
+		return result;
+	}
+	
+	
+	
+	
 	private def countTraingles(val graphID:String): Long {
-	    var result:Long = 0;	    
-	    //The following line should ideally receive the list ofrunning hosts.
-	    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
-	    //val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
-	    val hostListLen:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));//Number of hosts cannot be a long value
-	    val intermRes:Rail[Long] = new Rail[Long](hostListLen);
-	    
-	    // finish for(var i:Int=0n; i < hostListLen; i++){
-		   //  val k:Int = i;
-		   //  async{
-		   //  	//intermRes(k) = call_countTraingles(hosts(k), graphID);
-		   //  
-		   //  intermRes(k) = call_countTraingles(PlaceToNodeMapper.getHost(placeID), graphID);
-		   //  }
-	    // }
-	    
-	    //Here we need to create a map of partitions and their corresponding host names. Then for each place,
-	    //we makesure that it gets a partition from the host where it is running.
-	    //Here we need to makesure that we have enough number of places per host so that all the partitions will be
-	    //loaded by Acacia. Otherwise there will be several records left in the HashTable without getting assigned to
-	    //a particular place. Indeed this will result in inaccurate running of the algorithm.
-	    
-	    //var l:Rail[String] = call_runSelect("SELECT HOST_IDHOST, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-	    //SELECT NAME,PARTITION_IDPARTITION FROM "ACACIA_META"."HOST_HAS_PARTITION" INNER JOIN "ACACIA_META"."HOST" ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=191;
-	    //Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
-	    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-	    //Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
-	    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-	    
-	    for(var i:long=0; i<l.size; i++){
-	      //Console.OUT.println("pl(i) : " + l(i));
-	      val items:Rail[String] = l(i).split(",");
-	      //First we have to see whether we already have the host stored inside the HashMap.
-	      //var partitions:ArrayList[String] = mp.get(items(0)).value as ArrayList[String];
-	      
-	      // Console.OUT.println("items(0) : " + items(0));
-	      // Console.OUT.println("items(1) : " + items(1));
-	      val pts = mp.get(items(0));
-	      var partitions:ArrayList[String] = null;
-	      
-	      //This means there was no ArrayList object which holds the graph partitions for the host id stored in
-	      //items(0)
-	      if(pts == null){
-	        // Console.OUT.println("Partition count is NULL");
-	        partitions = new ArrayList[String]();
-	      }else{
-	        partitions = pts as ArrayList[String];
-	      }
-	      
-	      partitions.add(items(1));
-	      mp.put(items(0), partitions);
-	      // Console.OUT.println("put item " + items(0) + " : " + items(1));
-	    }
-	    
-	    var cntr:Int = 0n;
-	   // finish for (val p in Place.places()){
-	    //AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
-	    finish for (var p:Int = 0n; p < hostListLen; p++){
-	        val k:Int = cntr;
-	        val host = PlaceToNodeMapper.getHost(p);
-	        val port = PlaceToNodeMapper.getInstancePort(p);
-	        var partitionID:String = null;
-	        
-	        var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
-	        if(partitions.size() > 0){
-	            partitionID = partitions.removeFirst();
-	        }
-	        
-	        //Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
-	        
-	        val ptID:String = partitionID;
-	        // async{
-	        //     intermRes(k) = call_countTraingles(host, port, graphID, ptID);
-	        // }
-	        
-	        async{
-	        	intermRes(k) = AcaciaManager.countTraingles(host, port, graphID, ptID);
-	        }
-	        
-	        cntr++;
-	    }
-	   
-	    //Console.OUT.println("AA@1 : " + hostListLen);
-	    
-	    for(var i:Int=0n; i < hostListLen; i++){
-	    	val intermResult = intermRes(i);
-	    
-	        if(intermResult != -1){
-	        	result += intermResult;
-	        }
-	        
-	    	Console.OUT.println("Triangles at (" + i + ") : " + intermResult);
-	    }
-	    
-	    Console.OUT.println("Total triangle count :" + result);
-	    
-	    //Console.OUT.println("---------- Now calculating the global only traingles --------");
-	    //Next we need to count the traingles in the global graph only.
-	    val globalTriangleCount = AcaciaManager.countGlobalTraingles(graphID);
-	    
-	    /*
-	     * This is the X10 way of doing this. But the connection with the HSQLDB is not successful.
-	     * 
-	    var fromID:Long = -1;
-	    var toID:Long = -1;
-	    //var centralPartionCount:Int = java.lang.Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(Int)0L]);
-	    //var centralPartionCount:Int = Int.parse(org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).getBackingArray()(0));
-	    //var itm:Rail[String] = org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String];
-	    var centralPartionCount:Int = Int.parse((org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String])(0));
-	    Console.OUT.println("centralPartionCount : " + centralPartionCount);
-	    //var localSubGraphMap:java.util.HashMap[Long, java.util.TreeSet[Long]] = new java.util.HashMap[Long, java.util.TreeSet[Long]]();
-	    var localSubGraphMap:java.util.HashMap = new java.util.HashMap();
-	    var edgeCounter:Long = 0;
-	    
-	    
-	    for(var i:Int = 0n; i < centralPartionCount; i++){
-	    	val c:java.sql.Connection = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
-	    	try{
-	    		val stmt:java.sql.Statement = c.createStatement();
-	    		//java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + " and (idpartfrom = " + partitionID + " or idpartto = " + partitionID + ");" );
-	    		val rs:java.sql.ResultSet = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + ";" );
-	    
-	    		if(rs != null){
-	    			while(rs.next()){
-	    				fromID = rs.getLong(1n);
-	    				toID = rs.getLong(2n);
-	    				
-	                    if(localSubGraphMap.containsKey(fromID)){
-	                        var lst:java.util.TreeSet = localSubGraphMap.get(fromID) as java.util.TreeSet;
-	                        lst.add(toID);
-	                        localSubGraphMap.put(fromID, lst);
-	                    }else{
-	                        var lst:java.util.TreeSet = new java.util.TreeSet();
-	                        lst.add(toID);
-	                        localSubGraphMap.put(fromID, lst);
-	                    }
-	                    
-	                    if(localSubGraphMap.containsKey(toID)){
-	                    	var lst:java.util.TreeSet = localSubGraphMap.get(toID) as java.util.TreeSet;
-	                    	lst.add(fromID);
-	                    	localSubGraphMap.put(toID, lst);
-	                    }else{
-	                    	var lst:java.util.TreeSet = new java.util.TreeSet();
-	                    	lst.add(fromID);
-	                    	localSubGraphMap.put(toID, lst);
-	                    }
-	                    
-	                    edgeCounter++;
-	    			}
-	    		}
-		    }catch(val e:java.sql.SQLException){
-		    	e.printStackTrace();
-		    } 
-	    }
-	    */
-	    
-	    
-	    
-	    Console.OUT.println("Global traingles : " + globalTriangleCount);
-	    result += globalTriangleCount;
-	    return result;
+		var result:Long = 0;	    
+		//The following line should ideally receive the list ofrunning hosts.
+		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
+		//val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
+		val hostListLen:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));//Number of hosts cannot be a long value
+		val intermRes:Rail[Long] = new Rail[Long](hostListLen);
+		
+		// finish for(var i:Int=0n; i < hostListLen; i++){
+		//  val k:Int = i;
+		//  async{
+		//  	//intermRes(k) = call_countTraingles(hosts(k), graphID);
+		//  
+		//  intermRes(k) = call_countTraingles(PlaceToNodeMapper.getHost(placeID), graphID);
+		//  }
+		// }
+		
+		//Here we need to create a map of partitions and their corresponding host names. Then for each place,
+		//we makesure that it gets a partition from the host where it is running.
+		//Here we need to makesure that we have enough number of places per host so that all the partitions will be
+		//loaded by Acacia. Otherwise there will be several records left in the HashTable without getting assigned to
+		//a particular place. Indeed this will result in inaccurate running of the algorithm.
+		
+		//var l:Rail[String] = call_runSelect("SELECT HOST_IDHOST, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+		//SELECT NAME,PARTITION_IDPARTITION FROM "ACACIA_META"."HOST_HAS_PARTITION" INNER JOIN "ACACIA_META"."HOST" ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=191;
+		//Console.OUT.println("PPPPPPPPPPPPPPPPPPPPPPP hostListLen-->" + hostListLen);
+		var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+		//Console.OUT.println("QQQQQQQQQQQQQQQQQQQQQQQ size : " + l.size);
+		var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
+		
+		for(var i:long=0; i<l.size; i++){
+			//Console.OUT.println("pl(i) : " + l(i));
+			val items:Rail[String] = l(i).split(",");
+			//First we have to see whether we already have the host stored inside the HashMap.
+			//var partitions:ArrayList[String] = mp.get(items(0)).value as ArrayList[String];
+			
+			// Console.OUT.println("items(0) : " + items(0));
+			// Console.OUT.println("items(1) : " + items(1));
+			val pts = mp.get(items(0));
+			var partitions:ArrayList[String] = null;
+			
+			//This means there was no ArrayList object which holds the graph partitions for the host id stored in
+			//items(0)
+			if(pts == null){
+				// Console.OUT.println("Partition count is NULL");
+				partitions = new ArrayList[String]();
+			}else{
+				partitions = pts as ArrayList[String];
+			}
+			
+			partitions.add(items(1));
+			mp.put(items(0), partitions);
+			// Console.OUT.println("put item " + items(0) + " : " + items(1));
+		}
+		
+		var cntr:Int = 0n;
+		// finish for (val p in Place.places()){
+		//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+		finish for (var p:Int = 0n; p < hostListLen; p++){
+			val k:Int = cntr;
+			val host = PlaceToNodeMapper.getHost(p);
+			val port = PlaceToNodeMapper.getInstancePort(p);
+			var partitionID:String = null;
+			
+			var partitions:ArrayList[String] = mp.get(host) as ArrayList[String];
+			if(partitions.size() > 0){
+				partitionID = partitions.removeFirst();
+			}
+			
+			//Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
+			
+			val ptID:String = partitionID;
+			// async{
+			//     intermRes(k) = call_countTraingles(host, port, graphID, ptID);
+			// }
+			
+			async{
+				intermRes(k) = AcaciaManager.countTraingles(host, port, graphID, ptID);
+			}
+			
+			cntr++;
+		}
+		
+		//Console.OUT.println("AA@1 : " + hostListLen);
+		
+		for(var i:Int=0n; i < hostListLen; i++){
+			val intermResult = intermRes(i);
+			
+			if(intermResult != -1){
+				result += intermResult;
+			}
+			
+			Console.OUT.println("Triangles at (" + i + ") : " + intermResult);
+		}
+		
+		Console.OUT.println("Total triangle count :" + result);
+		
+		//Console.OUT.println("---------- Now calculating the global only traingles --------");
+		//Next we need to count the traingles in the global graph only.
+		val globalTriangleCount = AcaciaManager.countGlobalTraingles(graphID);
+		
+		/*
+		 * This is the X10 way of doing this. But the connection with the HSQLDB is not successful.
+		 * 
+		 * var fromID:Long = -1;
+		 * var toID:Long = -1;
+		 * //var centralPartionCount:Int = java.lang.Integer.parseInt(((String[])org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value)[(Int)0L]);
+		 * //var centralPartionCount:Int = Int.parse(org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).getBackingArray()(0));
+		 * //var itm:Rail[String] = org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String];
+		 * var centralPartionCount:Int = Int.parse((org.acacia.metadata.db.java.MetaDataDBInterface.runSelect("select CENTRALPARTITIONCOUNT from ACACIA_META.GRAPH where IDGRAPH=" + graphID).value as Rail[String])(0));
+		 * Console.OUT.println("centralPartionCount : " + centralPartionCount);
+		 * //var localSubGraphMap:java.util.HashMap[Long, java.util.TreeSet[Long]] = new java.util.HashMap[Long, java.util.TreeSet[Long]]();
+		 * var localSubGraphMap:java.util.HashMap = new java.util.HashMap();
+		 * var edgeCounter:Long = 0;
+		 * 
+		 * 
+		 * for(var i:Int = 0n; i < centralPartionCount; i++){
+		 * val c:java.sql.Connection = org.acacia.centralstore.java.HSQLDBInterface.getConnection(graphID, ""+i);
+		 * try{
+		 * val stmt:java.sql.Statement = c.createStatement();
+		 * //java.sql.ResultSet rs = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + " and (idpartfrom = " + partitionID + " or idpartto = " + partitionID + ");" );
+		 * val rs:java.sql.ResultSet = stmt.executeQuery("SELECT idfrom,idto FROM acacia_central.edgemap where idgraph=" + graphID + ";" );
+		 * 
+		 * if(rs != null){
+		 * while(rs.next()){
+		 * fromID = rs.getLong(1n);
+		 * toID = rs.getLong(2n);
+		 * 
+		 * if(localSubGraphMap.containsKey(fromID)){
+		 * var lst:java.util.TreeSet = localSubGraphMap.get(fromID) as java.util.TreeSet;
+		 * lst.add(toID);
+		 * localSubGraphMap.put(fromID, lst);
+		 * }else{
+		 * var lst:java.util.TreeSet = new java.util.TreeSet();
+		 * lst.add(toID);
+		 * localSubGraphMap.put(fromID, lst);
+		 * }
+		 * 
+		 * if(localSubGraphMap.containsKey(toID)){
+		 * var lst:java.util.TreeSet = localSubGraphMap.get(toID) as java.util.TreeSet;
+		 * lst.add(fromID);
+		 * localSubGraphMap.put(toID, lst);
+		 * }else{
+		 * var lst:java.util.TreeSet = new java.util.TreeSet();
+		 * lst.add(fromID);
+		 * localSubGraphMap.put(toID, lst);
+		 * }
+		 * 
+		 * edgeCounter++;
+		 * }
+		 * }
+		 * }catch(val e:java.sql.SQLException){
+		 * e.printStackTrace();
+		 * } 
+		 * }
+		 */
+		
+		
+		
+		Console.OUT.println("Global traingles : " + globalTriangleCount);
+		result += globalTriangleCount;
+		return result;
 	}
 	
 	private static def truncateAcacia(){
 		//First we truncate all the AcaciaInstances
-        //AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+		//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
 		for (p in Place.places()){
 			//at(p){
-//PlaceToNodeMapper.getHost(p.id), PlaceToNodeMapper.getInstancePort(p.id), graphID
-				call_truncateLocalInstance(PlaceToNodeMapper.getHost(p.id), PlaceToNodeMapper.getInstancePort(p.id));
+			//PlaceToNodeMapper.getHost(p.id), PlaceToNodeMapper.getInstancePort(p.id), graphID
+			call_truncateLocalInstance(PlaceToNodeMapper.getHost(p.id), PlaceToNodeMapper.getInstancePort(p.id));
 			//}
 		}
 		
 		//Next we need to remove the tables of HBase
 		var idArr:Rail[String] = call_runSelect("select IDGRAPH from ACACIA_META.Graph");
-				
+		
 		//Finally we truncate the related metadb tables.	
 		call_runDelete("DELETE FROM ACACIA_META.HOST_HAS_PARTITION");
 		call_runDelete("DELETE FROM ACACIA_META.PARTITION");
@@ -1211,82 +1211,82 @@ public class AcaciaFrontEndServiceSession {
 	
 	private static def removeGraph(val graphID:String):Long{	
 		var result:Long = 0;
-        
-/*		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
-		val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
-		var intermRes:Rail[Long] = new Rail[Long](hostListLen);
 		
-		finish for(var i:Int=0n; i < hostListLen; i++){
+		/*		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
+		 * val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
+		 * var intermRes:Rail[Long] = new Rail[Long](hostListLen);
+		 * 
+		 * finish for(var i:Int=0n; i < hostListLen; i++){
+		 * val k:Int = i;
+		 * async{
+		 * intermRes(k) = call_removeVertices(hosts(k), graphID);
+		 * }
+		 * }
+		 * 
+		 * for(var i:Int=0n; i < hostListLen; i++){
+		 * result += intermRes(i);
+		 * }
+		 * */
+		//28/10/2014: Now we are dealing with places
+		//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+		val numPlaces:Int = Place.places().size as Int;
+		var intermRes:Rail[Long] = new Rail[Long](numPlaces);
+		//SELECT NAME, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=197
+		var hostPartitionResults:Rail[String] = call_runSelect("SELECT NAME, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID);
+		
+		var mp:HashMap[String, String] = new HashMap[String, String]();
+		
+		for(var i:long=0; i<hostPartitionResults.size; i++){
+			//Console.OUT.println("pl(i) : " + l(i));
+			val items:Rail[String] = hostPartitionResults(i).split(",");
+			Console.OUT.println(items(0)+" : "+items(1));
+			mp.put(items(0)+i, items(1));
+		}
+		
+		finish for(var i:Int=0n; i < numPlaces; i++){
 			val k:Int = i;
 			async{
-				intermRes(k) = call_removeVertices(hosts(k), graphID);
+				//intermRes(k) = call_removeVertices(PlaceToNodeMapper.getHost(k), PlaceToNodeMapper.getInstancePort(k), graphID, ""+k);
+				val hst:String = PlaceToNodeMapper.getHost(k);
+				intermRes(k) = AcaciaManager.removeVertices(hst, PlaceToNodeMapper.getInstancePort(k), graphID, mp.get(hst+k));
 			}
 		}
 		
-		for(var i:Int=0n; i < hostListLen; i++){
+		for(var i:Int=0n; i < numPlaces; i++){
 			result += intermRes(i);
 		}
- * */
-        //28/10/2014: Now we are dealing with places
-       //AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
-        val numPlaces:Int = Place.places().size as Int;
-        var intermRes:Rail[Long] = new Rail[Long](numPlaces);
-        //SELECT NAME, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=197
-        var hostPartitionResults:Rail[String] = call_runSelect("SELECT NAME, PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID);
-        
-        var mp:HashMap[String, String] = new HashMap[String, String]();
-        
-        for(var i:long=0; i<hostPartitionResults.size; i++){
-        //Console.OUT.println("pl(i) : " + l(i));
-        	val items:Rail[String] = hostPartitionResults(i).split(",");
-        Console.OUT.println(items(0)+" : "+items(1));
-            mp.put(items(0)+i, items(1));
-        }
-        
-        finish for(var i:Int=0n; i < numPlaces; i++){
-	        val k:Int = i;
-	        async{
-	        	//intermRes(k) = call_removeVertices(PlaceToNodeMapper.getHost(k), PlaceToNodeMapper.getInstancePort(k), graphID, ""+k);
-	            val hst:String = PlaceToNodeMapper.getHost(k);
-	            intermRes(k) = AcaciaManager.removeVertices(hst, PlaceToNodeMapper.getInstancePort(k), graphID, mp.get(hst+k));
-	        }
-        }
-        
-        for(var i:Int=0n; i < numPlaces; i++){
-        	result += intermRes(i);
-        }
 		
 		//Next we need to remove the meta data database entries.
-        //Aug 30 2014 : May be have to re think whether we are deleting the meta-db entries of a deleted graph or not.
+		//Aug 30 2014 : May be have to re think whether we are deleting the meta-db entries of a deleted graph or not.
 		call_runDelete("DELETE FROM ACACIA_META.HOST_HAS_PARTITION WHERE PARTITION_GRAPH_IDGRAPH=" + graphID);
 		call_runDelete("DELETE FROM ACACIA_META.PARTITION WHERE GRAPH_IDGRAPH=" + graphID);
 		call_runDelete("DELETE FROM ACACIA_META.GRAPH WHERE IDGRAPH=" + graphID);
-
-        //March 7, 2015: We need to delete the graph's content from the central store as well
-        //org.apache.commons.io.FileUtils.deleteDirectory();
-        var centralDir:java.io.File = new java.io.File(Utils_Java.getAcaciaProperty("org.acacia.centralstore.location")); 
+		
+		//March 7, 2015: We need to delete the graph's content from the central store as well
+		//org.apache.commons.io.FileUtils.deleteDirectory();
+		var centralDir:java.io.File = new java.io.File(Utils_Java.getAcaciaProperty("org.acacia.centralstore.location")); 
 		var fileFilter:java.io.FileFilter = new org.apache.commons.io.filefilter.WildcardFileFilter(""+graphID+"_*");
-        var files:x10.interop.Java.array[java.io.File] = centralDir.listFiles(fileFilter);
-        Console.OUT.println("Files to delete are");
-        for(var i:Int = 0n; i < files.length; i++ ){
-            //Console.OUT.println("=======>" + i + " " + files(i).getAbsolutePath());
-            var delStatus:Boolean = false;
-            
-            if(files(i).isDirectory()){
-                //org.apache.commons.io.FileUtils.deleteDirectory(files(i).getAbsolutePath());
-                //(((fileName as (x10.util.Box<java.lang.String>)).value))
-                try{
-                    org.apache.commons.io.FileUtils.deleteDirectory(files(i));
-                }catch(var ex:java.io.IOException){
-                    ex.printStackTrace();
-                }
-            }else{
-            	delStatus = files(i).delete();
-            }
-            Console.OUT.println("=======>" + i + " " + files(i).getAbsolutePath()+"--->deleted?-->" + delStatus);
-        }
-        Console.OUT.println("-------------------");
-        
+		var files:x10.interop.Java.array[java.io.File] = centralDir.listFiles(fileFilter);
+		Console.OUT.println("Files to delete are");
+		for(var i:Int = 0n; i < files.length; i++ ){
+			//Console.OUT.println("=======>" + i + " " + files(i).getAbsolutePath());
+			var delStatus:Boolean = false;
+			
+			if(files(i).isDirectory()){
+				//org.apache.commons.io.FileUtils.deleteDirectory(files(i).getAbsolutePath());
+				//(((fileName as (x10.util.Box<java.lang.String>)).value))
+				try{
+					org.apache.commons.io.FileUtils.deleteDirectory(files(i));
+				}catch(var ex:java.io.IOException){
+					ex.printStackTrace();
+				}
+			}else{
+				delStatus = files(i).delete();
+			}
+			Console.OUT.println("=======>" + i + " " + files(i).getAbsolutePath()+"--->deleted?-->" + delStatus);
+		}
+		Console.OUT.println("-------------------");
+		
 		return result;
 	}
 	
@@ -1294,117 +1294,117 @@ public class AcaciaFrontEndServiceSession {
 	 * This method counts the number of vertices in a graph stored in Acacia.
 	 */
 	private static def countVertices(val graphID:String):Long{
-        return AcaciaManager.countVertices(graphID);
+		return AcaciaManager.countVertices(graphID);
 	}
 	
 	/**
 	 * This method counts the number of edges in a graph stored in Acacia.
 	 */
 	private static def countEdges(val graphID:String):Long{
-         return AcaciaManager.countEdges(graphID);
+		return AcaciaManager.countEdges(graphID);
 	}
 	
-/**
- * This method calculates the top-k pagerank of a graph stored in Acacia.
- */
-private static def getTopKPageRank(val graphID:String, val k:Int):String{
-    var result:String = "";
-    val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
-    val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
-    var intermRes:Rail[String] = new Rail[String](hostListLen);
-    var hostList:StringBuilder = new StringBuilder(); 
-
-    for(hst in hosts){
-    	hostList.add(hst);
-    	hostList.add(",");
-    }
-
-    val hstLine:String = hostList.toString();
-    var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-
-    var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
-    
-    for(var i:long=0; i<l.size; i++){
-	    val items:Rail[String] = l(i).split(",");
-	    //First we have to see whether we already have the host stored inside the HashMap.
-	    
-	    val pts = mp.get(items(0));
-	    var partitions:ArrayList[String] = null;
-	    
-	    //This means there was no ArrayList object which holds the graph partitions for the host id stored in
-	    //items(0)
-	    if(pts == null){
-	    	partitions = new ArrayList[String]();
-	    }else{
-	    	partitions = pts as ArrayList[String];
-	    }
-	    
-	    partitions.add(items(1));
-	    mp.put(items(0), partitions);
-    }    
-    
-    finish for(var i:Int=0n; i < hostListLen; i++){
-	    val u:Int = i;
-	    
-	    var partitions:ArrayList[String] = mp.get(hosts(u)) as ArrayList[String];
-	    var partitionID:String = null;
-	    
-	    if(partitions.size() > 0){
-	    	partitionID = partitions.removeFirst();
-	    }
-	    
-	    // Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
-	    
-	    val ptID:String = partitionID;
-	    
-	    async{
-	    	intermRes(u) = call_pageRankTopK(hosts(u), graphID, ptID, hstLine, "" + k);
-	    }
-    }
-    
-    for(var i:Int=0n; i < hostListLen; i++){
-    	result += intermRes(i);
-    }  
-
-    //Here we need to parse the result and return only the top K vertices having the highest pagerank scores 
-    val str1:Rail[String] = result.split(";");
-    var current:Double = 0d;
-    var largest:Double = 0d;
-    var lastLargest:Double = 0d;
-    var largestVertex:String = null;
-    var resultMP:HashMap[String, String] = new HashMap[String, String]();
-    for(var i:Int = 0n; i < k; i++){
-	    for(item in str1){
-	         val str2:Rail[String] = item.split(",");
-	         current = Double.parse(str2(1));
-	         
-	         if(lastLargest == 0d){
-		         if(current > largest){
-		             largest = current;
-		             largestVertex = str2(0);
-		         }
-	         }else{
-	             if((lastLargest > current)&&(current > largest)){
-	                 largest = current;
-	                 largestVertex = str2(0);
-	             }
-	         }
-	    }
-	    lastLargest = largest;
-	    largest = 0d;
-	    resultMP.put(largestVertex, "" + lastLargest);
-    }
-    
-    val itr3:x10.lang.Iterator[x10.util.Map.Entry[String, String]] = resultMP.entries().iterator();
-    var sb2:StringBuilder = new StringBuilder();
-    while(itr3.hasNext()){
-         val entr:x10.util.Map.Entry[String, String] = itr3.next();
-         sb2.add(entr.getKey() + "," + entr.getValue() + ";");
-    }
-    
-    return sb2.toString();
-}
-
+	/**
+	 * This method calculates the top-k pagerank of a graph stored in Acacia.
+	 */
+	private static def getTopKPageRank(val graphID:String, val k:Int):String{
+		var result:String = "";
+		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();//["sc01.sc.cs.titech.ac.jp", "sc02.sc.cs.titech.ac.jp", "sc03.sc.cs.titech.ac.jp", "sc04.sc.cs.titech.ac.jp"];
+		val hostListLen:Int = hosts.size as Int;//Number of hosts cannot be a long value
+		var intermRes:Rail[String] = new Rail[String](hostListLen);
+		var hostList:StringBuilder = new StringBuilder(); 
+		
+		for(hst in hosts){
+			hostList.add(hst);
+			hostList.add(",");
+		}
+		
+		val hstLine:String = hostList.toString();
+		var l:Rail[String] = call_runSelect("SELECT NAME,PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+		
+		var mp:HashMap[String, ArrayList[String]] = new HashMap[String, ArrayList[String]]();
+		
+		for(var i:long=0; i<l.size; i++){
+			val items:Rail[String] = l(i).split(",");
+			//First we have to see whether we already have the host stored inside the HashMap.
+			
+			val pts = mp.get(items(0));
+			var partitions:ArrayList[String] = null;
+			
+			//This means there was no ArrayList object which holds the graph partitions for the host id stored in
+			//items(0)
+			if(pts == null){
+				partitions = new ArrayList[String]();
+			}else{
+				partitions = pts as ArrayList[String];
+			}
+			
+			partitions.add(items(1));
+			mp.put(items(0), partitions);
+		}    
+		
+		finish for(var i:Int=0n; i < hostListLen; i++){
+			val u:Int = i;
+			
+			var partitions:ArrayList[String] = mp.get(hosts(u)) as ArrayList[String];
+			var partitionID:String = null;
+			
+			if(partitions.size() > 0){
+				partitionID = partitions.removeFirst();
+			}
+			
+			// Console.OUT.println("====>>Host : " + host +  " place id : " + p.id + " partitionID : " + partitionID + "");
+			
+			val ptID:String = partitionID;
+			
+			async{
+				intermRes(u) = call_pageRankTopK(hosts(u), graphID, ptID, hstLine, "" + k);
+			}
+		}
+		
+		for(var i:Int=0n; i < hostListLen; i++){
+			result += intermRes(i);
+		}  
+		
+		//Here we need to parse the result and return only the top K vertices having the highest pagerank scores 
+		val str1:Rail[String] = result.split(";");
+		var current:Double = 0d;
+		var largest:Double = 0d;
+		var lastLargest:Double = 0d;
+		var largestVertex:String = null;
+		var resultMP:HashMap[String, String] = new HashMap[String, String]();
+		for(var i:Int = 0n; i < k; i++){
+			for(item in str1){
+				val str2:Rail[String] = item.split(",");
+				current = Double.parse(str2(1));
+				
+				if(lastLargest == 0d){
+					if(current > largest){
+						largest = current;
+						largestVertex = str2(0);
+					}
+				}else{
+					if((lastLargest > current)&&(current > largest)){
+						largest = current;
+						largestVertex = str2(0);
+					}
+				}
+			}
+			lastLargest = largest;
+			largest = 0d;
+			resultMP.put(largestVertex, "" + lastLargest);
+		}
+		
+		val itr3:x10.lang.Iterator[x10.util.Map.Entry[String, String]] = resultMP.entries().iterator();
+		var sb2:StringBuilder = new StringBuilder();
+		while(itr3.hasNext()){
+			val entr:x10.util.Map.Entry[String, String] = itr3.next();
+			sb2.add(entr.getKey() + "," + entr.getValue() + ";");
+		}
+		
+		return sb2.toString();
+	}
+	
 	/**
 	 * This method counts the number of edges in a graph stored in Acacia.
 	 */
@@ -1434,78 +1434,78 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 		
 		return result;
 	}
-
-    private static def getFreeSpaceInfo():String{
-        var result:String = null;
-        var interimres:StringBuilder = new StringBuilder();
-
-        //This code segment assumes that there is one place running on each host. But this many not be true at all times. We may run multiple places in one host
-        // for (p in Place.places()){
-        //     if(p.id == 0){
-        //            val freeSP = call_getFreeSpaceInfo(System.getenv("HOSTNAME"))  + ",";
-        //            Console.OUT.println("freeSP (At place 0) : " + freeSP);
-        //            interimres.add(freeSP);
-        //     }else{
-        //            val freeSP = at(p){
-        //            		return call_getFreeSpaceInfo(System.getenv("HOSTNAME")) + ",";
-        //            };
-        //            Console.OUT.println("freeSP (At place " + p.id + ") : " + freeSP);
-        //            interimres.add(freeSP);
-        //     }
-        // }   
-        
-        val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-        for(host in hosts){
-                   val freeSP = call_getFreeSpaceInfo(host)  + ",";
-                   Console.OUT.println("freeSP (At place 0) : " + freeSP);
-                   interimres.add(freeSP);
-        }
-        
-        //This place needs improvement
-        if(result == null){
-        	result = interimres.toString();
-        }else{
-        	result += interimres.toString();
-        }
-        
-        return result;
-    }
-
-
-    /**
-     * This method counts the number of vertices in a graph stored in Acacia.
-     */
-    private static def getOutDegreeDistribution(val graphID:String):String{
-         var result:String = null;
-         var interimres:StringBuilder = new StringBuilder();
-         
-         val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
-         //AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
-         //val numPlaces:Int = Place.places().size as Int;//Number of places cannot be a long value
-         val numPlaces:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
-         var intermDegRes:Rail[String] = new Rail[String](numPlaces);
-         var l:Rail[String] = call_runSelect("SELECT PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
-         
-         finish for(var i:Int=0n; i < numPlaces; i++){
-                val k:Long = i;
-                val m:String = l(i);
-                
-                async{
-         				intermDegRes(k) = call_outDegree(PlaceToNodeMapper.getHost(k), "" + PlaceToNodeMapper.getInstancePort(k), graphID, m);
-	         	}
-         }
-         
-         val sb:StringBuilder = new StringBuilder();
-         
-         for(var i:Int=0n; i < numPlaces; i++){
-           sb.add(intermDegRes(i));
-           sb.add(";");
-         }
-         
-         result = sb.toString();
-
-         return result;
-}
+	
+	private static def getFreeSpaceInfo():String{
+		var result:String = null;
+		var interimres:StringBuilder = new StringBuilder();
+		
+		//This code segment assumes that there is one place running on each host. But this many not be true at all times. We may run multiple places in one host
+		// for (p in Place.places()){
+		//     if(p.id == 0){
+		//            val freeSP = call_getFreeSpaceInfo(System.getenv("HOSTNAME"))  + ",";
+		//            Console.OUT.println("freeSP (At place 0) : " + freeSP);
+		//            interimres.add(freeSP);
+		//     }else{
+		//            val freeSP = at(p){
+		//            		return call_getFreeSpaceInfo(System.getenv("HOSTNAME")) + ",";
+		//            };
+		//            Console.OUT.println("freeSP (At place " + p.id + ") : " + freeSP);
+		//            interimres.add(freeSP);
+		//     }
+		// }   
+		
+		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
+		for(host in hosts){
+			val freeSP = call_getFreeSpaceInfo(host)  + ",";
+			Console.OUT.println("freeSP (At place 0) : " + freeSP);
+			interimres.add(freeSP);
+		}
+		
+		//This place needs improvement
+		if(result == null){
+			result = interimres.toString();
+		}else{
+			result += interimres.toString();
+		}
+		
+		return result;
+	}
+	
+	
+	/**
+	 * This method counts the number of vertices in a graph stored in Acacia.
+	 */
+	private static def getOutDegreeDistribution(val graphID:String):String{
+		var result:String = null;
+		var interimres:StringBuilder = new StringBuilder();
+		
+		val hosts:Rail[String] = org.acacia.util.Utils.getPrivateHostList();
+		//AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+		//val numPlaces:Int = Place.places().size as Int;//Number of places cannot be a long value
+		val numPlaces:Int = AcaciaManager.getNPlaces(org.acacia.util.Utils.getPrivateHostList()(0));
+		var intermDegRes:Rail[String] = new Rail[String](numPlaces);
+		var l:Rail[String] = call_runSelect("SELECT PARTITION_IDPARTITION FROM ACACIA_META.HOST_HAS_PARTITION INNER JOIN ACACIA_META.HOST ON HOST_IDHOST=IDHOST WHERE PARTITION_GRAPH_IDGRAPH=" + graphID + ";");
+		
+		finish for(var i:Int=0n; i < numPlaces; i++){
+			val k:Long = i;
+			val m:String = l(i);
+			
+			async{
+				intermDegRes(k) = call_outDegree(PlaceToNodeMapper.getHost(k), "" + PlaceToNodeMapper.getInstancePort(k), graphID, m);
+			}
+		}
+		
+		val sb:StringBuilder = new StringBuilder();
+		
+		for(var i:Int=0n; i < numPlaces; i++){
+			sb.add(intermDegRes(i));
+			sb.add(";");
+		}
+		
+		result = sb.toString();
+		
+		return result;
+	}
 	
 	/**
 	 * This method checks if a graph exists in Acacia. This method uses the unique path of the graph.
@@ -1534,33 +1534,33 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 		
 		return result;
 	}
-		
+	
 	
 	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runSelect(#1)")
 	static native def call_runSelect(String):Rail[String];
-
-    @Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runInsert(#1)")
-    static native def call_runInsert(String):String;
-
-    @Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5, #6, #7)")
-    static native def call_runSPARQL(String, Int, String, String, String, Long, String):ArrayList[InterimResult];
-    
-    @Native("java", "org.acacia.server.AcaciaManager.runSPARQLWithReplications(#1, #2, #3, #4, #5, #6, #7,#8)")
-    static native def call_runSPARQLWithReplications(String, Int, String, String, String, Long, String,Int):ArrayList[InterimResult];
-    // @Native("java", "org.acacia.server.AcaciaManager.runKCore(#1, #2, #3, #4, #5, #6, #7)")
-    // static native def call_runKCore(String, Int, String, String, String, Long, String):Rail[String];
-    // 
+	
+	@Native("java", "org.acacia.metadata.db.java.MetaDataDBInterface.runInsert(#1)")
+	static native def call_runInsert(String):String;
+	
+	@Native("java", "org.acacia.server.AcaciaManager.runSPARQL(#1, #2, #3, #4, #5, #6, #7)")
+	static native def call_runSPARQL(String, Int, String, String, String, Long, String):ArrayList[InterimResult];
+	
+	@Native("java", "org.acacia.server.AcaciaManager.runSPARQLWithReplications(#1, #2, #3, #4, #5, #6, #7,#8)")
+	static native def call_runSPARQLWithReplications(String, Int, String, String, String, Long, String,Int):ArrayList[InterimResult];
+	// @Native("java", "org.acacia.server.AcaciaManager.runKCore(#1, #2, #3, #4, #5, #6, #7)")
+	// static native def call_runKCore(String, Int, String, String, String, Long, String):Rail[String];
+	// 
 	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1, #2)")
 	// static native def call_countVertices(String, String):Long;
-
+	
 	// @Native("java", "org.acacia.server.AcaciaManager.countVertices(#1)")
 	// static native def call_countVertices(String):Long;
 	
 	// @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1, #2)")
 	// static native def call_countEdges(String, String):Long;
-
-    // @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1)")
-    // static native def call_countEdges(String):Long;	
+	
+	// @Native("java", "org.acacia.server.AcaciaManager.countEdges(#1)")
+	// static native def call_countEdges(String):Long;	
 	
 	// @Native("java", "org.acacia.server.AcaciaManager.removeVertices(#1, #2, #3, #4)")
 	// static native def call_removeVertices(String, Int, String, String):Long;
@@ -1570,24 +1570,24 @@ private static def getTopKPageRank(val graphID:String, val k:Int):String{
 	
 	@Native("java", "org.acacia.server.AcaciaManager.truncateLocalInstance(#1, #2)")
 	static native def call_truncateLocalInstance(String, Int):void; 
-
-    //(int EntireGraphSize, int localGraphSize)
-    //@Native("java", "org.acacia.query.algorithms.pagerank.ApproxiRank.run(#1, #2)")
+	
+	//(int EntireGraphSize, int localGraphSize)
+	//@Native("java", "org.acacia.query.algorithms.pagerank.ApproxiRank.run(#1, #2)")
 	@Native("java", "org.acacia.server.AcaciaManager.pageRank(#1, #2, #3)")
-    static native def call_pageRank(String, String, String):String; 
-    
-    @Native("java", "org.acacia.server.AcaciaManager.pageRankTopK(#1, #2, #3, #4, #5)")
-    static native def call_pageRankTopK(String, String, String, String, String):String;
-    
-    // @Native("java", "org.acacia.server.AcaciaManager.countTraingles(#1, #2, #3, #4)")
-    // static native def call_countTraingles(String, Int, String, String):Long;
-    
-    // @Native("java", "org.acacia.server.AcaciaManager.countGlobalTraingles(#1)")
-    // static native def call_countGlobalTraingles(String):Long;
-    
-    @Native("java", "org.acacia.query.algorithms.degree.OutDegree.run(#1, #2, #3, #4)")
-    static native def call_outDegree(String, String, String, String):String; 
-    
-    @Native("java", "org.acacia.server.AcaciaManager.getFreeSpaceInfo(#1)")
-    static native def call_getFreeSpaceInfo(String):String;
+	static native def call_pageRank(String, String, String):String; 
+	
+	@Native("java", "org.acacia.server.AcaciaManager.pageRankTopK(#1, #2, #3, #4, #5)")
+	static native def call_pageRankTopK(String, String, String, String, String):String;
+	
+	// @Native("java", "org.acacia.server.AcaciaManager.countTraingles(#1, #2, #3, #4)")
+	// static native def call_countTraingles(String, Int, String, String):Long;
+	
+	// @Native("java", "org.acacia.server.AcaciaManager.countGlobalTraingles(#1)")
+	// static native def call_countGlobalTraingles(String):Long;
+	
+	@Native("java", "org.acacia.query.algorithms.degree.OutDegree.run(#1, #2, #3, #4)")
+	static native def call_outDegree(String, String, String, String):String; 
+	
+	@Native("java", "org.acacia.server.AcaciaManager.getFreeSpaceInfo(#1)")
+	static native def call_getFreeSpaceInfo(String):String;
 }

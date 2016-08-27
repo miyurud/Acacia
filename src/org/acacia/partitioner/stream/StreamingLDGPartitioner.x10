@@ -305,7 +305,7 @@ public class StreamingLDGPartitioner {
         return lines;
     }
     
-    public static def transferToInstance(var partitions:Rail[Int], var edges:ArrayList[String], val graphID:Long){
+    public static def transferToInstances(var partitions:Rail[Int], var edges:ArrayList[String], val graphID:Long){
        //iterate over the edges list
        val centralStoresMap:HashMap[Short, AcaciaHashMapCentralStore] = new HashMap[Short, AcaciaHashMapCentralStore]();
        val hosts= org.acacia.util.Utils.getPrivateHostList();
@@ -318,6 +318,7 @@ public class StreamingLDGPartitioner {
        }
        
        var mapOfPartitions:HashMap[Int, ArrayList[String]] = new HashMap[Int, ArrayList[String]]();
+       var mapOfCentralPartitions:HashMap[Int, ArrayList[String]] = new HashMap[Int, ArrayList[String]]();
 
        var localEdges:ArrayList[String] = null;
        
@@ -328,7 +329,6 @@ public class StreamingLDGPartitioner {
           
             if(partitions(left_node) == partitions(right_node)){
                //This edge belongs to the same partition
-               //"mahen-Satellite-C50-A" below here is for testing purposes  only. Correct host will be retrieved via val hosts Rail[String] above;
                localEdges = mapOfPartitions.get(partitions(left_node));
                if(localEdges == null){
                    localEdges = new ArrayList[String]();
@@ -336,27 +336,38 @@ public class StreamingLDGPartitioner {
                }
                
                localEdges.add(left_node + " " + right_node);
-               //AcaciaServer.insertEdge("wso2-ThinkPad-T530", graphID, partitions(left_node), Long.parse(left_node+""), Long.parse(right_node+""));
             } else {
-                Console.OUT.println("Insert edge to central store yet to be implemented...");
-            
-                //save this edge to the central store of the from vertex
-                //centralStoresMap.get(partitions(left_node) as short).addEdge(left_node, right_node);
-                //central.storeGraph();
+                localEdges = mapOfCentralPartitions.get(partitions(left_node));
+                if(localEdges == null){
+                	localEdges = new ArrayList[String]();
+                	mapOfCentralPartitions.put(partitions(left_node), localEdges);
+                }
+                
+                localEdges.add(left_node + " " + right_node);
             }
         }
        
-       val itr:Iterator[x10.util.Map.Entry[Int, ArrayList[String]]] = mapOfPartitions.entries().iterator();
-       
+       var itr:Iterator[x10.util.Map.Entry[Int, ArrayList[String]]] = mapOfPartitions.entries().iterator();
+       var host:String = null;
+       var port:Int = 0n;
+       var partitionID:Long = 0;
        while(itr.hasNext()){
            var entr:x10.util.Map.Entry[Int, ArrayList[String]] = itr.next();
-           AcaciaManager.insertEdges("wso2-ThinkPad-T530", graphID, entr.getKey() as Long, entr.getValue());
+           partitionID = entr.getKey() as Long;
+           //Here we make the asumption that partition ID is equal to place ID
+           host = PlaceToNodeMapper.getHost(partitionID);
+           port = PlaceToNodeMapper.getInstancePort(partitionID);
+           AcaciaManager.insertEdges(host, port, graphID, partitionID, entr.getValue(), false);
+       }
+       
+       itr = mapOfCentralPartitions.entries().iterator();
+       while(itr.hasNext()){
+    	   var entr:x10.util.Map.Entry[Int, ArrayList[String]] = itr.next();
+    	   partitionID = entr.getKey() as Long;
+    	   //Here we make the asumption that central partition ID is equal to place ID
+    	   host = PlaceToNodeMapper.getHost(partitionID);
+    	   port = PlaceToNodeMapper.getInstancePort(partitionID);
+    	   AcaciaManager.insertEdges(host, port, graphID, partitionID, entr.getValue(), true);
        }
     }
-    
-    
- 
-    
-   
-   
 }

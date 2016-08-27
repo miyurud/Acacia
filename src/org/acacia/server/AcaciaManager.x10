@@ -665,17 +665,20 @@ public class AcaciaManager {
 	 }
  
     /**
-     * This method is used to insert a batch of new edges to Acacia Local Instance.
+     * This method is used to insert a batch of new edges to Acacia Local Instance. This method will be used for transfering 
+     * resulting batches of edges after they get partitioned either to local store or to central store.
      * @param host
+     * @param port
      * @param graphID
-     * @param startVertexID
-     * @param endVertexID
+     * @param partitionID
+     * @param edges
+     * @param isCentralStore
      */
-    public static def insertEdges(host:String, graphID:long, partitionID:long, edges:ArrayList[String]):boolean{		
+    public static def insertEdges(host:String, port:Int, graphID:long, partitionID:long, edges:ArrayList[String], isCentralStore:boolean):boolean{		
         //The manger should contatct the appropriate AcaciaInstance and insert the edges.
         try{
-            Console.OUT.println("Connecting to host : " + host + " at port : " + Conts_Java.ACACIA_INSTANCE_PORT);
-            val socket:Socket = new Socket(host, Conts_Java.ACACIA_INSTANCE_PORT);
+            Console.OUT.println("Connecting to host : " + host + " at port : " + port);
+            val socket:Socket = new Socket(host, port);
             val out:PrintWriter = new PrintWriter(socket.getOutputStream());
             val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             var response:String = "";
@@ -714,6 +717,14 @@ public class AcaciaManager {
  
                     if((response == null) && (!response.equals(AcaciaInstanceProtocol.OK))){
                         Logger_Java.error("Error in uploading the graph : " + graphID + " partition : " + partitionID + " on host : " + host);
+                    }else{
+                        out.println(isCentralStore);
+                        out.flush();
+                        response = reader.readLine();
+                        
+                        if((response == null) && (!response.equals(AcaciaInstanceProtocol.OK))){
+                        	Logger_Java.error("Error in uploading the graph : " + graphID + " partition : " + partitionID + " on host : " + host);
+                        }
                     }
                 }
             }
@@ -727,6 +738,8 @@ public class AcaciaManager {
             out.println(AcaciaInstanceProtocol.INSERT_EDGES_COMPLETE); //We need to say we are done with sending edges.
             out.flush();
  
+            response = reader.readLine();
+            
             if((response != null) && (response.equals(AcaciaInstanceProtocol.INSERT_EDGES_ACK))){
                 out.close();
             }

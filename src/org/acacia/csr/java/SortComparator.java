@@ -25,30 +25,30 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
 /**
- * Compares the composite key, {@link StockKey}.
- * We sort by symbol ascendingly and timestamp
- * descendingly.
+ * Compares the composite key, {@link StockKey}. We sort by symbol ascendingly
+ * and timestamp descendingly.
+ * 
  * @author Jee Vang
  *
  */
-public class SortComparator extends WritableComparator{
+public class SortComparator extends WritableComparator {
 
-	public SortComparator() {
-		super(LongWritable.class, true);
-		// TODO Auto-generated constructor stub
-	}
-		
-	@Override
-	public int compare(WritableComparable a, WritableComparable b){
-		LongWritable v1 = (LongWritable)a;
-		LongWritable v2 = (LongWritable)b;
-		
-		if(v1.get() > v2.get()){
-			return 1;
-		}else if(v1.get() < v2.get()){
-			return -1;
-		}else{
-			return 0;
-		}
-	}
+    public SortComparator() {
+        super(LongWritable.class, true);
+        // TODO Auto-generated constructor stub
+    }
+
+    @Override
+    public int compare(WritableComparable a, WritableComparable b) {
+        LongWritable v1 = (LongWritable) a;
+        LongWritable v2 = (LongWritable) b;
+
+        if (v1.get() > v2.get()) {
+            return 1;
+        } else if (v1.get() < v2.get()) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
 }

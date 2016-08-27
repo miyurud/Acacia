@@ -19,9 +19,11 @@ package test.acacia.partitioner.index;
 import org.acacia.partitioner.index.PartitionIndex;
 import org.acacia.vertexcounter.java.VertexCounter;
 
-public class TestPartitionIndex{
+public class TestPartitionIndex {
     public static void main(String[] args) {
-    	PartitionIndex obj = new PartitionIndex(); //This is the number of vertices for Flickr in Acacia
-    	obj.run();
+        PartitionIndex obj = new PartitionIndex(); // This is the number of
+                                                   // vertices for Flickr in
+                                                   // Acacia
+        obj.run();
     }
 }

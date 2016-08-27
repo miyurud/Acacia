@@ -1,17 +1,17 @@
 /**
-Copyright 2015 Acacia Team
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+ * Copyright 2015 Acacia Team
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.acacia.server;
@@ -49,26 +49,27 @@ import org.acacia.util.PlaceToNodeMapper;
 
 public class AcaciaInstance{
 	//private GraphDatabaseService graphDB;
-	private var graphDBMap:HashMap[String, AcaciaLocalStore] = new HashMap[String, AcaciaLocalStore]();//This HashMap holds the AcaciaInstance objects. 
+	private var graphDBMapLocalStores:HashMap[String, AcaciaLocalStore] = new HashMap[String, AcaciaLocalStore]();//This HashMap holds the AcaciaInstance objects.
+	private var graphDBMapCentralStores:HashMap[String, AcaciaLocalStore] = new HashMap[String, AcaciaLocalStore]();//This HashMap holds the AcaciaInstance objects.
 	private var srv:ServerSocket;
 	private var sessions:ArrayList[AcaciaInstanceServiceSession];
 	private var runFlag:Boolean = true;
 	private var loadedGraphs:ArrayList[String] = new ArrayList[String](); 
 	private var port:Int;
-    private var sparqlQueryCache:ResultsCache = null;	
-    private var nonCached:Boolean = false;
+	private var sparqlQueryCache:ResultsCache = null;	
+	private var nonCached:Boolean = false;
 	
 	public def this(){
 		sessions = new ArrayList[AcaciaInstanceServiceSession]();
-        //port = 7780n;
+		//port = 7780n;
 		//port = Int.parseInt(java.lang.System.getProperty("ACACIA_INSTANT_PORT"));
-        
-        port = PlaceToNodeMapper.getInstancePort(here.id);
-        sparqlQueryCache = new ResultsCache();
-        nonCached = Boolean.parse(Utils.getAcaciaProperty("org.acacia.rdf.sparql.cached"));
-        Console.OUT.println("AcaciaInstance here.id:" + here.id + " and the port is : " + port);
-	}
 		
+		port = PlaceToNodeMapper.getInstancePort(here.id);
+		sparqlQueryCache = new ResultsCache();
+		nonCached = Boolean.parse(Utils.getAcaciaProperty("org.acacia.rdf.sparql.cached"));
+		Console.OUT.println("AcaciaInstance here.id:" + here.id + " and the port is : " + port);
+	}
+	
 	public def start_running() : void {	
 		//------------------------------------------------------------------------------------------
 		try{
@@ -80,7 +81,7 @@ public class AcaciaInstance{
 			
 			while(runFlag){
 				var socket:Socket = srv.accept();
-				var session:AcaciaInstanceServiceSession = new AcaciaInstanceServiceSession(socket, graphDBMap, loadedGraphs, sparqlQueryCache, nonCached);
+				var session:AcaciaInstanceServiceSession = new AcaciaInstanceServiceSession(socket, graphDBMapLocalStores, graphDBMapCentralStores, loadedGraphs, sparqlQueryCache, nonCached);
 				session.addDBTruncateEventListener(new AcaciaDBTruncateEventListener(this));
 				//session.addShutdownEventListener(new AcaciaShutdownEventListener(this));
 				session.start();
@@ -99,14 +100,14 @@ public class AcaciaInstance{
 		Logger_Java.info("XXXXXXXXXXXXXXXXX> Exitting the AcaciaInstance server at " + org.acacia.util.java.Utils_Java.getHostName() + " port : " + port);
 	}
 	
-    private static def registerShutdownHook(val graphDb:AcaciaHashMapLocalStore) : void {
-    	java.lang.Runtime.getRuntime().addShutdownHook(new java.lang.Thread() {
-    		public def run():void{
-    			graphDb.shutdown();
-    		}
-    	});    	
-    }
-
+	private static def registerShutdownHook(val graphDb:AcaciaHashMapLocalStore) : void {
+		java.lang.Runtime.getRuntime().addShutdownHook(new java.lang.Thread() {
+			public def run():void{
+				graphDb.shutdown();
+			}
+		});    	
+	}
+	
 	public def truncate() : void {
 		val acaciaDataFolder:String = Utils_Java.getAcaciaProperty("org.acacia.server.instance.datafolder");
 		val itr2:Iterator[String] = loadedGraphs.iterator();
@@ -114,27 +115,27 @@ public class AcaciaInstance{
 		while(itr2.hasNext()){
 			val itm:String = itr2.next() as String;
 			//These types of places (such as "" + itm) need to be reviewed and decide whether  
-			val db:AcaciaLocalStore = graphDBMap.get(itm) as AcaciaLocalStore;
+			val db:AcaciaLocalStore = graphDBMapLocalStores.get(itm) as AcaciaLocalStore;
 			//We need to shutdown the online graph db instance
 			Console.OUT.println("Shutting down graph id : " + itm);
 			db.storeGraph();
 		}
 		
-        Console.OUT.println("Done shutting down the hot Neo4j instances...");
-			
+		Console.OUT.println("Done shutting down the hot Neo4j instances...");
+		
 		try{
 			Logger_Java.info("The data folder is : " + acaciaDataFolder);
 			FileUtils.deleteDirectory(new File(acaciaDataFolder));
 			Logger_Java.info("Done deleting : " + acaciaDataFolder);
-				
-			graphDBMap = new HashMap[String, AcaciaLocalStore]();
+			
+			graphDBMapLocalStores = new HashMap[String, AcaciaLocalStore]();
 			loadedGraphs = new ArrayList[String](); 
 			
 			//Next we need to distribute the new graphDB object reference to all the xisting sessions. Because they are still using the old shutdowned session.
 			val itr:Iterator[AcaciaInstanceServiceSession] = sessions.iterator();
 			while(itr.hasNext()){
 				val obj:AcaciaInstanceServiceSession = itr.next() as AcaciaInstanceServiceSession;
-				obj.setGraphDBMap(graphDBMap, loadedGraphs);
+				obj.setGraphDBMap(graphDBMapLocalStores, graphDBMapCentralStores, loadedGraphs);
 			}
 		}catch(val e:UnknownHostException){
 			e.printStackTrace();
@@ -142,15 +143,15 @@ public class AcaciaInstance{
 			ec.printStackTrace();
 		}
 	}
-
+	
 	public def shutdown() : void {
-        Console.OUT.println("Acacia instance shuttingdown.");
+		Console.OUT.println("Acacia instance shuttingdown.");
 		//First we need to shutdown the loade graph dbs
 		val itr2:Iterator[String] = loadedGraphs.iterator();
 		
 		while(itr2.hasNext()){
 			val itm:String = itr2.next() as String;
-			val db:AcaciaLocalStore = graphDBMap.get(itm) as AcaciaLocalStore;
+			val db:AcaciaLocalStore = graphDBMapLocalStores.get(itm) as AcaciaLocalStore;
 			//We need to shutdown the online graph db instance
 			Console.OUT.println("Shutting down graph id : " + itm);
 			db.storeGraph();
@@ -163,10 +164,10 @@ public class AcaciaInstance{
 			val out:PrintWriter = new PrintWriter(socket.getOutputStream());
 			val reader:BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			var response:String = "";
-
+			
 			out.println(AcaciaInstanceProtocol.CLOSE);
 			out.flush();
-
+			
 			response = reader.readLine();
 			
 			
@@ -174,10 +175,10 @@ public class AcaciaInstance{
 				Logger_Java.info("Connection closed.");
 				out.close();
 			}
-        }catch(var e1:java.net.UnknownHostException){
-        	e1.printStackTrace();
-        }catch(var e2:java.io.IOException){
-            e2.printStackTrace();
+		}catch(var e1:java.net.UnknownHostException){
+			e1.printStackTrace();
+		}catch(var e2:java.io.IOException){
+			e2.printStackTrace();
 		}catch(var e:Exception){
 			e.printStackTrace();
 		}
@@ -202,7 +203,7 @@ class AcaciaShutdownEventListener implements ShutdownEventListener{
 	public def this(var inst:AcaciaInstance){
 		this.instance = inst;
 	}
-
+	
 	public def shutdownEventOccurred(var evt:ShutdownEvent) : void{
 		instance.shutdown();
 	}

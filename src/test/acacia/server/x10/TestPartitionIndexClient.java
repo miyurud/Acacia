@@ -24,9 +24,9 @@ import org.acacia.vertexcounter.java.VertexCounterClient;
  */
 public class TestPartitionIndexClient {
     /**
-     * Main method 
+     * Main method
      */
-    public static void main(String[] args) {   	
+    public static void main(String[] args) {
 
     }
 }

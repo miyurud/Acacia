@@ -48,98 +48,106 @@ import org.apache.hadoop.mapreduce.Reducer.Context;
  * @author miyuru
  *
  */
-@SuppressWarnings({"unchecked"})
+@SuppressWarnings({ "unchecked" })
 public class EdgelistPartitioner {
-  static class SequenceFileMapper extends MapReduceBase implements Mapper<NullWritable, BytesWritable, Text, Text> {
-    
-    @SuppressWarnings("unused")
-	private JobConf conf;
-    
-    @Override
-    public void configure(JobConf conf) {
-      this.conf = conf;
+    static class SequenceFileMapper extends MapReduceBase implements
+            Mapper<NullWritable, BytesWritable, Text, Text> {
+
+        @SuppressWarnings("unused")
+        private JobConf conf;
+
+        @Override
+        public void configure(JobConf conf) {
+            this.conf = conf;
+        }
+
+        @Override
+        public void map(NullWritable key, BytesWritable value,
+                OutputCollector<Text, Text> output, Reporter reporter)
+                throws IOException {
+
+            String content = new String(value.getBytes(), "UTF8").trim();
+            StringTokenizer tok = new StringTokenizer(content, " ,\t\r\n");
+            int i = 1;
+            while (tok.hasMoreTokens()) {
+                // String str = tok.nextToken();
+                // System.out.println(str + "====+++====>" + i);
+                output.collect(new Text(tok.nextToken()), new Text("" + i));
+                i++;
+            }
+        }
     }
 
-    @Override
-    public void map(NullWritable key, BytesWritable value,
-        OutputCollector<Text, Text> output, Reporter reporter)
-        throws IOException {
-          	
-    	String content = new String(value.getBytes(), "UTF8").trim();    	
-    	StringTokenizer tok = new StringTokenizer(content, " ,\t\r\n");
-    	int i = 1;
-    	while(tok.hasMoreTokens()){
-    		//String str = tok.nextToken();
-    		//System.out.println(str + "====+++====>" + i);
-    		output.collect(new Text(tok.nextToken()), new Text("" + i));
-    		i++;
-    	}
-    } 
-  }
-  
-  public static class MultipleOutputsInvertedReducer extends MapReduceBase implements org.apache.hadoop.mapred.Reducer<Text,Text,NullWritable,Text> {
-		private MultipleOutputs multipleOutputs;
-		
-		@Override
-		public void configure(JobConf conf){
-			multipleOutputs = new MultipleOutputs(conf);
-		}
-			
-		public void reduce(Text key, Iterator<Text> values, OutputCollector<NullWritable, Text> output, Reporter reporter) throws IOException {	
-			@SuppressWarnings("rawtypes")
-			OutputCollector collector = multipleOutputs.getCollector("partition", key.toString(), reporter);
-			
-			while(values.hasNext()){
-				//Text ttx = values.next();
-				//System.out.println("Writing --->" + ttx.toString());
-				collector.collect(NullWritable.get(), values.next());
-			}			
-		}
-		
-		@Override
-		public void close() throws IOException{
-			multipleOutputs.close();
-		}
-		
-		public void cleanup(@SuppressWarnings("rawtypes") Context context) throws IOException, InterruptedException{
-			multipleOutputs.close();
-		}
-	}
-  
-  @SuppressWarnings("unused")
-public static void main(String[] args) throws IOException {
-	    JobConf conf = new JobConf(EdgelistPartitioner.class);
-	    
-	    if (conf == null) {
-	      return;
-	    }
-		String dir1 = "/user/miyuru/merged";
-		String dir2 = "/user/miyuru/merged-out";
-		
-		//We first delete the temporary directories if they exist on the HDFS
-	    FileSystem fs1 = FileSystem.get(new JobConf());
-	    //only delete dir2 because dir1 is uploaded externally.
-		if(fs1.exists(new Path(dir2))){
-			fs1.delete(new Path(dir2), true);
-		}
-		
-	    conf.setInputFormat(WholeFileInputFormat.class);
-	    conf.setOutputFormat(TextOutputFormat.class);
-	    
-	    WholeFileInputFormat.setInputPaths(conf, new Path(dir1));
-	    SequenceFileOutputFormat.setOutputPath(conf, new Path(dir2));
-	    
-	    conf.setOutputKeyClass(Text.class);
-	    conf.setOutputValueClass(Text.class);
+    public static class MultipleOutputsInvertedReducer extends MapReduceBase
+            implements
+            org.apache.hadoop.mapred.Reducer<Text, Text, NullWritable, Text> {
+        private MultipleOutputs multipleOutputs;
 
-	    conf.setMapperClass(SequenceFileMapper.class);
-	    conf.setReducerClass(MultipleOutputsInvertedReducer.class);
-	    conf.setOutputFormat(NullOutputFormat.class);
-	    
-	    conf.setJobName("EdgelistPartitioner");
-	    
-	    MultipleOutputs.addMultiNamedOutput(conf, "partition", TextOutputFormat.class, NullWritable.class, Text.class);
-	    
-	    JobClient.runJob(conf);
-	  }
+        @Override
+        public void configure(JobConf conf) {
+            multipleOutputs = new MultipleOutputs(conf);
+        }
+
+        public void reduce(Text key, Iterator<Text> values,
+                OutputCollector<NullWritable, Text> output, Reporter reporter)
+                throws IOException {
+            @SuppressWarnings("rawtypes")
+            OutputCollector collector = multipleOutputs.getCollector(
+                    "partition", key.toString(), reporter);
+
+            while (values.hasNext()) {
+                // Text ttx = values.next();
+                // System.out.println("Writing --->" + ttx.toString());
+                collector.collect(NullWritable.get(), values.next());
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            multipleOutputs.close();
+        }
+
+        public void cleanup(@SuppressWarnings("rawtypes") Context context)
+                throws IOException, InterruptedException {
+            multipleOutputs.close();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static void main(String[] args) throws IOException {
+        JobConf conf = new JobConf(EdgelistPartitioner.class);
+
+        if (conf == null) {
+            return;
+        }
+        String dir1 = "/user/miyuru/merged";
+        String dir2 = "/user/miyuru/merged-out";
+
+        // We first delete the temporary directories if they exist on the HDFS
+        FileSystem fs1 = FileSystem.get(new JobConf());
+        // only delete dir2 because dir1 is uploaded externally.
+        if (fs1.exists(new Path(dir2))) {
+            fs1.delete(new Path(dir2), true);
+        }
+
+        conf.setInputFormat(WholeFileInputFormat.class);
+        conf.setOutputFormat(TextOutputFormat.class);
+
+        WholeFileInputFormat.setInputPaths(conf, new Path(dir1));
+        SequenceFileOutputFormat.setOutputPath(conf, new Path(dir2));
+
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(Text.class);
+
+        conf.setMapperClass(SequenceFileMapper.class);
+        conf.setReducerClass(MultipleOutputsInvertedReducer.class);
+        conf.setOutputFormat(NullOutputFormat.class);
+
+        conf.setJobName("EdgelistPartitioner");
+
+        MultipleOutputs.addMultiNamedOutput(conf, "partition",
+                TextOutputFormat.class, NullWritable.class, Text.class);
+
+        JobClient.runJob(conf);
+    }
 }

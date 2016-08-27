@@ -25,54 +25,57 @@ import java.net.UnknownHostException;
 import org.acacia.log.java.Logger_Java;
 import org.acacia.server.java.AcaciaInstanceFileTransferServiceSession;
 
-public class AcaciaInstanceFileTransferService{
-	private ServerSocket srv;
-	private boolean runFlag = true;
-	private int port;
-	
-	public AcaciaInstanceFileTransferService(int p){
-        port = p;
-	}
-	
-	public void start_running() throws UnknownHostException{
-		try{
-//			Logger_Java.info("Starting the file transfer service.");
-			srv = new ServerSocket(port);
-//			Logger_Java.info("Done creating the file transfer service.");
-			
-			while(runFlag){
-				Socket socket = srv.accept();
-				Logger_Java.info("Got a connection. Now serving...");
-				AcaciaInstanceFileTransferServiceSession session = new AcaciaInstanceFileTransferServiceSession(socket);
-				//session.addShutdownEventListener(new AcaciaShutdownEventListener(this));
-				session.start();
-				//This is something fancy we should do later in future.
-				//session.addShutdownEventListener(new InstanceShutdownEventListener(this));
-			}
-		}catch(BindException e){
-			Logger_Java.error("Error : " + e.getMessage());
-		} catch (IOException e) {
-			Logger_Java.error("Error : " + e.getMessage());
-		}
-		
-		System.out.println("Exitting the AcaciaInstance server.");
-	}
+public class AcaciaInstanceFileTransferService {
+    private ServerSocket srv;
+    private boolean runFlag = true;
+    private int port;
 
-	public void shutdown() {
-		System.out.println("Acacia instance shuttingdown.");
-	}
+    public AcaciaInstanceFileTransferService(int p) {
+        port = p;
+    }
+
+    public void start_running() throws UnknownHostException {
+        try {
+            // Logger_Java.info("Starting the file transfer service.");
+            srv = new ServerSocket(port);
+            // Logger_Java.info("Done creating the file transfer service.");
+
+            while (runFlag) {
+                Socket socket = srv.accept();
+                Logger_Java.info("Got a connection. Now serving...");
+                AcaciaInstanceFileTransferServiceSession session = new AcaciaInstanceFileTransferServiceSession(
+                        socket);
+                // session.addShutdownEventListener(new
+                // AcaciaShutdownEventListener(this));
+                session.start();
+                // This is something fancy we should do later in future.
+                // session.addShutdownEventListener(new
+                // InstanceShutdownEventListener(this));
+            }
+        } catch (BindException e) {
+            Logger_Java.error("Error : " + e.getMessage());
+        } catch (IOException e) {
+            Logger_Java.error("Error : " + e.getMessage());
+        }
+
+        System.out.println("Exitting the AcaciaInstance server.");
+    }
+
+    public void shutdown() {
+        System.out.println("Acacia instance shuttingdown.");
+    }
 }
 
-//class AcaciaShutdownEventListener implements ShutdownEventListener{
-//	private AcaciaInstanceFileTransferService instance;
-//	
-//	public AcaciaShutdownEventListener(AcaciaInstanceFileTransferService inst){
-//		this.instance = inst;
-//	}
+// class AcaciaShutdownEventListener implements ShutdownEventListener{
+// private AcaciaInstanceFileTransferService instance;
 //
-//	public void shutdownEventOccurred(ShutdownEvent evt) {
-//		instance.shutdown();
-//	}
-//	
-//}
+// public AcaciaShutdownEventListener(AcaciaInstanceFileTransferService inst){
+// this.instance = inst;
+// }
+//
+// public void shutdownEventOccurred(ShutdownEvent evt) {
+// instance.shutdown();
+// }
+//
+// }
 

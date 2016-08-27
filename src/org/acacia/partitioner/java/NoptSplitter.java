@@ -38,102 +38,112 @@ import org.apache.hadoop.mapreduce.Job;
 /**
  * @author miyuru
  *
- *It seems the best way to spli up the lareg list of edges that accumulate into a single nopt file in HDFS is to
- *use a simple mapreduce job.
+ *         It seems the best way to spli up the lareg list of edges that
+ *         accumulate into a single nopt file in HDFS is to use a simple
+ *         mapreduce job.
  */
 public class NoptSplitter {
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		if(!validArgs(args)){
-			printUsage();
-			return;
-		}
-		//These are the temp paths that are created on HDFS
-		String dir1 = "/user/miyuru/edgedistributed-out/nopt";
-		String dir2 = "/user/miyuru/nopt-distributed";
-		
-		//We first delete the temporary directories if they exist on the HDFS
-	    FileSystem fs1;
-		try {
-			fs1 = FileSystem.get(new JobConf());
-	    
-		    System.out.println("Deleting the dir : " + dir2);
-		    
-			if(fs1.exists(new Path(dir2))){
-				fs1.delete(new Path(dir2), true);
-			}
-			
-//			Path notinPath = new Path(dir2);
-//			
-//			if(!fs1.exists(notinPath)){
-//				fs1.create(notinPath);
-//			}
-			
-			JobConf conf = new JobConf(NoptSplitter.class);
-//		    conf.setOutputKeyClass(Text.class);
-//		    conf.setOutputValueClass(Text.class);
-		    conf.setMapperClass(Map.class);
-			conf.setCombinerClass(Reduce.class);
-			conf.setReducerClass(Reduce.class);
-		    
-//			conf.setInputFormat(TextInputFormat.class);
-//			conf.setOutputFormat(TextOutputFormat.class);
-
-			FileInputFormat.setInputPaths(conf, new Path(dir1));
-			FileOutputFormat.setOutputPath(conf, new Path(dir2));
-			
-			 Job job1 = new Job(conf, "nopt_splitter");
-			 job1.setNumReduceTasks(Integer.parseInt(args[0])); //The most importnt point in this job
-			 job1.waitForCompletion(true); 
-			 
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-	
-    public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, LongWritable, Text> {
-        public void map(LongWritable key, Text value, OutputCollector<LongWritable, Text> output, Reporter reporter) throws IOException {
-        			output.collect(key, value);
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        if (!validArgs(args)) {
+            printUsage();
+            return;
         }
-}
+        // These are the temp paths that are created on HDFS
+        String dir1 = "/user/miyuru/edgedistributed-out/nopt";
+        String dir2 = "/user/miyuru/nopt-distributed";
 
-    public static class Reduce extends MapReduceBase implements Reducer<LongWritable, Text, LongWritable, Text> {  	
-		public void reduce(LongWritable arg0, Iterator<Text> arg1,
-				OutputCollector<LongWritable, Text> arg2, Reporter arg3)
-				throws IOException {
-			
-			while(arg1.hasNext()){
-				arg2.collect(arg0, arg1.next());
-			}
-			
-			arg3.progress();
-		}
+        // We first delete the temporary directories if they exist on the HDFS
+        FileSystem fs1;
+        try {
+            fs1 = FileSystem.get(new JobConf());
+
+            System.out.println("Deleting the dir : " + dir2);
+
+            if (fs1.exists(new Path(dir2))) {
+                fs1.delete(new Path(dir2), true);
+            }
+
+            // Path notinPath = new Path(dir2);
+            //
+            // if(!fs1.exists(notinPath)){
+            // fs1.create(notinPath);
+            // }
+
+            JobConf conf = new JobConf(NoptSplitter.class);
+            // conf.setOutputKeyClass(Text.class);
+            // conf.setOutputValueClass(Text.class);
+            conf.setMapperClass(Map.class);
+            conf.setCombinerClass(Reduce.class);
+            conf.setReducerClass(Reduce.class);
+
+            // conf.setInputFormat(TextInputFormat.class);
+            // conf.setOutputFormat(TextOutputFormat.class);
+
+            FileInputFormat.setInputPaths(conf, new Path(dir1));
+            FileOutputFormat.setOutputPath(conf, new Path(dir2));
+
+            Job job1 = new Job(conf, "nopt_splitter");
+            job1.setNumReduceTasks(Integer.parseInt(args[0])); // The most
+                                                               // importnt point
+                                                               // in this job
+            job1.waitForCompletion(true);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
-	
-	private static void printUsage() {
-		System.out.println("-----NoptSplitter-----------");
-		System.out.println("Usage : ");
-		System.out.println(" jar bin/acacia.jar org.acacia.partitioner.java.NoptSplitter <number-of-splits>");
-		System.out.println("----------------------------");
-	}
 
-	/**
-	 * This method validates whether the command line arguments are in correct format.
-	 * @param args
-	 * @return
-	 */
-	private static boolean validArgs(String[] args) {
-		if(args.length < 1){
-			return false;
-		}
-		return true;
-	}
+    public static class Map extends MapReduceBase implements
+            Mapper<LongWritable, Text, LongWritable, Text> {
+        public void map(LongWritable key, Text value,
+                OutputCollector<LongWritable, Text> output, Reporter reporter)
+                throws IOException {
+            output.collect(key, value);
+        }
+    }
+
+    public static class Reduce extends MapReduceBase implements
+            Reducer<LongWritable, Text, LongWritable, Text> {
+        public void reduce(LongWritable arg0, Iterator<Text> arg1,
+                OutputCollector<LongWritable, Text> arg2, Reporter arg3)
+                throws IOException {
+
+            while (arg1.hasNext()) {
+                arg2.collect(arg0, arg1.next());
+            }
+
+            arg3.progress();
+        }
+    }
+
+    private static void printUsage() {
+        System.out.println("-----NoptSplitter-----------");
+        System.out.println("Usage : ");
+        System.out
+                .println(" jar bin/acacia.jar org.acacia.partitioner.java.NoptSplitter <number-of-splits>");
+        System.out.println("----------------------------");
+    }
+
+    /**
+     * This method validates whether the command line arguments are in correct
+     * format.
+     * 
+     * @param args
+     * @return
+     */
+    private static boolean validArgs(String[] args) {
+        if (args.length < 1) {
+            return false;
+        }
+        return true;
+    }
 
 }

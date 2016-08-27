@@ -44,71 +44,76 @@ import org.acacia.events.java.ShutdownEventListener;
 import org.acacia.events.java.DBTruncateEvent;
 import org.acacia.events.java.DBTruncateEventListener;
 
-public class AcaciaInstanceFileTransferServiceSession extends Thread{
-	private Socket sessionSkt;
-	private ShutdownEventListener listenerShtdn;
-	private String dataFolder= "/tmp/dgr";
-	
-	/**
-	 * The constructor
-	 * @param socket
-	 */
-	public AcaciaInstanceFileTransferServiceSession(Socket socket){
-		sessionSkt = socket;
-	}
-	
-	/**
+public class AcaciaInstanceFileTransferServiceSession extends Thread {
+    private Socket sessionSkt;
+    private ShutdownEventListener listenerShtdn;
+    private String dataFolder = "/tmp/dgr";
+
+    /**
+     * The constructor
+     * 
+     * @param socket
+     */
+    public AcaciaInstanceFileTransferServiceSession(Socket socket) {
+        sessionSkt = socket;
+    }
+
+    /**
 	 * 
 	 */
-	public void run(){
-		int b = -1;
-		
-		try{			
-			Logger_Java.info("Started writing to file.");
-			
-				InputStream inpStrm = sessionSkt.getInputStream();			
-				PrintWriter out = new PrintWriter(sessionSkt.getOutputStream());
+    public void run() {
+        int b = -1;
 
-				byte[] line = new byte[8*1024];
-				
-				inpStrm.read(line, 0, line.length);
-				String idTemp = new String(line).trim(); //We must trim() here to avoid an error which indicates invalid file path.
-				Logger_Java.info("File name is : " + idTemp);
-				Logger_Java.info("File path is : " + dataFolder + "/" + idTemp);
-				
-				File fil = new File(dataFolder + "/" + idTemp);
+        try {
+            Logger_Java.info("Started writing to file.");
 
-				if(!fil.exists()){
-					fil.createNewFile();
-				}
-				
-				if(fil.canWrite()){				
-					FileOutputStream foutstrm = new FileOutputStream(fil);
-	
-					out.println(AcaciaInstanceProtocol.SEND_FILE);
-					out.flush();		
-					
-					while((b = inpStrm.read(line)) > 0){					
-						foutstrm.write(line, 0, b);
-						foutstrm.flush();
-					}
-	
-					foutstrm.close();
-				}else{
-					Logger_Java.info("The file cannot be written to...");
-				}
-				
-			sessionSkt.close();
-		}catch(IOException e){
-			Logger_Java.error("Error : " + e.getMessage());
-		}
-	}
-	
-	private void fireShutdownEvent(ShutdownEvent evt){
-		listenerShtdn.shutdownEventOccurred(evt);
-	}
-		
-	public void addShutdownEventListener(ShutdownEventListener listener){
-		this.listenerShtdn = listener;
-	}
+            InputStream inpStrm = sessionSkt.getInputStream();
+            PrintWriter out = new PrintWriter(sessionSkt.getOutputStream());
+
+            byte[] line = new byte[8 * 1024];
+
+            inpStrm.read(line, 0, line.length);
+            String idTemp = new String(line).trim(); // We must trim() here to
+                                                     // avoid an error which
+                                                     // indicates invalid
+                                                     // file
+                                                     // path.
+            Logger_Java.info("File name is : " + idTemp);
+            Logger_Java.info("File path is : " + dataFolder + "/" + idTemp);
+
+            File fil = new File(dataFolder + "/" + idTemp);
+
+            if (!fil.exists()) {
+                fil.createNewFile();
+            }
+
+            if (fil.canWrite()) {
+                FileOutputStream foutstrm = new FileOutputStream(fil);
+
+                out.println(AcaciaInstanceProtocol.SEND_FILE);
+                out.flush();
+
+                while ((b = inpStrm.read(line)) > 0) {
+                    foutstrm.write(line, 0, b);
+                    foutstrm.flush();
+                }
+
+                foutstrm.close();
+            } else {
+                Logger_Java.info("The file cannot be written to...");
+            }
+
+            sessionSkt.close();
+        } catch (IOException e) {
+            Logger_Java.error("Error : " + e.getMessage());
+        }
+    }
+
+    private void fireShutdownEvent(ShutdownEvent evt) {
+        listenerShtdn.shutdownEventOccurred(evt);
+    }
+
+    public void addShutdownEventListener(ShutdownEventListener listener) {
+        this.listenerShtdn = listener;
+    }
 }

@@ -36,11 +36,11 @@ import java.net.Socket;
  * The Acacia front-end.
  */
 public class AcaciaFrontEnd {
-	private var runFlag:Boolean = true;
-	private var srv:ServerSocket;
-	private var sessions:ArrayList[AcaciaFrontEndServiceSession] = new ArrayList[AcaciaFrontEndServiceSession]();
+    private var runFlag:Boolean = true;
+    private var srv:ServerSocket;
+    private var sessions:ArrayList[AcaciaFrontEndServiceSession] = new ArrayList[AcaciaFrontEndServiceSession]();
 	
-public static def main(val args:Rail[String]) {
+    public static def main(val args:Rail[String]) {
 		var frontend:AcaciaFrontEnd = new AcaciaFrontEnd();
 		frontend.run();
 	}    
@@ -51,33 +51,17 @@ public static def main(val args:Rail[String]) {
     		srv = new ServerSocket(Conts.ACACIA_FRONTEND_PORT);
     		Logger.info("Done creating frontend");
     		val pg = Place.places();
-    		//finish{
-	    		while(runFlag){
-	    			var socket:Socket = srv.accept();
-	    			val skt = socket;
-	                val session:AcaciaFrontEndServiceSession = new AcaciaFrontEndServiceSession(skt,pg);
-	                sessions.add(session);
-	    			//async{
-	                    //Console.OUT.println("CCCCC");
-	    				session.run();
-	                    //Console.OUT.println("EEEEE");
-	    			//}
-	    		}
-    		//}
-    		
-    		// while(runFlag){
-    		// 	var socket:Socket = srv.accept();
-    		// 	val skt = socket;
-    		// 	val session:AcaciaFrontEndServiceSession = new AcaciaFrontEndServiceSession(skt);
-    		// 	sessions.add(session);
-    		// 	session.start();
-    		// }
-    		
+            while(runFlag){
+                var socket:Socket = srv.accept();
+                val skt = socket;
+                val session:AcaciaFrontEndServiceSession = new AcaciaFrontEndServiceSession(skt,pg);
+                sessions.add(session);
+                session.start();
+            }    		
     	}catch(var e:BindException){
     		Logger.error("Error : " + e.getMessage());
     	} catch (var e:IOException) {
     		Logger.error("Error : " + e.getMessage());
     	}
     }
-    
 }

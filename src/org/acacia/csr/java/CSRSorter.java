@@ -39,38 +39,44 @@ import org.apache.hadoop.mapreduce.Reducer.Context;
 
 /**
  * This MapReduce class does the counting of number of vertices and edges
+ * 
  * @author miyuru
  *
  */
 public class CSRSorter {
-	public static class CSRSortMapper  extends MapReduceBase implements org.apache.hadoop.mapred.Mapper<LongWritable, Text, LongWritable, LongWritable>{
-		public void map(LongWritable arg0, Text value,
-				OutputCollector<LongWritable, LongWritable> output, Reporter arg3)
-				throws IOException {
-			 String v = value.toString();
-			 int edgeCount = v.trim().split(" |,").length;
-			 
-			 //This is corresponding to the edges
-			 output.collect(new LongWritable(-1), new LongWritable(edgeCount));
-			 //This is corresponding to the vertices. FOr each vertex we emit <-2,1> KV pair
-			 output.collect(new LongWritable(-2), new LongWritable(1));	 
-		}
-	}
+    public static class CSRSortMapper extends MapReduceBase
+            implements
+            org.apache.hadoop.mapred.Mapper<LongWritable, Text, LongWritable, LongWritable> {
+        public void map(LongWritable arg0, Text value,
+                OutputCollector<LongWritable, LongWritable> output,
+                Reporter arg3) throws IOException {
+            String v = value.toString();
+            int edgeCount = v.trim().split(" |,").length;
 
-	public static class CSRSortReducer  extends MapReduceBase implements org.apache.hadoop.mapred.Reducer<LongWritable,LongWritable,LongWritable,LongWritable> {
-		public void reduce(LongWritable key, Iterator<LongWritable> values,
-				OutputCollector<LongWritable, LongWritable> output, Reporter arg3)
-				throws IOException {	
-			long res = 0l;
-			    while (values.hasNext()){
-			    	res += values.next().get();
-			    }
-			   
-			    if(key.get() == -1){ //This need to be done only for edges
-			    	res = res / 2; //This is because we count each edge twice
-			    }
-			    
-			   output.collect(key, new LongWritable(res));	
-		}
-	}
+            // This is corresponding to the edges
+            output.collect(new LongWritable(-1), new LongWritable(edgeCount));
+            // This is corresponding to the vertices. FOr each vertex we emit
+            // <-2,1> KV pair
+            output.collect(new LongWritable(-2), new LongWritable(1));
+        }
+    }
+
+    public static class CSRSortReducer extends MapReduceBase
+            implements
+            org.apache.hadoop.mapred.Reducer<LongWritable, LongWritable, LongWritable, LongWritable> {
+        public void reduce(LongWritable key, Iterator<LongWritable> values,
+                OutputCollector<LongWritable, LongWritable> output,
+                Reporter arg3) throws IOException {
+            long res = 0l;
+            while (values.hasNext()) {
+                res += values.next().get();
+            }
+
+            if (key.get() == -1) { // This need to be done only for edges
+                res = res / 2; // This is because we count each edge twice
+            }
+
+            output.collect(key, new LongWritable(res));
+        }
+    }
 }

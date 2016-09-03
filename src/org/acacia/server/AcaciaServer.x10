@@ -1134,6 +1134,8 @@ for (p in Place.places()) {
     	Console.OUT.println("Reading Stream from Kafka Queue");
     	val isDistrbutedCentralPartitions:Boolean = true;
     	val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + item + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
+				
+		Console.OUT.println("GraphID : " + graphID);
         
         val partitioner:HashPartitioner = new HashPartitioner();
         
@@ -1177,22 +1179,36 @@ for (p in Place.places()) {
         	Console.OUT.println(e);
         }*/
 	
-	val kafkaSocket:KafkaConsumer = new KafkaConsumer();
-	var line:String = null;
-	
-	Console.OUT.println("GraphID : " + graphID);
-            while((line=kafkaSocket.getNext())!=null){
-                Console.OUT.println(line);
-		if(line.equals("-1")) {
-			break;
-		}
-                val vertsArr:Rail[String] = line.split(" ");
-		partitioner.partition(Int.parse(vertsArr(0)), Int.parse(vertsArr(1)));
-                //AcaciaServer.insertEdge(p.selectLDGHost(), Long.parse(graphID), Long.parse(vertsArr(0)), Long.parse(vertsArr(1)));
+		val kafkaSocket:KafkaConsumer = new KafkaConsumer();
+		var line:String = null;
+		var edges:ArrayList[String]= new ArrayList[String]();	
+		var count:Int = 0n;
+		
+		try {
+		    while (!(line=kafkaSocket.getNext()).equals("-1")){
+				edges.add(line);
+				count++;
+			
+				if (count % 1000n == 0n) {
+					partitioner.partition(edges);
+					edges.clear();
+				}
 
-            }
-	Console.OUT.println("Stream ends");
-	partitioner.saveToDisk();
+				//Console.OUT.println("Counter : " + count);
+				
+			}
+			
+			//for remaning edges
+			Console.OUT.println("Partitioning remaining edges using hashpartitioner");
+			if (edges.size() > 0) {
+				partitioner.partition(edges);
+			}
+		} catch (var e:Exception ){
+        		Console.OUT.println(" Exception " + e);
+		}
+	
+		Console.OUT.println("Stream ends");
+		//partitioner.saveToDisk();
 
     }
     

@@ -40,6 +40,7 @@ public class KafkaConsumer extends Thread {
     final static String TOPIC = "mytopic";
     ConsumerConnector consumerConnector;
     ConsumerIterator<byte[], byte[]> it = null;
+	private String line = "";
 
     public KafkaConsumer(){
         Properties properties = new Properties();
@@ -55,8 +56,8 @@ public class KafkaConsumer extends Thread {
     }
     
     public String getNext(){
-    	if(it.hasNext()){
-    		return new String(it.next().message());
+    	if( (line = new String(it.next().message())) != null){
+    		return line;
     	}else{
     		return null;
     	}

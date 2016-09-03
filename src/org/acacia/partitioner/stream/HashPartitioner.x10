@@ -19,9 +19,11 @@ package org.acacia.partitioner.stream;
 import x10.compiler.Native;
 import org.acacia.util.Utils;
 import x10.array.Array;
+import x10.util.ArrayList;
 import x10.util.HashMap;
 
 import org.acacia.server.AcaciaServer;
+import org.acacia.server.AcaciaManager;
 import org.acacia.centralstore.AcaciaHashMapCentralStore;
 
 
@@ -49,6 +51,7 @@ public class HashPartitioner {
 
 		// get the list of available hosts
 		hosts = org.acacia.util.Utils.getPrivateHostList();
+
 		centralStoresMap = new HashMap[Short, AcaciaHashMapCentralStore]();
  
 		//numberofCentralPartitions equals to numberof hosts. Here we hardcode it for testing purposes.
@@ -61,25 +64,59 @@ public class HashPartitioner {
 	}
 	
 	/**
-	 * This method assing given edge(fromVertex & toVertex) to a partition.
+	 * Assign partitions to given edges.
 	 */	
-	public def partition(fromVertex:int, toVertex:int):void {
-
-		//Hash values of vertices
-		val hashFromVertex:long = hash(fromVertex);
-		val hashToVertex:long = hash(toVertex);
-		
-		if (hashFromVertex == hashToVertex) {
-			//put both vertices in same localStore
-			Console.OUT.println("Put vertices in same localstore");
-			AcaciaServer.insertEdge(hosts(0), Long.parse(graphID), fromVertex, toVertex);
-		} else {
-			//put both vertices in centralStore
-			Console.OUT.println("Put vertices in centralstore");
+	public def partition(var edges:ArrayList[String]):void {
+		var fromVertex:Int = 0n;
+		var toVertex:Int = 0n;
+	
+		var mapOfPartitions:HashMap[Int, ArrayList[String]] = new HashMap[Int, ArrayList[String]]();
+		var localEdges:ArrayList[String];
+	
+		for (edge in edges) {
 			
-		        val central:AcaciaHashMapCentralStore = centralStoresMap.get(hashFromVertex as short);
-		        central.addEdge(fromVertex, toVertex);
-		        Console.OUT.println("Saved crossing edge ");
+            val nodes = edge.split(" ");
+            fromVertex = Int.parse(nodes(0));
+            toVertex = Int.parse(nodes(1));
+			
+			//Hash values of vertices
+			val hashFromVertex:long = hash(fromVertex);
+			val hashToVertex:long = hash(toVertex);
+		
+			if (hashFromVertex == hashToVertex) {
+
+				//put both vertices in same localStore
+				//Console.OUT.println("Put vertices in same localstore");
+				//AcaciaServer.insertEdge(hosts(0), Long.parse(graphID), hashFromVertex, fromVertex, toVertex);
+				localEdges = mapOfPartitions.get(hashFromVertex as Int);
+
+				if(localEdges == null){
+				    	localEdges = new ArrayList[String]();
+				    	mapOfPartitions.put(hashFromVertex as Int, localEdges);
+				}
+				   
+				localEdges.add(fromVertex + " " + toVertex);
+
+			} else {
+				//put both vertices in centralStore
+				//Console.OUT.println("Put vertices in centralstore");
+			
+				val central:AcaciaHashMapCentralStore = centralStoresMap.get(hashFromVertex as short);
+				central.addEdge(fromVertex, toVertex);
+				//Console.OUT.println("Saved crossing edge ");
+			}
+		}
+		
+		val itr:Iterator[x10.util.Map.Entry[Int, ArrayList[String]]] = mapOfPartitions.entries().iterator();
+       
+		while(itr.hasNext()){
+			var entr:x10.util.Map.Entry[Int, ArrayList[String]] = itr.next();
+			
+			if(AcaciaManager.insertEdges(hosts(0), Long.parseLong(graphID), entr.getKey() as Long, entr.getValue())) {
+				Console.OUT.println("In HashPartitioner : edges saved successfully");
+			} else {
+				Console.OUT.println("In HashPartitioner : failed to save egdes");
+			}
 		}
 	}
 	

@@ -591,6 +591,7 @@ public class AcaciaFrontEndServiceSession {
             }catch(val e:IOException){
                 Logger.error("Error : " + e.getMessage());
             }
+
             out.println(AcaciaFrontEndProtocol.STRM_ACK);
             out.flush();
             
@@ -610,6 +611,8 @@ public class AcaciaFrontEndServiceSession {
 */
 
 	    AcaciaServer.uploadStream(name);
+		out.println(AcaciaFrontEndProtocol.DONE);
+        out.flush();
 
 	} else if(msg.equals(AcaciaFrontEndProtocol.ADD_STREAM_KAFKA)){
             
@@ -626,7 +629,7 @@ public class AcaciaFrontEndServiceSession {
             }
             out.println(AcaciaFrontEndProtocol.STRM_ACK);
             out.flush();
-            //get file location
+            /*/get file location
             try{
             	fileName = buff.readLine();
             }catch(val e:IOException){
@@ -634,7 +637,7 @@ public class AcaciaFrontEndServiceSession {
             }
             out.println(AcaciaFrontEndProtocol.STRM_ACK);
             out.flush();
-            
+            */
             var streamLdgPartitioner:StreamingLDGPartitioner = new StreamingLDGPartitioner();
             
             val hosts= org.acacia.util.Utils.getPrivateHostList();
@@ -646,14 +649,17 @@ public class AcaciaFrontEndServiceSession {
         
         	try{
         	
-        		val input = new File(fileName);
-        		val inp = input.openRead();
+        		//val input = new File(fileName);
+        		//val inp = input.openRead();
         		var count:Int = 0n;
+				val kafkaSocket:KafkaConsumer = new KafkaConsumer();
+				var line:String = null;
         
             	val graphID:String = call_runInsert("INSERT INTO ACACIA_META.GRAPH(NAME,UPLOAD_PATH,UPLOAD_START_TIME, UPLOAD_END_TIME,GRAPH_STATUS_IDGRAPH_STATUS,VERTEXCOUNT) VALUES('" + graphName + "', 'stream', '" + Utils_Java.getCurrentTimeStamp() + "','" + Utils_Java.getCurrentTimeStamp() + "'," + GraphStatus.STREAMING + ",0 )");
             	var start_time:long = System.currentTimeMillis();
            
-        		for(line in inp.lines()){
+        		//for(line in inp.lines()){
+				while((line=kafkaSocket.getNext())!=null){
         			partitions=null;
         			edges.add(line);
         			count++;
@@ -676,7 +682,7 @@ public class AcaciaFrontEndServiceSession {
              		}
         		}
         
-               if(edges.size()>0){
+				if(edges.size()>0){
         			//Console.OUT.println("Remaining edges size " + edges.size());
         			//Console.OUT.println("Iteration \t Node distribution \t #Edges within partitions \t #Crossing edges \t Cut ratio \t Time(ms)" );
         			var original_edges:ArrayList[String] = edges.clone();
